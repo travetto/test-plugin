@@ -34,11 +34,16 @@ function getWorker() {
 export function activate(context: vscode.ExtensionContext) {
 
   function buildDec(state: string) {
+    let color = state === 'fail' ? 'rgba(255,0,0,0.5)' : state === 'success' ? 'rgba(0,255,0,.5)' : 'rgba(255,255,255,.5)';
+    let img = context.asAbsolutePath('images/' + state + '.png');
     return vscode.window.createTextEditorDecorationType({
       isWholeLine: false,
+      borderWidth: '0 0 0 4px',
+      borderStyle: 'solid',
+      borderColor: color,
       overviewRulerLane: vscode.OverviewRulerLane.Left,
-      overviewRulerColor: state === 'fail' ? 'rgba(255,0,0,0.5)' : state === 'success' ? 'rgba(0,255,0,.5)' : 'rgba(255,255,255,.5)',
-      //gutterIconPath: context.asAbsolutePath('images/' + state + '.png'),
+      overviewRulerColor: color,
+      //gutterIconPath:,
       //gutterIconSize: 'auto',
       textDecoration: 'font-style: italic;',
       light: {
