@@ -154,7 +154,7 @@ export function activate(context: vscode.ExtensionContext) {
             decs.assert.success.push(line(assertion.line));
           }
         }
-        /*
+
         if (test.status === 'failed') {
           decs.group.fail.push(line(test.line));
         } else if (test.status === 'passed') {
@@ -162,9 +162,9 @@ export function activate(context: vscode.ExtensionContext) {
         } else if (test.status === 'skipped') {
           decs.group.unknown.push(line(test.line));
         }
-        */
+
       }
-      /*
+
       if (suite.failed) {
         decs.group.fail.push(line(suite.line));
       } else if (suite.passed) {
@@ -172,9 +172,8 @@ export function activate(context: vscode.ExtensionContext) {
       } else if (suite.skipped) {
         decs.group.unknown.push(line(suite.line));
       }
-      */
+
     }
-    console.log(decs);
     for (let key in decs.assert) {
       activeEditor.setDecorations(DECORATIONS.assert[key], decs.assert[key]);
       activeEditor.setDecorations(DECORATIONS.group[key], decs.group[key]);
