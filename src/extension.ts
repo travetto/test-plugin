@@ -8,6 +8,10 @@ function buildMessage(a: Assertion) {
   return a.actual + ' should be ' + a.operator + ' ' + a.expected;
 }
 
+function line(n: number) {
+  return { range: new vscode.Range(n - 1, 0, n - 1, 100000000000) }
+}
+
 function getWorker() {
   let sub = child_process.spawn(require.resolve(cwd + '/node_modules/@encore2/test/bin/worker.js'), [], {
     stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
@@ -33,18 +37,16 @@ function getWorker() {
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
 
-  function buildDec(state: string) {
+  function buildAssertDec(state: string) {
     let color = state === 'fail' ? 'rgba(255,0,0,0.5)' : state === 'success' ? 'rgba(0,255,0,.5)' : 'rgba(255,255,255,.5)';
-    let img = context.asAbsolutePath('images/' + state + '.png');
     return vscode.window.createTextEditorDecorationType({
       isWholeLine: false,
+      rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed,
       borderWidth: '0 0 0 4px',
       borderStyle: 'solid',
       borderColor: color,
       overviewRulerLane: vscode.OverviewRulerLane.Left,
       overviewRulerColor: color,
-      //gutterIconPath:,
-      //gutterIconSize: 'auto',
       textDecoration: 'font-style: italic;',
       light: {
         after: { color: 'darkgrey' }
@@ -55,10 +57,28 @@ export function activate(context: vscode.ExtensionContext) {
     });
   }
 
+  function buildTestDec(state: string) {
+    let img = context.asAbsolutePath('images/' + state + '.png');
+    return vscode.window.createTextEditorDecorationType({
+      isWholeLine: false,
+      rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed,
+      gutterIconPath: img,
+      gutterIconSize: 'auto'
+    });
+  }
+
+
   const DECORATIONS = {
-    success: buildDec('success'),
-    fail: buildDec('fail'),
-    unknown: buildDec('unknown')
+    assert: {
+      success: buildAssertDec('success'),
+      fail: buildAssertDec('fail'),
+      unknown: buildAssertDec('unknown')
+    },
+    group: {
+      success: buildTestDec('success'),
+      fail: buildTestDec('fail'),
+      unknown: buildTestDec('unknown')
+    }
   };
 
   let timeout = null;
@@ -83,7 +103,7 @@ export function activate(context: vscode.ExtensionContext) {
     try {
       let suites = [];
       sub.send({ type: 'run', file: activeEditor.document.fileName.split(cwd)[1] });
-      let fn = (ev) => {
+      sub.on('message', function fn(ev) {
         if (ev.phase === 'after' && ev.type === 'suite') {
           suites.push(ev.suite);
         }
@@ -91,8 +111,7 @@ export function activate(context: vscode.ExtensionContext) {
           sub.removeListener('message', fn);
           onTest(activeEditor, suites);
         }
-      }
-      sub.on('message', fn);
+      });
     } catch (e) {
       console.log(e);
     }
@@ -107,17 +126,24 @@ export function activate(context: vscode.ExtensionContext) {
 
 
     let decs = {
-      fail: [] as vscode.DecorationOptions[],
-      success: [] as vscode.DecorationOptions[],
-      unknown: [] as vscode.DecorationOptions[]
+      assert: {
+        fail: [] as vscode.DecorationOptions[],
+        success: [] as vscode.DecorationOptions[],
+        unknown: [] as vscode.DecorationOptions[]
+      },
+      group: {
+        fail: [] as vscode.DecorationOptions[],
+        success: [] as vscode.DecorationOptions[],
+        unknown: [] as vscode.DecorationOptions[]
+      }
     }
 
     for (let suite of results) {
       for (let test of suite.tests) {
         for (let assertion of test.assertions) {
           if (assertion.error) {
-            decs.fail.push({
-              range: new vscode.Range(assertion.line - 1, 0, assertion.line - 1, 100000000000),
+            decs.assert.fail.push({
+              ...line(assertion.line),
               renderOptions: {
                 after: {
                   contentText: '  ' + (assertion.message || buildMessage(assertion))
@@ -125,16 +151,33 @@ export function activate(context: vscode.ExtensionContext) {
               }
             });
           } else {
-            decs.success.push({
-              range: new vscode.Range(assertion.line - 1, 0, assertion.line - 1, 100000000000),
-            })
+            decs.assert.success.push(line(assertion.line));
           }
         }
+        /*
+        if (test.status === 'failed') {
+          decs.group.fail.push(line(test.line));
+        } else if (test.status === 'passed') {
+          decs.group.success.push(line(test.line));
+        } else if (test.status === 'skipped') {
+          decs.group.unknown.push(line(test.line));
+        }
+        */
       }
+      /*
+      if (suite.failed) {
+        decs.group.fail.push(line(suite.line));
+      } else if (suite.passed) {
+        decs.group.success.push(line(suite.line));
+      } else if (suite.skipped) {
+        decs.group.unknown.push(line(suite.line));
+      }
+      */
     }
     console.log(decs);
-    for (let key in decs) {
-      activeEditor.setDecorations(DECORATIONS[key], decs[key]);
+    for (let key in decs.assert) {
+      activeEditor.setDecorations(DECORATIONS.assert[key], decs.assert[key]);
+      activeEditor.setDecorations(DECORATIONS.group[key], decs.group[key]);
     }
   }
 

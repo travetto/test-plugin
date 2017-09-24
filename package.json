@@ -31,8 +31,6 @@
     "@types/node": "^8.0.0"
   },
   "dependencies": {
-    "@encore2/test": "git+ssh://git@git.eaiti.com/encore2/test.git#v1.x.x",
-    "@types/util.promisify": "^1.0.0",
-    "util.promisify": "^1.0.0"
+    "@encore2/test": "git+ssh://git@git.eaiti.com/encore2/test.git#v1.x.x"
   }
 }
