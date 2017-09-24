@@ -11,16 +11,10 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:extension.sayHello"
+    "onLanguage:typescript",
+    "workspaceContains:**/node_modules/@encore2/test"
   ],
   "main": "./out/src/extension",
-  "contributes": {
-    "commands": [
-    {
-      "command": "extension.sayHello",
-      "title": "Hello World"
-    }]
-  },
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
@@ -28,11 +22,17 @@
     "postinstall": "node ./node_modules/vscode/bin/install",
     "test": "npm run compile && node ./node_modules/vscode/bin/test"
   },
+  "files": [
+    "src/extension.ts"
+  ],
   "devDependencies": {
     "typescript": "^2.5.2",
     "vscode": "^1.1.5",
-    "mocha": "^3.5.0",
-    "@types/node": "^7.0.43",
-    "@types/mocha": "^2.2.42"
+    "@types/node": "^8.0.0"
+  },
+  "dependencies": {
+    "@encore2/test": "git+ssh://git@git.eaiti.com/encore2/test.git#v1.x.x",
+    "@types/util.promisify": "^1.0.0",
+    "util.promisify": "^1.0.0"
   }
 }
