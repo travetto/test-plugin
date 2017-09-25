@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import * as child_process from 'child_process';
-import { SuiteResult, Assertion } from '@encore2/test';
+import { SuiteResult, Assertion } from '@encore2/test/src/model';
 
 const cwd = vscode.workspace.workspaceFolders[0].uri.path;
 
@@ -63,6 +63,16 @@ export function activate(context: vscode.ExtensionContext) {
       isWholeLine: false,
       rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed,
       gutterIconPath: img,
+      gutterIconSize: '33%'
+    });
+  }
+
+  function buildSuiteDec(state: string) {
+    let img = context.asAbsolutePath('images/' + state + '.png');
+    return vscode.window.createTextEditorDecorationType({
+      isWholeLine: false,
+      rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed,
+      gutterIconPath: img,
       gutterIconSize: 'auto'
     });
   }
@@ -74,10 +84,15 @@ export function activate(context: vscode.ExtensionContext) {
       fail: buildAssertDec('fail'),
       unknown: buildAssertDec('unknown')
     },
-    group: {
+    test: {
       success: buildTestDec('success'),
       fail: buildTestDec('fail'),
       unknown: buildTestDec('unknown')
+    },
+    suite: {
+      success: buildSuiteDec('success'),
+      fail: buildSuiteDec('fail'),
+      unknown: buildSuiteDec('unknown')
     }
   };
 
@@ -124,14 +139,18 @@ export function activate(context: vscode.ExtensionContext) {
     let text = activeEditor.document.getText();
     let index = -1;
 
-
     let decs = {
       assert: {
         fail: [] as vscode.DecorationOptions[],
         success: [] as vscode.DecorationOptions[],
         unknown: [] as vscode.DecorationOptions[]
       },
-      group: {
+      test: {
+        fail: [] as vscode.DecorationOptions[],
+        success: [] as vscode.DecorationOptions[],
+        unknown: [] as vscode.DecorationOptions[]
+      },
+      suite: {
         fail: [] as vscode.DecorationOptions[],
         success: [] as vscode.DecorationOptions[],
         unknown: [] as vscode.DecorationOptions[]
@@ -155,29 +174,31 @@ export function activate(context: vscode.ExtensionContext) {
           }
         }
 
-        if (test.status === 'failed') {
-          decs.group.fail.push(line(test.line));
-        } else if (test.status === 'passed') {
-          decs.group.success.push(line(test.line));
-        } else if (test.status === 'skipped') {
-          decs.group.unknown.push(line(test.line));
+        if (test.status === 'fail') {
+          decs.test.fail.push(line(test.line));
+        } else if (test.status === 'success') {
+          decs.test.success.push(line(test.line));
+        } else if (test.status === 'skip') {
+          decs.test.unknown.push(line(test.line));
         }
 
       }
 
-      if (suite.failed) {
-        decs.group.fail.push(line(suite.line));
-      } else if (suite.passed) {
-        decs.group.success.push(line(suite.line));
-      } else if (suite.skipped) {
-        decs.group.unknown.push(line(suite.line));
+      if (suite.fail) {
+        decs.suite.fail.push(line(suite.line));
+      } else if (suite.success) {
+        decs.suite.success.push(line(suite.line));
+      } else if (suite.skip) {
+        decs.suite.unknown.push(line(suite.line));
       }
 
     }
     for (let key in decs.assert) {
       activeEditor.setDecorations(DECORATIONS.assert[key], decs.assert[key]);
-      activeEditor.setDecorations(DECORATIONS.group[key], decs.group[key]);
+      activeEditor.setDecorations(DECORATIONS.test[key], decs.test[key]);
+      activeEditor.setDecorations(DECORATIONS.suite[key], decs.suite[key]);
     }
+
   }
 
   function onUpdate(editor: vscode.TextEditor) {
@@ -187,11 +208,12 @@ export function activate(context: vscode.ExtensionContext) {
 
     activeEditor = editor;
 
-    if (timeout) {
-      clearTimeout(timeout);
-    }
+    // if (timeout) {
+    //   clearTimeout(timeout);
+    // }
 
-    timeout = setTimeout(runTests, 500);
+    // timeout = setTimeout(runTests, 500);
+    runTests();
   }
 
   vscode.window.onDidChangeActiveTextEditor(ed => onUpdate(ed), null, context.subscriptions);
