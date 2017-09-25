@@ -23,14 +23,16 @@ function getWorker() {
   });
   sub.stderr.on('data', d => console.log(d.toString()));
   sub.stdout.on('data', d => console.error(d.toString()));
-  sub.once('message', function ready(e) {
-    if (e.type === 'ready') {
-      sub.removeListener('message', ready);
-      console.log('Ready, lets init');
-      sub.send({ type: 'init' });
-    }
+  return new Promise<child_process.ChildProcess>((resolve, reject) => {
+    sub.once('message', function ready(e) {
+      if (e.type === 'ready') {
+        sub.removeListener('message', ready);
+        console.log('Ready, lets init');
+        sub.send({ type: 'init' });
+        resolve(sub);
+      }
+    });
   });
-  return sub;
 }
 
 // this method is called when your extension is activated
@@ -89,19 +91,22 @@ export function activate(context: vscode.ExtensionContext) {
 
   let timeout = null;
   let activeEditor: vscode.TextEditor;
-  let sub = getWorker();
-
-  sub.on('close', code => {
-    sub = getWorker();
-  });
+  let sub: child_process.ChildProcess;
 
   // Use the console to output diagnostic information (console.log) and errors (console.error)
   // This line of code will only be executed once when your extension is activated
   console.log('Congratulations, your extension "encore2-test-plugin" is now active!', __dirname + '/success.png');
 
-  function runTests() {
+  async function runTests() {
     if (!activeEditor) {
       return;
+    }
+
+    if (!sub) {
+      sub = await getWorker();
+      sub.on('close', async code => {
+        sub = undefined;
+      });
     }
 
     console.log('Running tests', activeEditor.document.fileName)
