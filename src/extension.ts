@@ -4,10 +4,6 @@ import { SuiteResult, Assertion } from '@encore2/test/src/model';
 
 const cwd = vscode.workspace.workspaceFolders[0].uri.path;
 
-function buildMessage(a: Assertion) {
-  return a.actual + ' should be ' + a.operator + ' ' + a.expected;
-}
-
 function line(n: number) {
   return { range: new vscode.Range(n - 1, 0, n - 1, 100000000000) }
 }
@@ -150,7 +146,7 @@ export function activate(context: vscode.ExtensionContext) {
               renderOptions: {
                 after: {
                   textDecoration: 'font-style: italic;',
-                  contentText: '    ' + (assertion.message || buildMessage(assertion))
+                  contentText: '    ' + assertion.message
                 }
               }
             });
