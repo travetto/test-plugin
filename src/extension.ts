@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import * as child_process from 'child_process';
-import { SuiteResult, Assertion } from '@encore2/test/src/model';
+import { SuiteResult, Assertion } from '@travetto/test/src/model';
 
 const cwd = vscode.workspace.workspaceFolders[0].uri.path;
 
@@ -9,7 +9,7 @@ function line(n: number) {
 }
 
 function getWorker() {
-  let sub = child_process.spawn(require.resolve(cwd + '/node_modules/@encore2/test/bin/worker.js'), [], {
+  let sub = child_process.spawn(require.resolve(cwd + '/node_modules/@travetto/test/bin/worker.js'), [], {
     stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
     cwd,
     env: {
@@ -91,7 +91,7 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Use the console to output diagnostic information (console.log) and errors (console.error)
   // This line of code will only be executed once when your extension is activated
-  console.log('Congratulations, your extension "encore2-test-plugin" is now active!', __dirname + '/success.png');
+  console.log('Congratulations, your extension "travetto-test-plugin" is now active!', __dirname + '/success.png');
 
   async function runTests() {
     if (!activeEditor) {

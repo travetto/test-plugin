@@ -1,5 +1,5 @@
 # Change Log
-All notable changes to the "encore2-test-plugin" extension will be documented in this file.
+All notable changes to the "travetto-test-plugin" extension will be documented in this file.
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 

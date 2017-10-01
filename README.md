@@ -1,6 +1,6 @@
-# encore2-test-plugin README
+# travetto-test-plugin README
 
-This plugin integrates with the encore frameweork's testing module, to provide realtime feedback of tests in the UI.
+This plugin integrates with the travetto frameweork's testing module, to provide realtime feedback of tests in the UI.
 
 ## Features
 
@@ -9,7 +9,7 @@ TODO
 
 ## Requirements
 
-This plugin only works with the testing module provided by the encore framework.
+This plugin only works with the testing module provided by the travetto framework.
 
 ## Known Issues
 

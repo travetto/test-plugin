@@ -1,9 +1,16 @@
 {
-  "name": "encore2-test-plugin",
-  "displayName": "Encore2 Test Plugin",
-  "description": "UI integration for encore2 testing",
+  "name": "travetto-test-plugin",
+  "displayName": "Travetto Test Plugin",
+  "description": "UI integration for travetto testing",
   "version": "0.0.1",
   "publisher": "eaitechnologies",
+  "author": {
+    "email": "timothy.soehnlin@gmail.com",
+    "name": "Timothy Soehnlin"
+  },
+  "repository": {
+    "url": "https://github.com/travetto/test-plugin.git"
+  },
   "engines": {
     "vscode": "^1.15.0"
   },
@@ -12,7 +19,7 @@
   ],
   "activationEvents": [
     "onLanguage:typescript",
-    "workspaceContains:**/node_modules/@encore2/test"
+    "workspaceContains:**/node_modules/@travetto/test"
   ],
   "main": "./out/src/extension",
   "scripts": {
@@ -31,6 +38,6 @@
     "@types/node": "^8.0.0"
   },
   "dependencies": {
-    "@encore2/test": "git+ssh://git@git.eaiti.com/encore2/test.git#v1.x.x"
+    "@travetto/test": "0.x.x"
   }
 }
