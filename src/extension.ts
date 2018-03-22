@@ -9,7 +9,7 @@ function line(n: number) {
 }
 
 function getWorker() {
-  let sub = child_process.spawn(require.resolve(cwd + '/node_modules/@travetto/test/bin/worker.js'), [], {
+  const sub = child_process.spawn(require.resolve(cwd + '/node_modules/@travetto/test/bin/worker.js'), [], {
     stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
     cwd,
     env: {
@@ -20,7 +20,7 @@ function getWorker() {
   sub.stderr.on('data', d => console.log(d.toString()));
   sub.stdout.on('data', d => console.error(d.toString()));
   return new Promise<child_process.ChildProcess>((resolve, reject) => {
-    sub.once('message', function ready(e) {
+    sub.on('message', function ready(e) {
       if (e.type === 'ready') {
         sub.removeListener('message', ready);
         console.log('Ready, lets init');
@@ -36,7 +36,7 @@ function getWorker() {
 export function activate(context: vscode.ExtensionContext) {
 
   function buildAssertDec(state: string) {
-    let color = state === 'fail' ? 'rgba(255,0,0,0.5)' : state === 'success' ? 'rgba(0,255,0,.5)' : 'rgba(255,255,255,.5)';
+    const color = state === 'fail' ? 'rgba(255,0,0,0.5)' : state === 'success' ? 'rgba(0,255,0,.5)' : 'rgba(255,255,255,.5)';
     return vscode.window.createTextEditorDecorationType({
       isWholeLine: false,
       rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed,
@@ -58,7 +58,7 @@ export function activate(context: vscode.ExtensionContext) {
   }
 
   function buildImageDec(state: string, size = 'auto') {
-    let img = context.asAbsolutePath('images/' + state + '.png');
+    const img = context.asAbsolutePath('images/' + state + '.png');
     return vscode.window.createTextEditorDecorationType({
       isWholeLine: false,
       rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed,
@@ -85,7 +85,6 @@ export function activate(context: vscode.ExtensionContext) {
     }
   };
 
-  let timeout = null;
   let activeEditor: vscode.TextEditor;
   let sub: child_process.ChildProcess;
 
@@ -108,7 +107,7 @@ export function activate(context: vscode.ExtensionContext) {
     console.log('Running tests', activeEditor.document.fileName)
 
     try {
-      let suites = [];
+      const suites = [];
       sub.send({ type: 'run', file: activeEditor.document.fileName.split(cwd)[1] });
       sub.on('message', function fn(ev) {
         if (ev.phase === 'after' && ev.type === 'suite') {
@@ -124,22 +123,21 @@ export function activate(context: vscode.ExtensionContext) {
     }
   }
 
-  function onTest(activeEditor: vscode.TextEditor, results: SuiteResult[]) {
+  function onTest(editor: vscode.TextEditor, results: SuiteResult[]) {
     console.log('HEre', results);
-    let decorations = [];
+    const decorations = [];
 
-    let text = activeEditor.document.getText();
-    let index = -1;
+    const text = editor.document.getText();
 
-    let decs: { [key: string]: { [key: string]: vscode.DecorationOptions[] } } = {
+    const decs: { [key: string]: { [key: string]: vscode.DecorationOptions[] } } = {
       assert: { fail: [], success: [], unknown: [] },
       test: { fail: [], success: [], unknown: [] },
       suite: { fail: [], success: [], unknown: [] }
     }
 
-    for (let suite of results) {
-      for (let test of suite.tests) {
-        for (let assertion of test.assertions) {
+    for (const suite of results) {
+      for (const test of suite.tests) {
+        for (const assertion of test.assertions) {
           if (assertion.error) {
             decs.assert.fail.push({
               ...line(assertion.line),
@@ -166,9 +164,9 @@ export function activate(context: vscode.ExtensionContext) {
       }
     }
 
-    for (let key of Object.keys(decs)) {
-      for (let type of Object.keys(decs[key])) {
-        activeEditor.setDecorations(DECORATIONS[key][type], decs[key][type]);
+    for (const key of Object.keys(decs)) {
+      for (const type of Object.keys(decs[key])) {
+        editor.setDecorations(DECORATIONS[key][type], decs[key][type]);
       }
     }
   }
