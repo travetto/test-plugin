@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import * as child_process from 'child_process';
 import { SuiteResult, Assertion } from '@travetto/test/src/model';
+import { deserialize } from '@travetto/test/src/exec/agent/error';
 
 const cwd = vscode.workspace.workspaceFolders[0].uri.path;
 
@@ -9,7 +10,7 @@ function line(n: number) {
 }
 
 function getWorker() {
-  const sub = child_process.spawn(require.resolve(cwd + '/node_modules/@travetto/test/bin/worker.js'), [], {
+  const sub = child_process.spawn(require.resolve(`${cwd}/node_modules/@travetto/test/bin/worker.js`), [], {
     stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
     cwd,
     env: {
@@ -58,7 +59,7 @@ export function activate(context: vscode.ExtensionContext) {
   }
 
   function buildImageDec(state: string, size = 'auto') {
-    const img = context.asAbsolutePath('images/' + state + '.png');
+    const img = context.asAbsolutePath(`images/${state}.png`);
     return vscode.window.createTextEditorDecorationType({
       isWholeLine: false,
       rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed,
@@ -90,7 +91,7 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Use the console to output diagnostic information (console.log) and errors (console.error)
   // This line of code will only be executed once when your extension is activated
-  console.log('Congratulations, your extension "travetto-test-plugin" is now active!', __dirname + '/success.png');
+  console.log('Congratulations, your extension "travetto-test-plugin" is now active!', `${__dirname}/success.png`);
 
   async function runTests() {
     if (!activeEditor) {
@@ -112,6 +113,16 @@ export function activate(context: vscode.ExtensionContext) {
       sub.on('message', function fn(ev) {
         if (ev.phase === 'after' && ev.type === 'suite') {
           suites.push(ev.suite);
+          for (const t of ev.suite.tests) {
+            if (t.error) {
+              t.error = deserialize(t.error);
+            }
+            for (const a of t.assertions) {
+              if (a.error) {
+                a.error = deserialize(a.error);
+              }
+            }
+          }
         }
         if (ev.type === 'runComplete') {
           sub.removeListener('message', fn);
@@ -124,7 +135,6 @@ export function activate(context: vscode.ExtensionContext) {
   }
 
   function onTest(editor: vscode.TextEditor, results: SuiteResult[]) {
-    console.log('HEre', results);
     const decorations = [];
 
     const text = editor.document.getText();
@@ -141,10 +151,14 @@ export function activate(context: vscode.ExtensionContext) {
           if (assertion.error) {
             decs.assert.fail.push({
               ...line(assertion.line),
+              hoverMessage: {
+                language: 'html',
+                value: `${assertion.error.stack}`
+              },
               renderOptions: {
                 after: {
                   textDecoration: 'font-style: italic;',
-                  contentText: '    ' + assertion.message
+                  contentText: `    ${assertion.message}`
                 }
               }
             });
@@ -152,7 +166,16 @@ export function activate(context: vscode.ExtensionContext) {
             decs.assert.success.push(line(assertion.line));
           }
         }
-        decs.test[test.status === 'skip' ? 'unknown' : test.status].push(line(test.line));
+        if (test.error) {
+          console.log(test.error.stack);
+        }
+        decs.test[test.status === 'skip' ? 'unknown' : test.status].push({
+          ...line(test.line),
+          hoverMessage: test.error ? {
+            language: 'html',
+            value: `${test.error.stack}`
+          } : ''
+        });
       }
 
       if (suite.fail) {
