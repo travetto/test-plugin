@@ -1,42 +1,42 @@
 {
-  "name": "travetto-test-plugin",
-  "displayName": "Travetto Test Plugin",
-  "description": "UI integration for travetto testing",
-  "version": "0.0.2",
-  "publisher": "arcsine",
-  "author": {
-    "email": "timothy.soehnlin@gmail.com",
-    "name": "Timothy Soehnlin"
-  },
-  "repository": {
-    "url": "https://github.com/travetto/test-plugin.git"
-  },
-  "engines": {
-    "vscode": "^1.15.0"
-  },
-  "categories": [
-    "Other"
-  ],
-  "activationEvents": [
-    "onLanguage:typescript",
-    "workspaceContains:**/node_modules/@travetto/test"
-  ],
-  "main": "./out/src/extension",
-  "scripts": {
-    "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./",
-    "postinstall": "node ./node_modules/vscode/bin/install",
-    "test": "npm run compile && node ./node_modules/vscode/bin/test"
-  },
-  "files": [
-    "src/extension.ts"
-  ],
-  "devDependencies": {
-    "vscode": "^1.1.13",
-    "@types/node": "^9.4.7"
-  },
-  "dependencies": {
-    "@travetto/test": "0.x.x"
-  }
+    "name": "travetto-test-plugin",
+    "displayName": "Travetto Test Plugin",
+    "description": "UI integration for travetto testing",
+    "version": "0.4.0",
+    "publisher": "arcsine",
+    "author": {
+        "email": "timothy.soehnlin@gmail.com",
+        "name": "Timothy Soehnlin"
+    },
+    "repository": {
+        "url": "https://github.com/travetto/test-plugin.git"
+    },
+    "engines": {
+        "vscode": "^1.15.0"
+    },
+    "categories": [
+        "Other"
+    ],
+    "activationEvents": [
+        "onLanguage:typescript",
+        "workspaceContains:**/node_modules/@travetto/test"
+    ],
+    "main": "./out/src/extension",
+    "scripts": {
+        "vscode:prepublish": "npm run compile",
+        "compile": "tsc -p ./",
+        "watch": "tsc -watch -p ./",
+        "postinstall": "node ./node_modules/vscode/bin/install",
+        "test": "npm run compile && node ./node_modules/vscode/bin/test"
+    },
+    "files": [
+        "src/extension.ts"
+    ],
+    "devDependencies": {
+        "vscode": "^1.1.13",
+        "@types/node": "^9.4.7"
+    },
+    "dependencies": {
+        "@travetto/test": "0.x.x"
+    }
 }

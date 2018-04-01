@@ -1,9 +1,11 @@
 import * as vscode from 'vscode';
 import * as child_process from 'child_process';
-import { SuiteResult, Assertion } from '@travetto/test/src/model';
+import { SuiteResult, Assertion, TestResult } from '@travetto/test/src/model';
 import { deserialize } from '@travetto/test/src/exec/agent/error';
 
 const cwd = vscode.workspace.workspaceFolders[0].uri.path;
+
+type TestDecs = { [key: string]: { [key: string]: vscode.DecorationOptions[] } };
 
 function line(n: number) {
   return { range: new vscode.Range(n - 1, 0, n - 1, 100000000000) }
@@ -93,6 +95,71 @@ export function activate(context: vscode.ExtensionContext) {
   // This line of code will only be executed once when your extension is activated
   console.log('Congratulations, your extension "travetto-test-plugin" is now active!', `${__dirname}/success.png`);
 
+  function assertionToDec(assertion: Assertion) {
+    let dec;
+    if (assertion.error) {
+      dec = {
+        ...line(assertion.line),
+        hoverMessage: {
+          language: 'html',
+          value: `${assertion.error.stack}`
+        },
+        renderOptions: {
+          after: {
+            textDecoration: 'font-style: italic;',
+            contentText: `    ${assertion.message}`
+          }
+        }
+      };
+    } else {
+      dec = line(assertion.line);
+    }
+    return { dec, status: assertion.error ? 'fail' : 'success' };
+  }
+
+  function testToDec(test: TestResult) {
+    const hoverMessage = test.error ? {
+      language: 'html',
+      value: `${test.error.stack}`
+    } : ''
+
+    const dec = {
+      ...line(test.line),
+      hoverMessage
+    };
+
+    return { dec, status: test.status === 'skip' ? 'unknown' : test.status };
+  }
+
+  function receiveTest(test: TestResult) {
+    if (test.error) {
+      test.error = deserialize(test.error);
+    }
+    for (const a of test.assertions) {
+      if (a.error) {
+        a.error = deserialize(a.error);
+      }
+    }
+
+    return { test: testToDec(test), assertions: test.assertions.map(assertionToDec) }
+  }
+
+  function suiteToDec(suite: SuiteResult) {
+    return { dec: line(suite.line), status: suite.skip ? 'unknown' : (suite.fail ? 'fail' : 'success') }
+  }
+
+  function receiveSuite(suite: SuiteResult) {
+    return { suite: suiteToDec(suite) }
+  }
+
+  function setDecorations(decs: TestDecs) {
+    for (const key of ['suite', 'test', 'assert']) {
+      for (const type of ['fail', 'success', 'unknown']) {
+        activeEditor.setDecorations(DECORATIONS[key][type], (decs[key] || {})[type] || []);
+      }
+    }
+  }
+
   async function runTests() {
     if (!activeEditor) {
       return;
@@ -107,90 +174,39 @@ export function activate(context: vscode.ExtensionContext) {
 
     console.log('Running tests', activeEditor.document.fileName)
 
+    const decs: TestDecs = {
+      suite: { success: [], fail: [], unknown: [] },
+      test: { success: [], fail: [], unknown: [] },
+      assert: { success: [], fail: [] }
+    }
+
     try {
-      const suites = [];
       sub.send({ type: 'run', file: activeEditor.document.fileName.split(cwd)[1] });
       sub.on('message', function fn(ev) {
-        if (ev.phase === 'after' && ev.type === 'suite') {
-          suites.push(ev.suite);
-          for (const t of ev.suite.tests) {
-            if (t.error) {
-              t.error = deserialize(t.error);
-            }
-            for (const a of t.assertions) {
-              if (a.error) {
-                a.error = deserialize(a.error);
-              }
+
+        if (ev.phase === 'after') {
+          if (ev.type === 'suite') {
+            const { suite } = receiveSuite(ev.suite);
+            const { status, dec } = suite;
+            decs.suite[status].push(dec);
+          } else if (ev.type === 'test') {
+            const { test, assertions } = receiveTest(ev.test);
+            const { status: tstatus, dec: tdec } = test;
+            decs.test[tstatus].push(tdec);
+            for (const { status, dec } of assertions) {
+              decs.assert[status].push(dec);
             }
           }
+
+          setDecorations(decs);
         }
+
         if (ev.type === 'runComplete') {
           sub.removeListener('message', fn);
-          onTest(activeEditor, suites);
         }
       });
     } catch (e) {
       console.log(e);
-    }
-  }
-
-  function onTest(editor: vscode.TextEditor, results: SuiteResult[]) {
-    const decorations = [];
-
-    const text = editor.document.getText();
-
-    const decs: { [key: string]: { [key: string]: vscode.DecorationOptions[] } } = {
-      assert: { fail: [], success: [], unknown: [] },
-      test: { fail: [], success: [], unknown: [] },
-      suite: { fail: [], success: [], unknown: [] }
-    }
-
-    for (const suite of results) {
-      for (const test of suite.tests) {
-        for (const assertion of test.assertions) {
-          if (assertion.error) {
-            decs.assert.fail.push({
-              ...line(assertion.line),
-              hoverMessage: {
-                language: 'html',
-                value: `${assertion.error.stack}`
-              },
-              renderOptions: {
-                after: {
-                  textDecoration: 'font-style: italic;',
-                  contentText: `    ${assertion.message}`
-                }
-              }
-            });
-          } else {
-            decs.assert.success.push(line(assertion.line));
-          }
-        }
-        if (test.error) {
-          console.log(test.error.stack);
-        }
-        decs.test[test.status === 'skip' ? 'unknown' : test.status].push({
-          ...line(test.line),
-          hoverMessage: test.error ? {
-            language: 'html',
-            value: `${test.error.stack}`
-          } : ''
-        });
-      }
-
-      if (suite.fail) {
-        decs.suite.fail.push(line(suite.line));
-      } else if (suite.success) {
-        decs.suite.success.push(line(suite.line));
-      } else if (suite.skip) {
-        decs.suite.unknown.push(line(suite.line));
-      }
-    }
-
-    for (const key of Object.keys(decs)) {
-      for (const type of Object.keys(decs[key])) {
-        editor.setDecorations(DECORATIONS[key][type], decs[key][type]);
-      }
     }
   }
 
