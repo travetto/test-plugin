@@ -181,6 +181,8 @@ export function activate(context: vscode.ExtensionContext) {
     }
 
     try {
+      setDecorations(decs);
+
       sub.send({ type: 'run', file: activeEditor.document.fileName.split(cwd)[1] });
       sub.on('message', function fn(ev) {
 
