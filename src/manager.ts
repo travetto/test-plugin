@@ -42,15 +42,15 @@ export class DecorationManager {
 
   init() {
     if (!this.decStyles) {
-      this.decStyles = mapObj(Object.keys(Entity), k =>
-        mapObj(Object.keys(State), s =>
+      this.decStyles = mapObj(Object.values(Entity), k =>
+        mapObj(Object.values(State), s =>
           (k === Entity.ASSERTION) ?
             this.buildAssert(s) :
             this.buildImage(s, k === Entity.TEST ? Style.SMALL_IMAGE : Style.FULL_IMAGE)
         )
       );
     }
-    this.decs = mapObj(Object.keys(Entity), () => ({ [State.SUCCESS]: [], [State.FAIL]: [], [State.UNKNOWN]: [] }));
+    this.decs = mapObj(Object.values(Entity), () => mapObj(Object.values(State), () => []));
   }
 
   buildAssert(state: string) {
@@ -97,7 +97,7 @@ export class DecorationManager {
     }
 
     const status = assertion.error ? State.FAIL : State.SUCCESS;
-    this.decs.assert[status].push(dec);
+    this.decs[Entity.ASSERTION][status].push(dec);
   }
 
   onTest(test: TestResult) {
@@ -105,12 +105,12 @@ export class DecorationManager {
     const dec = { ...line(test.line), hoverMessage: buildHover(test.error) };
 
     const status = test.status === State.SKIP ? State.UNKNOWN : test.status;
-    this.decs.test[status].push(dec);
+    this.decs[Entity.TEST][status].push(dec);
   }
 
   onSuite(suite: SuiteResult) {
     const status = suite.skip ? State.UNKNOWN : (suite.fail ? State.FAIL : State.SUCCESS);
-    this.decs.suite[status].push(line(suite.line));
+    this.decs[Entity.SUITE][status].push(line(suite.line));
   }
 
   applyDecorations(editor: vscode.TextEditor) {

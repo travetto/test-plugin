@@ -28,15 +28,17 @@ export class TestRunner {
 
       const file = editor.document.fileName.split(CWD)[1];
 
-      this.worker.init();
+      this.mgr.init();
 
-      await this.worker.listen(e => {
-        if (e.type === Events.READY) {
-          console.log('Ready, lets init');
-          this.worker.send({ type: Events.INIT });
-          return true;
-        }
-      });
+      if (this.worker.init()) {
+        await this.worker.listen(e => {
+          if (e.type === Events.READY) {
+            console.log('Ready, lets init');
+            this.worker.send({ type: Events.INIT });
+            return true;
+          }
+        });
+      }
 
       await this.worker.send({ type: Events.RUN, file });
 

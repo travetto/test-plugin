@@ -18,7 +18,7 @@ export class Worker {
 
   init() {
     if (this.sub) {
-      return;
+      return false;
     }
 
     this.sub = spawn(`${CWD}/${this.script}`, this.args || [], {
@@ -27,12 +27,14 @@ export class Worker {
       env: this.env || {}
     });
 
-    this.sub.stderr.on('data', d => console.log(d.toString()));
-    this.sub.stdout.on('data', d => console.error(d.toString()));
+    this.sub.stdout.on('data', d => console.log(d.toString()));
+    this.sub.stderr.on('data', d => console.error(d.toString()));
     this.sub.on(ProcEvents.CLOSE, code => {
       console.log('Closed', code);
       this.sub = undefined;
     });
+
+    return true;
   }
 
   async send(e: Event) {
