@@ -5,7 +5,7 @@ import { Assertion, TestResult, SuiteResult } from '@travetto/test/src/model';
 
 import { Entity } from './types';
 
-type Decs<T> = { [key: string]: { [key: string]: T[] } };
+type Decs<T> = { [key: string]: { [key: string]: T } };
 
 const line = (n: number) => ({ range: new vscode.Range(n - 1, 0, n - 1, 100000000000) });
 const rgba = (r = 0, g = 0, b = 0, a = 1) => `rgba(${r},${g},${b},${a})`;
@@ -36,7 +36,7 @@ const Style = {
 
 export class DecorationManager {
   private decStyles: Decs<vscode.TextEditorDecorationType>;
-  private decs: Decs<vscode.DecorationOptions>;
+  private decs: Decs<vscode.DecorationOptions[]>;
 
   constructor(private context: vscode.ExtensionContext) { }
 

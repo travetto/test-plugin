@@ -4,6 +4,8 @@ import * as spawn from 'cross-spawn';
 
 import { EntityPhase, Entity, CWD } from './types';
 
+type Event = { type: string } & { [key: string]: any };
+type EventHandler = (e: Event) => boolean | undefined;
 const ProcEvents = {
   MESSAGE: 'message',
   CLOSE: 'close'
@@ -14,43 +16,45 @@ export class Worker {
 
   constructor(private script: string, private args?: any[], private env?: object, private cwd?: string) { }
 
-  async _init(handler: (event: any) => void) {
-    const sub = spawn(`${CWD}/${this.script}`, this.args || [], {
+  async init(handler: EventHandler) {
+    if (this.sub) {
+      return;
+    }
+
+    this.sub = spawn(`${CWD}/${this.script}`, this.args || [], {
       stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
       cwd: this.cwd || CWD,
       env: this.env || {}
     });
 
-    sub.stderr.on('data', d => console.log(d.toString()));
-    sub.stdout.on('data', d => console.error(d.toString()));
+    this.sub.stderr.on('data', d => console.log(d.toString()));
+    this.sub.stdout.on('data', d => console.error(d.toString()));
+    this.sub.on(ProcEvents.CLOSE, async code => this.sub = undefined);
 
-    return new Promise<child_process.ChildProcess>((resolve, reject) => {
-      const send = (type: string, data: object) => sub.send({ type, ...data });
-      sub.on(ProcEvents.MESSAGE, function ready(e) {
-        const res = handler(e);
-        if (res) {
-          sub.removeListener(ProcEvents.MESSAGE, ready);
-          resolve(sub)
+    await this.listen(handler);
+  }
+
+  async send(e: Event) {
+    this.sub.send(e);
+  }
+
+  async listen(handler: EventHandler) {
+    return new Promise((resolve, reject) => {
+      const kill = () => {
+        this.sub.removeListener(ProcEvents.MESSAGE, fn);
+      };
+      const fn = (e) => {
+        try {
+          if (handler(e)) {
+            kill();
+            resolve();
+          }
+        } catch (e) {
+          kill();
+          reject(e);
         }
-      });
-      sub.on(ProcEvents.CLOSE, async code => this.sub = undefined);
+      };
+      this.sub.on(ProcEvents.MESSAGE, fn);
     });
-  }
-
-  async init(handler: (e: any) => void) {
-    if (!this.sub) {
-      this.sub = await this._init(handler);
-    }
-  }
-
-  async run(event: string, data: object, handler: (event: any) => void) {
-    const fn = (e) => handler(e);
-    this.sub.send({ type: event, ...data });
-
-    this.sub.on(ProcEvents.MESSAGE, fn);
-
-    return () => {
-      this.sub.removeListener(ProcEvents.MESSAGE, fn);
-    }
   }
 }
