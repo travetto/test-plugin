@@ -16,7 +16,7 @@ export class Worker {
 
   constructor(private script: string, private args?: any[], private env?: object, private cwd?: string) { }
 
-  async init(handler: EventHandler) {
+  init() {
     if (this.sub) {
       return;
     }
@@ -29,9 +29,10 @@ export class Worker {
 
     this.sub.stderr.on('data', d => console.log(d.toString()));
     this.sub.stdout.on('data', d => console.error(d.toString()));
-    this.sub.on(ProcEvents.CLOSE, async code => this.sub = undefined);
-
-    await this.listen(handler);
+    this.sub.on(ProcEvents.CLOSE, code => {
+      console.log('Closed', code);
+      this.sub = undefined;
+    });
   }
 
   async send(e: Event) {

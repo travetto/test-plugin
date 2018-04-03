@@ -44,7 +44,7 @@ export class DecorationManager {
     if (!this.decStyles) {
       this.decStyles = mapObj(Object.keys(Entity), k =>
         mapObj(Object.keys(State), s =>
-          (k === Entity.ASSERT) ?
+          (k === Entity.ASSERTION) ?
             this.buildAssert(s) :
             this.buildImage(s, k === Entity.TEST ? Style.SMALL_IMAGE : Style.FULL_IMAGE)
         )
@@ -114,7 +114,7 @@ export class DecorationManager {
   }
 
   applyDecorations(editor: vscode.TextEditor) {
-    for (const key of [Entity.SUITE, Entity.TEST, Entity.ASSERT]) {
+    for (const key of [Entity.SUITE, Entity.TEST, Entity.ASSERTION]) {
       for (const type of [State.FAIL, State.SUCCESS, State.UNKNOWN]) {
         editor.setDecorations(this.decStyles[key][type], (this.decs[key] || {})[type] || []);
       }
