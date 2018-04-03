@@ -37,6 +37,8 @@
         "@types/node": "^9.4.7"
     },
     "dependencies": {
-        "@travetto/test": "0.x.x"
+        "@travetto/test": "0.x.x",
+        "@types/cross-spawn": "^6.0.0",
+        "cross-spawn": "^6.0.5"
     }
 }
