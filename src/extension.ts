@@ -16,7 +16,7 @@ export function activate(context: vscode.ExtensionContext) {
     if (ed) {
       activeEditor = ed;
     }
-    if (activeEditor) {
+    if (activeEditor === vscode.window.activeTextEditor) {
       try {
         await runner.run(activeEditor)
       } catch (e) {

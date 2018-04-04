@@ -55,16 +55,17 @@ export class DecorationManager {
   constructor(private context: vscode.ExtensionContext) { }
 
   init() {
-    if (!this.decStyles) {
-      this.decStyles = mapObj(Object.values(Entity), k =>
-        mapObj(Object.values(State), s =>
-          (k === Entity.ASSERTION) ?
-            this.buildAssert(s) :
-            this.buildImage(s, k === Entity.TEST ? Style.SMALL_IMAGE : Style.FULL_IMAGE)
-        )
-      );
-    }
-    this.decs = mapObj(Object.values(Entity), () => mapObj(Object.values(State), () => []));
+    this.decStyles = mapObj(Object.values(Entity), k =>
+      mapObj(Object.values(State), s =>
+        (k === Entity.ASSERTION) ?
+          this.buildAssert(s) :
+          this.buildImage(s, k === Entity.TEST ? Style.SMALL_IMAGE : Style.FULL_IMAGE)
+      )
+    );
+  }
+
+  resetDecorations(data: Decs<vscode.DecorationOptions[]> = undefined) {
+    this.decs = data || mapObj(Object.values(Entity), () => mapObj(Object.values(State), () => []));
   }
 
   buildAssert(state: string) {
@@ -127,10 +128,11 @@ export class DecorationManager {
     this.decs[Entity.SUITE][status].push(line(suite.line));
   }
 
-  applyDecorations(editor: vscode.TextEditor) {
+  applyDecorations(editor: vscode.TextEditor, data: any = undefined) {
+    data = data || this.decs;
     for (const key of [Entity.SUITE, Entity.TEST, Entity.ASSERTION]) {
       for (const type of [State.FAIL, State.SUCCESS, State.UNKNOWN]) {
-        editor.setDecorations(this.decStyles[key][type], (this.decs[key] || {})[type] || []);
+        editor.setDecorations(this.decStyles[key][type], (data[key] || {})[type] || []);
       }
     }
   }

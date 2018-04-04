@@ -11,7 +11,7 @@ interface ResultHandler {
 }
 
 export class TestExecution {
-  private _init: boolean;
+  private _init: Promise<any>;
   private proc: ChildProcess;
   private running: boolean = false;
 
@@ -30,15 +30,18 @@ export class TestExecution {
     }))
   }
 
-  async init() {
+  init() {
     if (!this._init) {
-      await this.listenOnce('ready');
-      console.log('Ready, lets init');
-      this.proc.send({ type: 'init' });
-      await this.listenOnce('initComplete');
-      console.log('Init Complete');
-      this._init = true;
+      this._init = new Promise(async (resolve) => {
+        await this.listenOnce('ready');
+        console.log('Ready, lets init');
+        this.proc.send({ type: 'init' });
+        await this.listenOnce('initComplete');
+        console.log('Init Complete');
+        resolve();
+      });
     }
+    return this._init;
   }
 
   async run(file: string, handler: ResultHandler, onAll: () => void) {
@@ -73,6 +76,8 @@ export class TestExecution {
 
     await this.listenOnce('runComplete');
     console.log('Run Complete', file);
+
+    this.kill();
   }
 
   kill() {

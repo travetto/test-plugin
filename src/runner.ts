@@ -12,19 +12,24 @@ export class TestRunner {
 
   constructor(private context: vscode.ExtensionContext) {
     this.mgr = new DecorationManager(context);
+    this.mgr.init();
+
     this.execution = new TestExecution();
+    this.execution.init();
   }
 
   async run(editor: vscode.TextEditor) {
     let timer: any;
 
-    try {
-      if (!editor || !editor.document || !/@Test\(/.test(editor.document.getText() || '')) {
-        return;
-      }
+    if (!editor || !editor.document || !/@Test\(/.test(editor.document.getText() || '')) {
+      return;
+    }
 
-      const file = editor.document.fileName.split(CWD)[1];
-      this.mgr.init();
+    const file = editor.document.fileName.split(CWD)[1];
+
+    try {
+
+      this.mgr.resetDecorations();
 
       if (timer) {
         clearInterval(timer);
@@ -51,6 +56,7 @@ export class TestRunner {
       clearInterval(timer);
     }
 
+    console.log('Applying', file);
     this.mgr.applyDecorations(editor);
   }
 }
