@@ -1,11 +1,25 @@
 import * as vscode from 'vscode';
 
-import { deserializeError } from '@travetto/exec';
 import { Assertion, TestResult, SuiteResult } from '@travetto/test/src/model';
 
 import { Entity } from './types';
 
 type Decs<T> = { [key: string]: { [key: string]: T } };
+
+function deserializeError(e: any) {
+  if (e && e.$) {
+    const err = new Error();
+    for (const k of Object.keys(e)) {
+      (err as any)[k] = e[k];
+    }
+    err.message = e.message;
+    err.stack = e.stack;
+    err.name = e.name;
+    return err;
+  } else if (e) {
+    return e;
+  }
+}
 
 const line = (n: number) => ({ range: new vscode.Range(n - 1, 0, n - 1, 100000000000) });
 const rgba = (r = 0, g = 0, b = 0, a = 1) => `rgba(${r},${g},${b},${a})`;

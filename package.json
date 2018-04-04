@@ -21,7 +21,7 @@
     "onLanguage:typescript",
     "workspaceContains:**/node_modules/@travetto/test"
   ],
-  "main": "./out/src/extension",
+  "main": "./out/extension",
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
@@ -30,11 +30,7 @@
     "test": "npm run compile && node ./node_modules/vscode/bin/test"
   },
   "files": [
-    "src/extension.ts",
-    "src/manager.ts",
-    "src/runner.ts",
-    "src/types.ts",
-    "src/worker.ts"
+    "src/"
   ],
   "devDependencies": {
     "@types/node": "^9.4.7",
@@ -42,6 +38,7 @@
   },
   "dependencies": {
     "@travetto/test": "0.x.x",
-    "@travetto/exec": "0.x.x"
+    "@types/cross-spawn": "^6.0.0",
+    "cross-spawn": "^6.0.5"
   }
 }
