@@ -2,7 +2,7 @@
     "name": "travetto-test-plugin",
     "displayName": "Travetto Test Plugin",
     "description": "UI integration for travetto testing",
-    "version": "0.4.2",
+    "version": "0.4.3",
     "publisher": "arcsine",
     "author": {
         "email": "timothy.soehnlin@gmail.com",
