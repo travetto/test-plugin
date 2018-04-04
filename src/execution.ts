@@ -36,6 +36,7 @@ export class TestExecution {
       console.log('Ready, lets init');
       this.proc.send({ type: 'init' });
       await this.listenOnce('initComplete');
+      console.log('Init Complete');
       this._init = true;
     }
   }
@@ -45,25 +46,36 @@ export class TestExecution {
 
     if (this.running) {
       console.log('Run already in progress', file);
-      return;
+      this.kill();
     }
 
     this.proc.on('message', (ev) => {
-      if (ev.phase === EntityPhase.AFTER) {
-        if (ev.type === Entity.SUITE) {
-          handler.onSuite(ev.suite);
-        } else if (ev.type === Entity.TEST) {
-          handler.onTest(ev.test);
-        } else if (ev.type === Entity.ASSERTION) {
-          handler.onAssertion(ev.assertion);
+      try {
+        if (ev.phase === EntityPhase.AFTER) {
+          if (ev.type === Entity.SUITE) {
+            handler.onSuite(ev.suite);
+          } else if (ev.type === Entity.TEST) {
+            handler.onTest(ev.test);
+          } else if (ev.type === Entity.ASSERTION) {
+            handler.onAssertion(ev.assertion);
+          }
+          onAll();
         }
-        onAll();
+      } catch (e) {
+        console.log(e);
       }
     });
 
     this.running = true;
+
+    console.log('Running', file);
     this.proc.send({ type: 'run', file });
+
     await this.listenOnce('runComplete');
+    console.log('Run Complete', file);
+  }
+
+  kill() {
     delete this.running;
     this.proc.removeAllListeners('message');
   }

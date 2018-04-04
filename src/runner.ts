@@ -26,6 +26,10 @@ export class TestRunner {
       const file = editor.document.fileName.split(CWD)[1];
       this.mgr.init();
 
+      if (timer) {
+        clearInterval(timer);
+      }
+
       let pending = false;
 
       timer = setInterval(() => {
@@ -35,7 +39,9 @@ export class TestRunner {
         }
       }, 200);
 
-      await this.execution.run(file, this.mgr, () => pending = true);
+      await this.execution.run(file, this.mgr, () => {
+        pending = true;
+      });
 
     } catch (e) {
       console.log(e);
@@ -44,5 +50,7 @@ export class TestRunner {
     if (timer) {
       clearInterval(timer);
     }
+
+    this.mgr.applyDecorations(editor);
   }
 }
