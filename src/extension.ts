@@ -12,12 +12,16 @@ export function activate(context: vscode.ExtensionContext) {
   // This line of code will only be executed once when your extension is activated
   console.log('Congratulations, your extension "travetto-test-plugin" is now active!', `${__dirname}/success.png`);
 
-  const onUpdate = (ed?: vscode.TextEditor) => {
+  const onUpdate = async (ed?: vscode.TextEditor) => {
     if (ed) {
       activeEditor = ed;
     }
     if (activeEditor) {
-      runner.run(activeEditor)
+      try {
+        await runner.run(activeEditor)
+      } catch (e) {
+        console.error(e);
+      }
     }
   };
 

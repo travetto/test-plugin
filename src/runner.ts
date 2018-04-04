@@ -24,7 +24,7 @@ export class TestRunner {
       const file = editor.document.fileName.split(CWD)[1];
       this.mgr.init();
 
-      this.execution.run(editor, file, this.mgr, () => {
+      await this.execution.run(file, this.mgr, () => {
         this.mgr.applyDecorations(editor);
       });
     } catch (e) {

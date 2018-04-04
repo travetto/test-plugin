@@ -11,15 +11,19 @@ interface ResultHandler {
 }
 
 export class TestExecution {
-  private ready: boolean = false;
+  private _init: boolean;
   private proc: ChildProcess;
+  private running: boolean = false;
 
   constructor() {
-    this.proc = spawn(`node_modules/.bin/travetto-test`, [], { cwd: CWD, env: { EXECUTION: true } });
+    this.proc = spawn(`node_modules/.bin/travetto-test`, [], {
+      cwd: CWD, env: { EXECUTION: true },
+      stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
+    });
   }
 
   listenOnce(type: string) {
-    return new Promise(resolve => this.proc.on('messge', (e: any) => {
+    return new Promise(resolve => this.proc.on('message', (e: any) => {
       if (e.type === type) {
         resolve();
       }
@@ -27,19 +31,23 @@ export class TestExecution {
   }
 
   async init() {
-    if (!this.ready) {
-      this.ready = true;
+    if (!this._init) {
       await this.listenOnce('ready');
       console.log('Ready, lets init');
       this.proc.send({ type: 'init' });
       await this.listenOnce('initComplete');
+      this._init = true;
     }
   }
 
-  async run(editor: vscode.TextEditor, file: string, handler: ResultHandler, onAll: () => void) {
+  async run(file: string, handler: ResultHandler, onAll: () => void) {
     await this.init();
 
-    this.proc.send({ type: 'run', file });
+    if (this.running) {
+      console.log('Run already in progress', file);
+      return;
+    }
+
 
     this.proc.on('message', (ev) => {
       if (ev.phase === EntityPhase.AFTER) {
@@ -54,8 +62,10 @@ export class TestExecution {
       }
     });
 
+    this.running = true;
+    this.proc.send({ type: 'run', file });
     await this.listenOnce('runComplete');
-    this.ready = false;
+    delete this.running;
     this.proc.removeAllListeners('message');
   }
 }
