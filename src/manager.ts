@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-import { deserialize } from '@travetto/test/src/exec/agent/error';
+import { deserializeError } from '@travetto/exec';
 import { Assertion, TestResult, SuiteResult } from '@travetto/test/src/model';
 
 import { Entity } from './types';
@@ -9,7 +9,7 @@ type Decs<T> = { [key: string]: { [key: string]: T } };
 
 const line = (n: number) => ({ range: new vscode.Range(n - 1, 0, n - 1, 100000000000) });
 const rgba = (r = 0, g = 0, b = 0, a = 1) => `rgba(${r},${g},${b},${a})`;
-const buildHover = (err?: Error) => (err ? { language: 'html', value: `${deserialize(err).stack}` } : undefined)
+const buildHover = (err?: Error) => (err ? { language: 'html', value: `${deserializeError(err).stack}` } : undefined)
 const mapObj = (keys: string[], fn: (key: string) => any) => keys.reduce((acc, v) => { acc[v] = fn(v); return acc; }, {})
 
 const State = {

@@ -1,22 +1,17 @@
 import * as vscode from 'vscode';
-import { Worker } from './worker';
 import { DecorationManager } from './manager';
 import { Entity, EntityPhase, CWD } from './types';
 
-const Events = {
-  INIT: 'init',
-  READY: 'ready',
-  RUN: 'run',
-  RUN_COMPLETE: 'runComplete'
-};
+import { Events } from '@travetto/test/src/exec/communication';
+import { ChildExecution } from '@travetto/exec';
 
 export class TestRunner {
 
-  private worker: Worker;
+  private worker: ChildExecution;
   private mgr: DecorationManager;
 
   constructor(private context: vscode.ExtensionContext) {
-    this.worker = new Worker(`node_modules/@travetto/test/bin/worker.js`, [], { DEBUG: 1, env: 'test' });
+    this.worker = new ChildExecution(`node_modules/@travetto/test/bin/travetto-test.js`, true, { env: 'test' });
     this.mgr = new DecorationManager(context);
   }
 
@@ -31,18 +26,12 @@ export class TestRunner {
       this.mgr.init();
 
       if (this.worker.init()) {
-        await this.worker.listen(e => {
-          if (e.type === Events.READY) {
-            console.log('Ready, lets init');
-            this.worker.send({ type: Events.INIT });
-            return true;
-          }
-        });
+        await this.worker.listenOnce(Events.READY);
+        console.log('Ready, lets init');
+        this.worker.send(Events.INIT);
       }
 
-      await this.worker.send({ type: Events.RUN, file });
-
-      await this.worker.listen((ev) => {
+      this.worker.listen((ev, done) => {
         if (ev.phase === EntityPhase.AFTER) {
           if (ev.type === Entity.SUITE) {
             this.mgr.onSuite(ev.suite);
@@ -54,9 +43,11 @@ export class TestRunner {
 
           this.mgr.applyDecorations(editor);
         } else if (ev.type === Events.RUN_COMPLETE) {
-          return true;
+          done();
         }
       });
+
+      this.worker.send(Events.RUN, { file });
     } catch (e) {
       console.log(e);
     }
