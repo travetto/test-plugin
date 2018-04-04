@@ -16,6 +16,8 @@ export class TestRunner {
   }
 
   async run(editor: vscode.TextEditor) {
+    let timer: any;
+
     try {
       if (!editor || !editor.document || !/@Test\(/.test(editor.document.getText() || '')) {
         return;
@@ -24,11 +26,23 @@ export class TestRunner {
       const file = editor.document.fileName.split(CWD)[1];
       this.mgr.init();
 
-      await this.execution.run(file, this.mgr, () => {
-        this.mgr.applyDecorations(editor);
-      });
+      let pending = false;
+
+      timer = setInterval(() => {
+        if (pending) {
+          this.mgr.applyDecorations(editor);
+          pending = false;
+        }
+      }, 200);
+
+      await this.execution.run(file, this.mgr, () => pending = true);
+
     } catch (e) {
       console.log(e);
+    }
+
+    if (timer) {
+      clearInterval(timer);
     }
   }
 }

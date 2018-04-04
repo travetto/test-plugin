@@ -48,7 +48,6 @@ export class TestExecution {
       return;
     }
 
-
     this.proc.on('message', (ev) => {
       if (ev.phase === EntityPhase.AFTER) {
         if (ev.type === Entity.SUITE) {
