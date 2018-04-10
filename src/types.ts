@@ -9,5 +9,6 @@ export const Entity = {
 }
 
 export const EntityPhase = {
-  AFTER: 'after'
+  AFTER: 'after',
+  BEFORE: 'before'
 }

@@ -2,12 +2,16 @@ import * as vscode from 'vscode';
 import { EntityPhase, Entity, CWD } from './types';
 import { ChildProcess } from 'child_process';
 import * as spawn from 'cross-spawn';
-import { SuiteResult, TestResult, Assertion } from '@travetto/test/src/model';
+import { SuiteResult, TestResult, Assertion, SuiteConfig, TestConfig } from '@travetto/test/src/model';
 
 interface ResultHandler {
-  onSuite(suite: SuiteResult): void;
-  onTest(test: TestResult): void;
-  onAssertion(assertion: Assertion): void;
+  onSuiteStart(suite: SuiteResult): void;
+  onTestStart(suite: SuiteConfig, test: TestConfig): void;
+
+  onSuiteEnd(suite: SuiteResult): void;
+  onTestEnd(suite: SuiteConfig, test: TestResult): void;
+
+  onAssertion(suite: SuiteConfig, test: TestConfig, assertion: Assertion): void;
   onAny?: () => void;
 }
 
@@ -15,6 +19,9 @@ export class TestExecution {
   private _init: Promise<any>;
   private proc: ChildProcess;
   private running: boolean = false;
+
+  private suite: SuiteConfig;
+  private test: TestConfig;
 
   constructor() {
     this.proc = spawn(`node_modules/.bin/travetto-test`, [], {
@@ -55,13 +62,23 @@ export class TestExecution {
 
     this.proc.on('message', (ev) => {
       try {
-        if (ev.phase === EntityPhase.AFTER) {
+        if (ev.phase === EntityPhase.BEFORE) {
           if (ev.type === Entity.SUITE) {
-            handler.onSuite(ev.suite);
+            this.suite = ev.suite;
+            handler.onSuiteStart(ev.suite);
           } else if (ev.type === Entity.TEST) {
-            handler.onTest(ev.test);
+            this.test = ev.test;
+            handler.onTestStart(this.suite, this.test);
+          }
+        } else if (ev.phase === EntityPhase.AFTER) {
+          if (ev.type === Entity.SUITE) {
+            handler.onSuiteEnd(ev.suite);
+            delete this.suite;
+          } else if (ev.type === Entity.TEST) {
+            handler.onTestEnd(this.suite, ev.test);
+            delete this.test;
           } else if (ev.type === Entity.ASSERTION) {
-            handler.onAssertion(ev.assertion);
+            handler.onAssertion(this.suite, this.test, ev.assertion);
           }
           handler.onAny();
         }

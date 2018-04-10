@@ -12,7 +12,7 @@
         "/home/tim/Code/travetto/test"
       ],
       "env": {
-        "DEBUG": 1
+        "DEBUG": "1"
       },
       "stopOnEntry": false,
       "sourceMaps": true,

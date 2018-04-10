@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-import { Assertion, TestResult, SuiteResult } from '@travetto/test/src/model';
+import { Assertion, TestResult, SuiteResult, TestConfig, SuiteConfig } from '@travetto/test/src/model';
 
 import { Entity } from './types';
 
@@ -62,22 +62,22 @@ const Style = {
 
 export class DecorationManager {
   private decStyles: Decs<vscode.TextEditorDecorationType>;
-  private decs: Decs<vscode.DecorationOptions[]>;
+  private decs: Decs<Set<vscode.DecorationOptions>>;
+  private mapping: Decs<vscode.DecorationOptions[]> = {};
 
   constructor(private context: vscode.ExtensionContext) { }
 
   init() {
-    this.decStyles = mapObj(Object.values(Entity), k =>
-      mapObj(Object.values(State), s =>
-        (k === Entity.ASSERTION) ?
-          this.buildAssert(s) :
-          this.buildImage(s, k === Entity.TEST ? Style.SMALL_IMAGE : Style.FULL_IMAGE)
-      )
-    );
-  }
-
-  resetDecorations(data: Decs<vscode.DecorationOptions[]> = undefined) {
-    this.decs = data || mapObj(Object.values(Entity), () => mapObj(Object.values(State), () => []));
+    if (this.decStyles) {
+      this.decStyles = mapObj(Object.values(Entity), k =>
+        mapObj(Object.values(State), s =>
+          (k === Entity.ASSERTION) ?
+            this.buildAssert(s) :
+            this.buildImage(s, k === Entity.TEST ? Style.SMALL_IMAGE : Style.FULL_IMAGE)
+        )
+      );
+    }
+    this.mapping = {}
   }
 
   buildAssert(state: string) {
@@ -98,7 +98,27 @@ export class DecorationManager {
     });
   }
 
-  onAssertion(assertion: Assertion) {
+  reset(level: string, key: string) {
+    if (!this.mapping[level]) {
+      this.mapping[level] = {};
+    }
+    if (!this.mapping[level[key]]) {
+      this.mapping[level][key] = [];
+    }
+    if (this.mapping[level][key]) {
+      const toRemove = this.mapping[level][key];
+      for (const el of toRemove) {
+        for (const k of [State.SKIP, State.FAIL, State.SUCCESS]) {
+          this.decs[level][k].delete(el);
+        }
+      }
+      this.mapping[level][key] = [];
+    }
+  }
+
+  onAssertion(suite: SuiteConfig, test: TestConfig, assertion: Assertion) {
+    const status = assertion.error ? State.FAIL : State.SUCCESS;
+    const key = `${suite.name}:${test.method}`;
 
     let dec;
     if (assertion.error) {
@@ -116,22 +136,34 @@ export class DecorationManager {
       dec = line(assertion.line);
     }
 
-    const status = assertion.error ? State.FAIL : State.SUCCESS;
-    this.decs[Entity.ASSERTION][status].push(dec);
+    this.store('assertion', key, status, dec);
   }
 
-  onTest(test: TestResult) {
+  store(level: string, key: string, status: string, val: vscode.DecorationOptions) {
+    this.mapping[level][key].push(val);
+    this.decs[level][status].add(val);
+  }
 
-    // Prep errors
+  onTestStart(suite: SuiteConfig, test: TestConfig) {
+    const key = `${suite.name}:${test.method}`;
+
+    this.reset('assertion', key);
+    this.reset('test', key);
+  }
+
+  onTestEnd(suite: SuiteConfig, test: TestResult) {
     const dec = { ...line(test.line), hoverMessage: buildHover(test.error) };
-
     const status = test.status === State.SKIP ? State.UNKNOWN : test.status;
-    this.decs[Entity.TEST][status].push(dec);
+    this.store('test', `${suite.name}:${test.method}`, status, dec);
   }
 
-  onSuite(suite: SuiteResult) {
+  onSuiteStart(suite: SuiteConfig) {
+    this.reset('suite', suite.name);
+  }
+
+  onSuiteEnd(suite: SuiteResult) {
     const status = suite.skip ? State.UNKNOWN : (suite.fail ? State.FAIL : State.SUCCESS);
-    this.decs[Entity.SUITE][status].push({ ...line(suite.line), });
+    this.store('suite', suite.name, status, { ...line(suite.line) });
   }
 
   applyDecorations(editor: vscode.TextEditor, data: any = undefined) {

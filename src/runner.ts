@@ -23,7 +23,9 @@ export class TestRunner {
         return;
       }
 
-      this.mgr.init();
+      if (all) {
+        this.mgr.init();
+      }
 
       if (timer) {
         clearInterval(timer);
@@ -42,8 +44,13 @@ export class TestRunner {
         editor.document.fileName,
         all ? 0 : editor.selection.active.line, {
           onAssertion: this.mgr.onAssertion.bind(this.mgr),
-          onSuite: this.mgr.onSuite.bind(this.mgr),
-          onTest: this.mgr.onTest.bind(this.mgr),
+
+          onSuiteStart: this.mgr.onSuiteStart.bind(this.mgr),
+          onTestStart: this.mgr.onTestStart.bind(this.mgr),
+
+          onSuiteEnd: this.mgr.onSuiteEnd.bind(this.mgr),
+          onTestEnd: this.mgr.onTestEnd.bind(this.mgr),
+
           onAny: () => {
             pending = true;
           }
