@@ -4,17 +4,6 @@ import { ChildProcess } from 'child_process';
 import * as spawn from 'cross-spawn';
 import { SuiteResult, TestResult, Assertion, SuiteConfig, TestConfig } from '@travetto/test/src/model';
 
-interface ResultHandler {
-  onSuiteStart(suite: SuiteResult): void;
-  onTestStart(suite: SuiteConfig, test: TestConfig): void;
-
-  onSuiteEnd(suite: SuiteResult): void;
-  onTestEnd(suite: SuiteConfig, test: TestResult): void;
-
-  onAssertion(suite: SuiteConfig, test: TestConfig, assertion: Assertion): void;
-  onAny?: () => void;
-}
-
 export class TestExecution {
   private _init: Promise<any>;
   private proc: ChildProcess;
@@ -52,7 +41,7 @@ export class TestExecution {
     return this._init;
   }
 
-  async run(file: string, line: number, handler: ResultHandler) {
+  async run(file: string, line: number, handler: (e) => void) {
     await this.init();
 
     if (this.running) {
@@ -60,32 +49,7 @@ export class TestExecution {
       this.kill();
     }
 
-    this.proc.on('message', (ev) => {
-      try {
-        if (ev.phase === EntityPhase.BEFORE) {
-          if (ev.type === Entity.SUITE) {
-            this.suite = ev.suite;
-            handler.onSuiteStart(ev.suite);
-          } else if (ev.type === Entity.TEST) {
-            this.test = ev.test;
-            handler.onTestStart(this.suite, this.test);
-          }
-        } else if (ev.phase === EntityPhase.AFTER) {
-          if (ev.type === Entity.SUITE) {
-            handler.onSuiteEnd(ev.suite);
-            delete this.suite;
-          } else if (ev.type === Entity.TEST) {
-            handler.onTestEnd(this.suite, ev.test);
-            delete this.test;
-          } else if (ev.type === Entity.ASSERTION) {
-            handler.onAssertion(this.suite, this.test, ev.assertion);
-          }
-          handler.onAny();
-        }
-      } catch (e) {
-        console.log(e);
-      }
-    });
+    this.proc.on('message', handler);
 
     this.running = true;
 

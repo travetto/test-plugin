@@ -42,18 +42,10 @@ export class TestRunner {
 
       await this.execution.run(
         editor.document.fileName,
-        all ? 0 : editor.selection.active.line, {
-          onAssertion: this.mgr.onAssertion.bind(this.mgr),
-
-          onSuiteStart: this.mgr.onSuiteStart.bind(this.mgr),
-          onTestStart: this.mgr.onTestStart.bind(this.mgr),
-
-          onSuiteEnd: this.mgr.onSuiteEnd.bind(this.mgr),
-          onTestEnd: this.mgr.onTestEnd.bind(this.mgr),
-
-          onAny: () => {
-            pending = true;
-          }
+        all ? 0 : editor.selection.active.line,
+        e => {
+          this.mgr.onEvent(e);
+          pending = true;
         }
       );
 
