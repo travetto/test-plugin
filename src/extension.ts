@@ -15,7 +15,10 @@ export function activate(context: vscode.ExtensionContext) {
 
   const onUpdate = async (runAll: boolean = true) => {
 
-    if (activeEditor === vscode.window.activeTextEditor) {
+    if (activeEditor === vscode.window.activeTextEditor &&
+      activeEditor.document &&
+      /@Test\(/.test(activeEditor.document.getText() || '')
+    ) {
       try {
         await runner.run(activeEditor, runAll);
       } catch (e) {

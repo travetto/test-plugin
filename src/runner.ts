@@ -9,6 +9,8 @@ export class TestRunner {
   private execution: TestExecution;
   private mgr: DecorationManager;
   private ready: boolean = false;
+  private queue: [vscode.TextEditor, number][] = [];
+  private running: Promise<any>;
 
   constructor(private context: vscode.ExtensionContext) {
     this.mgr = new DecorationManager(context);
@@ -16,14 +18,28 @@ export class TestRunner {
   }
 
   async run(editor: vscode.TextEditor, all: boolean = true) {
+    this.queue.push([editor, all ? 0 : editor.selection.active.line]);
+
+    if (this.running) {
+      return this.running;
+    } else {
+      this.running = new Promise(async (resolve, reject) => {
+        while (this.queue.length) {
+          const [rEditor, rLine] = this.queue.shift();
+          await this._run(rEditor, rLine);
+        }
+        resolve();
+      });
+      return this.running;
+    }
+  }
+
+  async _run(editor: vscode.TextEditor, line: number) {
+
     let timer: any;
 
     try {
-      if (!editor || !editor.document || !/@Test\(/.test(editor.document.getText() || '')) {
-        return;
-      }
-
-      if (all) {
+      if (!line) {
         this.mgr.init();
       }
 
@@ -40,14 +56,10 @@ export class TestRunner {
         }
       }, 200);
 
-      await this.execution.run(
-        editor.document.fileName,
-        all ? 0 : editor.selection.active.line,
-        e => {
-          this.mgr.onEvent(e);
-          pending = true;
-        }
-      );
+      await this.execution.run(editor.document.fileName, line, e => {
+        this.mgr.onEvent(e);
+        pending = true;
+      });
 
     } catch (e) {
       console.log(e);
