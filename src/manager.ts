@@ -4,7 +4,9 @@ import { Assertion, TestResult, SuiteResult } from '@travetto/test/src/model';
 
 import { Entity } from './types';
 
-type Decs<T> = { [key: string]: { [key: string]: T } };
+type SMap<v> = { [key: string]: v };
+
+type Decs<T> = SMap<SMap<T>>;
 
 function deserializeError(e: any) {
   if (e && e.$) {
@@ -33,18 +35,28 @@ const State = {
   SUCCESS: 'success',
 }
 
+const ITALIC = 'font-style: italic;';
 const Style = {
   SMALL_IMAGE: '40%',
   FULL_IMAGE: 'auto',
-  ITALIC: 'font-style: italic;',
-  LEFT_BORDER: '0 0 0 4px',
-  BORDER_TYPE: 'solid',
-  LIGHT_COLOR: 'darkgrey',
-  DARK_COLOR: 'gray',
   COLORS: {
     [State.FAIL]: rgba(255, 0, 0, 0.5),
     [State.SUCCESS]: rgba(0, 255, 0, .5),
     [State.UNKNOWN]: rgba(255, 255, 255, .5)
+  },
+  IMAGE: {
+    isWholeLine: false,
+    rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed
+  },
+  ASSERT: {
+    isWholeLine: false,
+    rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed,
+    borderWidth: '0 0 0 4px',
+    borderStyle: 'solid',
+    overviewRulerLane: vscode.OverviewRulerLane.Right,
+    after: { textDecoration: `none; ${ITALIC}` },
+    light: { after: { color: 'darkgrey' } },
+    dark: { after: { color: 'grey' } }
   }
 };
 
@@ -71,30 +83,23 @@ export class DecorationManager {
   buildAssert(state: string) {
     const color = Style.COLORS[state];
     return vscode.window.createTextEditorDecorationType({
-      isWholeLine: false,
-      rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed,
-      borderWidth: Style.LEFT_BORDER,
-      borderStyle: Style.BORDER_TYPE,
+      ...Style.ASSERT,
       borderColor: color,
-      overviewRulerLane: vscode.OverviewRulerLane.Right,
       overviewRulerColor: state === State.FAIL ? color : '',
-      after: { textDecoration: `none; ${Style.ITALIC}` },
-      light: { after: { color: Style.LIGHT_COLOR } },
-      dark: { after: { color: Style.DARK_COLOR } }
     });
   }
 
   buildImage(state: string, size = Style.FULL_IMAGE) {
     const img = this.context.asAbsolutePath(`images/${state}.png`);
     return vscode.window.createTextEditorDecorationType({
-      isWholeLine: false,
-      rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed,
+      ...Style.IMAGE,
       gutterIconPath: img,
-      gutterIconSize: Style.SMALL_IMAGE
+      gutterIconSize: size
     });
   }
 
   onAssertion(assertion: Assertion) {
+
     let dec;
     if (assertion.error) {
       dec = {
@@ -102,7 +107,7 @@ export class DecorationManager {
         hoverMessage: buildHover(assertion.error),
         renderOptions: {
           after: {
-            textDecoration: Style.ITALIC,
+            textDecoration: ITALIC,
             contentText: `    ${assertion.message}`
           }
         }
@@ -116,6 +121,7 @@ export class DecorationManager {
   }
 
   onTest(test: TestResult) {
+
     // Prep errors
     const dec = { ...line(test.line), hoverMessage: buildHover(test.error) };
 
@@ -125,7 +131,7 @@ export class DecorationManager {
 
   onSuite(suite: SuiteResult) {
     const status = suite.skip ? State.UNKNOWN : (suite.fail ? State.FAIL : State.SUCCESS);
-    this.decs[Entity.SUITE][status].push(line(suite.line));
+    this.decs[Entity.SUITE][status].push({ ...line(suite.line), });
   }
 
   applyDecorations(editor: vscode.TextEditor, data: any = undefined) {

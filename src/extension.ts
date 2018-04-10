@@ -18,7 +18,7 @@ export function activate(context: vscode.ExtensionContext) {
     }
     if (activeEditor === vscode.window.activeTextEditor) {
       try {
-        await runner.run(activeEditor)
+        await runner.applyDecorations(activeEditor)
       } catch (e) {
         console.error(e);
       }
@@ -27,6 +27,7 @@ export function activate(context: vscode.ExtensionContext) {
 
   vscode.window.onDidChangeActiveTextEditor(onUpdate, null, context.subscriptions);
   vscode.workspace.onDidSaveTextDocument(doc => {
+
     if (doc === activeEditor.document) {
       onUpdate();
     }
