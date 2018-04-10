@@ -2,67 +2,17 @@ import * as vscode from 'vscode';
 
 import { Assertion, TestResult, SuiteResult, TestConfig, SuiteConfig, TestEvent } from '@travetto/test/src/model';
 
-import { Entity, EntityPhase } from './types';
+import { Entity, EntityPhase, State } from './types';
+import { Decorations } from './decoration';
 
 type SMap<v> = { [key: string]: v };
 
 type Decs<T> = SMap<SMap<T>>;
 
-function deserializeError(e: any) {
-  if (e && e.$) {
-    const err = new Error();
-    for (const k of Object.keys(e)) {
-      (err as any)[k] = e[k];
-    }
-    err.message = e.message;
-    err.stack = e.stack;
-    err.name = e.name;
-    return err;
-  } else if (e) {
-    return e;
-  }
-}
-
 function build<T>(x: (a: string, b: string) => T): Decs<T> {
   const s = (l) => ({ fail: x(l, 'fail'), success: x(l, 'success'), unknown: x(l, 'unknown') });
   return { test: s('test'), assertion: s('assertion'), suite: s('suite') };
 }
-
-const line = (n: number) => ({ range: new vscode.Range(n - 1, 0, n - 1, 100000000000) });
-const rgba = (r = 0, g = 0, b = 0, a = 1) => `rgba(${r},${g},${b},${a})`;
-const buildHover = (err?: Error) => (err ? { language: 'html', value: `${deserializeError(err).stack}` } : undefined);
-
-const State = {
-  FAIL: 'fail',
-  SKIP: 'skip',
-  UNKNOWN: 'unknown',
-  SUCCESS: 'success',
-}
-
-const ITALIC = 'font-style: italic;';
-const Style = {
-  SMALL_IMAGE: '40%',
-  FULL_IMAGE: 'auto',
-  COLORS: {
-    [State.FAIL]: rgba(255, 0, 0, 0.5),
-    [State.SUCCESS]: rgba(0, 255, 0, .5),
-    [State.UNKNOWN]: rgba(255, 255, 255, .5)
-  },
-  IMAGE: {
-    isWholeLine: false,
-    rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed
-  },
-  ASSERT: {
-    isWholeLine: false,
-    rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed,
-    borderWidth: '0 0 0 4px',
-    borderStyle: 'solid',
-    overviewRulerLane: vscode.OverviewRulerLane.Right,
-    after: { textDecoration: `none; ${ITALIC}` },
-    light: { after: { color: 'darkgrey' } },
-    dark: { after: { color: 'grey' } }
-  }
-};
 
 export class DecorationManager {
   private decStyles: Decs<vscode.TextEditorDecorationType>;
@@ -79,27 +29,9 @@ export class DecorationManager {
     this.mapping = build((a, b) => []);
     if (!this.decStyles) {
       this.decStyles = build((k, s) => (k === Entity.ASSERTION) ?
-        this.buildAssert(s) :
-        this.buildImage(s, k === Entity.TEST ? Style.SMALL_IMAGE : Style.FULL_IMAGE))
+        Decorations.buildAssert(s) :
+        Decorations.buildImage(this.context, s, k === Entity.TEST ? Style.SMALL_IMAGE : Style.FULL_IMAGE))
     }
-  }
-
-  buildAssert(state: string) {
-    const color = Style.COLORS[state];
-    return vscode.window.createTextEditorDecorationType({
-      ...Style.ASSERT,
-      borderColor: color,
-      overviewRulerColor: state === State.FAIL ? color : '',
-    });
-  }
-
-  buildImage(state: string, size = Style.FULL_IMAGE) {
-    const img = this.context.asAbsolutePath(`images/${state}.png`);
-    return vscode.window.createTextEditorDecorationType({
-      ...Style.IMAGE,
-      gutterIconPath: img,
-      gutterIconSize: size
-    });
   }
 
   store(level: string, key: string, status: string, val: vscode.DecorationOptions) {
@@ -137,10 +69,10 @@ export class DecorationManager {
     } else {
       if (e.type === Entity.SUITE) {
         const status = e.suite.skip ? State.UNKNOWN : (e.suite.fail ? State.FAIL : State.SUCCESS);
-        this.store(Entity.SUITE, e.suite.name, status, { ...line(e.suite.line) });
+        this.store(Entity.SUITE, e.suite.name, status, Decorations.buildSuite(e.suite));
         delete this._suite;
       } else if (e.type === Entity.TEST) {
-        const dec = { ...line(e.test.line), hoverMessage: buildHover(e.test.error) };
+        const dec = Decorations.buildTest(e.test);
         const status = e.test.status === State.SKIP ? State.UNKNOWN : e.test.status;
         this.store(Entity.TEST, `${this._test.suiteName}:${e.test.method}`, status, dec);
         delete this._test;
@@ -153,23 +85,7 @@ export class DecorationManager {
   onAssertion(assertion: Assertion) {
     const status = assertion.error ? State.FAIL : State.SUCCESS;
     const key = `${this._test.suiteName}:${this._test.method}`;
-
-    let dec;
-    if (assertion.error) {
-      dec = {
-        ...line(assertion.line),
-        hoverMessage: buildHover(assertion.error),
-        renderOptions: {
-          after: {
-            textDecoration: ITALIC,
-            contentText: `    ${assertion.message}`
-          }
-        }
-      };
-    } else {
-      dec = line(assertion.line);
-    }
-
+    const dec = Decorations.buildAssertion(assertion);
     this.store(Entity.ASSERTION, key, status, dec);
   }
 

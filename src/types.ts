@@ -12,3 +12,10 @@ export const EntityPhase = new (class {
   public readonly AFTER = 'after';
   public readonly BEFORE = 'before';
 })();
+
+export const State = {
+  FAIL: 'fail',
+  SKIP: 'skip',
+  UNKNOWN: 'unknown',
+  SUCCESS: 'success',
+}
