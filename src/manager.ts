@@ -23,10 +23,14 @@ function deserializeError(e: any) {
   }
 }
 
+function build<T>(x: (a: string, b: string) => T): Decs<T> {
+  const s = (l) => ({ fail: x(l, 'fail'), success: x(l, 'success'), unknown: x(l, 'unknown') });
+  return { test: s('test'), assertion: s('assertion'), suite: s('suite') };
+}
+
 const line = (n: number) => ({ range: new vscode.Range(n - 1, 0, n - 1, 100000000000) });
 const rgba = (r = 0, g = 0, b = 0, a = 1) => `rgba(${r},${g},${b},${a})`;
-const buildHover = (err?: Error) => (err ? { language: 'html', value: `${deserializeError(err).stack}` } : undefined)
-const mapObj = (keys: string[], fn: (key: string) => any) => keys.reduce((acc, v) => { acc[v] = fn(v); return acc; }, {})
+const buildHover = (err?: Error) => (err ? { language: 'html', value: `${deserializeError(err).stack}` } : undefined);
 
 const State = {
   FAIL: 'fail',
@@ -60,15 +64,10 @@ const Style = {
   }
 };
 
-function build<T>(x: (a: string, b: string) => T): Decs<T> {
-  const s = (l) => ({ fail: x(l, 'fail'), success: x(l, 'success'), unknown: x(l, 'unknown') });
-  return { test: s('test'), assertion: s('assertion'), suite: s('suite') };
-}
-
 export class DecorationManager {
   private decStyles: Decs<vscode.TextEditorDecorationType>;
-  private decs: Decs<Set<vscode.DecorationOptions>>;
-  private mapping: Decs<vscode.DecorationOptions[]> = {};
+  private decs: Decs<vscode.DecorationOptions[]>;
+  private mapping: Decs<{ state: string, dec: vscode.DecorationOptions }[]> = {};
 
   private _suite: SuiteConfig;
   private _test: TestConfig;
@@ -76,7 +75,7 @@ export class DecorationManager {
   constructor(private context: vscode.ExtensionContext) { }
 
   init() {
-    this.decs = build((a, b) => new Set());
+    this.decs = build((a, b) => []);
     this.mapping = build((a, b) => []);
     if (!this.decStyles) {
       this.decStyles = build((k, s) => (k === Entity.ASSERTION) ?
@@ -104,35 +103,33 @@ export class DecorationManager {
   }
 
   store(level: string, key: string, status: string, val: vscode.DecorationOptions) {
-    this.mapping[level][key].push(val);
-    this.decs[level][status].add(val);
+    this.mapping[level][key].push({ state: status, dec: val });
+    this.decs[level][status].push(val);
+    console.log(level, key, status, true);
   }
 
   reset(level: string, key: string) {
-    if (!this.mapping[level]) {
-      this.mapping[level] = {};
-    }
-    if (!this.mapping[level[key]]) {
+    if (!this.mapping[level][key]) {
       this.mapping[level][key] = [];
     }
-    if (this.mapping[level][key]) {
-      const toRemove = this.mapping[level][key];
-      for (const el of toRemove) {
-        for (const k of [State.SKIP, State.FAIL, State.SUCCESS]) {
-          this.decs[level][k].delete(el);
-        }
+
+    const toRemove = this.mapping[level][key];
+    for (const el of toRemove) {
+      const p = this.decs[level][el.state].indexOf(el.dec);
+      if (p >= 0) {
+        this.decs[level][el.state].splice(p, 1);
+        console.log(level, key, el.state, p, false);
       }
-      this.mapping[level][key] = [];
     }
+    this.mapping[level][key] = [];
   }
 
   onEvent(e: TestEvent) {
     if (e.phase === EntityPhase.BEFORE) {
       if (e.type === Entity.SUITE) {
         this.reset(Entity.SUITE, e.suite.name);
-        this._suite = e.suite;
-      } else {
-        const key = `${this._suite.name}:${e.test.method}`;
+      } else if (e.type === Entity.TEST) {
+        const key = `${e.test.suiteName}:${e.test.method}`;
         this.reset(Entity.ASSERTION, key);
         this.reset(Entity.TEST, key);
         this._test = e.test;
@@ -145,9 +142,9 @@ export class DecorationManager {
       } else if (e.type === Entity.TEST) {
         const dec = { ...line(e.test.line), hoverMessage: buildHover(e.test.error) };
         const status = e.test.status === State.SKIP ? State.UNKNOWN : e.test.status;
-        this.store(Entity.TEST, `${this._suite.name}:${e.test.method}`, status, dec);
+        this.store(Entity.TEST, `${this._test.suiteName}:${e.test.method}`, status, dec);
         delete this._test;
-      } else {
+      } else if (e.type === Entity.ASSERTION) {
         this.onAssertion(e.assertion);
       }
     }
@@ -155,7 +152,7 @@ export class DecorationManager {
 
   onAssertion(assertion: Assertion) {
     const status = assertion.error ? State.FAIL : State.SUCCESS;
-    const key = `${this._suite.name}:${this._test.method}`;
+    const key = `${this._test.suiteName}:${this._test.method}`;
 
     let dec;
     if (assertion.error) {
