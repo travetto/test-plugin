@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { TestRunner } from './runner';
+import { TestExecution } from './execution';
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -12,22 +13,23 @@ export function activate(context: vscode.ExtensionContext) {
   // This line of code will only be executed once when your extension is activated
   console.log('Congratulations, your extension "travetto-test-plugin" is now active!', `${__dirname}/success.png`);
 
-  const onUpdate = async (ed?: vscode.TextEditor) => {
+  const onUpdate = async (ed?: vscode.TextEditor, firstLoad: boolean = false) => {
+
     if (ed) {
       activeEditor = ed;
     }
+
     if (activeEditor === vscode.window.activeTextEditor) {
       try {
-        await runner.applyDecorations(activeEditor)
+        await runner.run(activeEditor);
       } catch (e) {
         console.error(e);
       }
     }
   };
 
-  vscode.window.onDidChangeActiveTextEditor(onUpdate, null, context.subscriptions);
+  vscode.window.onDidChangeActiveTextEditor((editor) => onUpdate(editor, true), null, context.subscriptions);
   vscode.workspace.onDidSaveTextDocument(doc => {
-
     if (doc === activeEditor.document) {
       onUpdate();
     }

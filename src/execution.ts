@@ -8,6 +8,7 @@ interface ResultHandler {
   onSuite(suite: SuiteResult): void;
   onTest(test: TestResult): void;
   onAssertion(assertion: Assertion): void;
+  onAny?: () => void;
 }
 
 export class TestExecution {
@@ -44,7 +45,7 @@ export class TestExecution {
     return this._init;
   }
 
-  async run(file: string, handler: ResultHandler, onAll: () => void) {
+  async run(file: string, line: number, handler: ResultHandler) {
     await this.init();
 
     if (this.running) {
@@ -62,7 +63,7 @@ export class TestExecution {
           } else if (ev.type === Entity.ASSERTION) {
             handler.onAssertion(ev.assertion);
           }
-          onAll();
+          handler.onAny();
         }
       } catch (e) {
         console.log(e);
@@ -72,7 +73,7 @@ export class TestExecution {
     this.running = true;
 
     console.log('Running', file);
-    this.proc.send({ type: 'run', file });
+    this.proc.send({ type: 'run', file, class: line });
 
     await this.listenOnce('runComplete');
     console.log('Run Complete', file);

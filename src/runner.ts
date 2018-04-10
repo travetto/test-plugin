@@ -1,24 +1,63 @@
 import * as vscode from 'vscode';
 import { DecorationManager } from './manager';
+import { Entity, EntityPhase, CWD } from './types';
 import { TestExecution } from './execution';
+import { TestResult, SuiteResult, Assertion } from '@travetto/test/src/model';
 
 export class TestRunner {
 
+  private execution: TestExecution;
   private mgr: DecorationManager;
   private ready: boolean = false;
 
   constructor(private context: vscode.ExtensionContext) {
     this.mgr = new DecorationManager(context);
-    this.mgr.init();
+    this.execution = new TestExecution();
   }
 
-  async applyDecorations(editor: vscode.TextEditor) {
-    if (!editor || !editor.document || !/@Test\(/.test(editor.document.getText() || '')) {
-      return;
+  async run(editor: vscode.TextEditor, all: boolean = true) {
+    let timer: any;
+
+    try {
+      if (!editor || !editor.document || !/@Test\(/.test(editor.document.getText() || '')) {
+        return;
+      }
+
+      this.mgr.init();
+
+      if (timer) {
+        clearInterval(timer);
+      }
+
+      let pending = false;
+
+      timer = setInterval(() => {
+        if (pending) {
+          this.mgr.applyDecorations(editor);
+          pending = false;
+        }
+      }, 200);
+
+      await this.execution.run(
+        editor.document.fileName,
+        all ? 0 : editor.selection.active.line, {
+          onAssertion: this.mgr.onAssertion.bind(this.mgr),
+          onSuite: this.mgr.onSuite.bind(this.mgr),
+          onTest: this.mgr.onTest.bind(this.mgr),
+          onAny: () => {
+            pending = true;
+          }
+        }
+      );
+
+    } catch (e) {
+      console.log(e);
     }
-    TestExecution.on('assertion', (e) => {
-      this.mgr.onAssertion(e);
-    });
+
+    if (timer) {
+      clearInterval(timer);
+    }
+
     this.mgr.applyDecorations(editor);
   }
 }
