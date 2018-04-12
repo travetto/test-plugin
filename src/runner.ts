@@ -12,8 +12,8 @@ export class TestRunner {
   private queue: [vscode.TextEditor, number][] = [];
   private running: Promise<any>;
 
-  constructor(private context: vscode.ExtensionContext) {
-    this.mgr = new ResultsManager(context);
+  constructor() {
+    this.mgr = new ResultsManager();
     this.execution = new TestExecution();
   }
 

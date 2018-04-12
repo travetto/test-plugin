@@ -3,8 +3,6 @@ import { State, Entity } from './types';
 import { Assertion, SuiteResult, TestResult } from '@travetto/test/src/model';
 
 const rgba = (r = 0, g = 0, b = 0, a = 1) => `rgba(${r},${g},${b},${a})`;
-const buildHover = (err?: Error) => (err ? { language: 'html', value: `${deserializeError(err).stack}` } : undefined);
-const line = (n: number) => ({ range: new vscode.Range(n - 1, 0, n - 1, 100000000000) });
 
 function deserializeError(e: any) {
   if (e && e.$) {
@@ -48,9 +46,17 @@ const Style = {
 
 export class Decorations {
 
-  constructor(private context: vscode.ExtensionContext) { }
+  static context: vscode.ExtensionContext;
 
-  buildAssert(state: string) {
+  static buildHover(err?: Error) {
+    return err ? { language: 'html', value: `${deserializeError(err).stack}` } : undefined;
+  }
+
+  static line(n: number) {
+    return { range: new vscode.Range(n - 1, 0, n - 1, 100000000000) }
+  }
+
+  static buildAssert(state: string) {
     const color = Style.COLORS[state];
     return vscode.window.createTextEditorDecorationType({
       ...Style.ASSERT,
@@ -59,8 +65,8 @@ export class Decorations {
     });
   }
 
-  buildImage(state: string, size = Style.FULL_IMAGE) {
-    const img = this.context.asAbsolutePath(`images/${state}.png`);
+  static buildImage(state: string, size = Style.FULL_IMAGE) {
+    const img = Decorations.context.asAbsolutePath(`images/${state}.png`);
     return vscode.window.createTextEditorDecorationType({
       ...Style.IMAGE,
       gutterIconPath: img,
@@ -68,28 +74,28 @@ export class Decorations {
     });
   }
 
-  buildAssertion(assertion: Assertion) {
+  static buildAssertion(assertion: Assertion) {
     return assertion.error ? {
-      ...line(assertion.line),
-      hoverMessage: buildHover(assertion.error),
+      ...this.line(assertion.line),
+      hoverMessage: this.buildHover(assertion.error),
       renderOptions: {
         after: {
           textDecoration: ITALIC,
           contentText: `    ${assertion.message}`
         }
       }
-    } : line(assertion.line);
+    } : this.line(assertion.line);
   }
 
-  buildSuite(suite: SuiteResult) {
-    return { ...line(suite.line) };
+  static buildSuite(suite: SuiteResult) {
+    return { ...this.line(suite.line) };
   }
 
-  buildTest(test: TestResult) {
-    return { ...line(test.line), hoverMessage: buildHover(test.error) };
+  static buildTest(test: TestResult) {
+    return { ...this.line(test.line), hoverMessage: this.buildHover(test.error) };
   }
 
-  buildStyle(entity: string, state: string) {
+  static buildStyle(entity: string, state: string) {
     return (entity === Entity.ASSERTION) ?
       this.buildAssert(state) :
       this.buildImage(state, entity === Entity.TEST ? Style.SMALL_IMAGE : Style.FULL_IMAGE);
