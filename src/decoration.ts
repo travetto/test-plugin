@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { State } from './types';
+import { State, Entity } from './types';
 import { Assertion, SuiteResult, TestResult } from '@travetto/test/src/model';
 
 const rgba = (r = 0, g = 0, b = 0, a = 1) => `rgba(${r},${g},${b},${a})`;
@@ -47,7 +47,10 @@ const Style = {
 };
 
 export class Decorations {
-  static buildAssert(state: string) {
+
+  constructor(private context: vscode.ExtensionContext) { }
+
+  buildAssert(state: string) {
     const color = Style.COLORS[state];
     return vscode.window.createTextEditorDecorationType({
       ...Style.ASSERT,
@@ -56,8 +59,8 @@ export class Decorations {
     });
   }
 
-  static buildImage(context: vscode.ExtensionContext, state: string, size = Style.FULL_IMAGE) {
-    const img = context.asAbsolutePath(`images/${state}.png`);
+  buildImage(state: string, size = Style.FULL_IMAGE) {
+    const img = this.context.asAbsolutePath(`images/${state}.png`);
     return vscode.window.createTextEditorDecorationType({
       ...Style.IMAGE,
       gutterIconPath: img,
@@ -65,7 +68,7 @@ export class Decorations {
     });
   }
 
-  static buildAssertion(assertion: Assertion) {
+  buildAssertion(assertion: Assertion) {
     return assertion.error ? {
       ...line(assertion.line),
       hoverMessage: buildHover(assertion.error),
@@ -78,11 +81,17 @@ export class Decorations {
     } : line(assertion.line);
   }
 
-  static buildSuite(suite: SuiteResult) {
+  buildSuite(suite: SuiteResult) {
     return { ...line(suite.line) };
   }
 
-  static buildTest(test: TestResult) {
+  buildTest(test: TestResult) {
     return { ...line(test.line), hoverMessage: buildHover(test.error) };
+  }
+
+  buildStyle(entity: string, state: string) {
+    return (entity === Entity.ASSERTION) ?
+      this.buildAssert(state) :
+      this.buildImage(state, entity === Entity.TEST ? Style.SMALL_IMAGE : Style.FULL_IMAGE);
   }
 }

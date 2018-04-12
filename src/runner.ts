@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { DecorationManager } from './manager';
+import { ResultsManager } from './manager';
 import { Entity, EntityPhase, CWD } from './types';
 import { TestExecution } from './execution';
 import { TestResult, SuiteResult, Assertion } from '@travetto/test/src/model';
@@ -7,13 +7,13 @@ import { TestResult, SuiteResult, Assertion } from '@travetto/test/src/model';
 export class TestRunner {
 
   private execution: TestExecution;
-  private mgr: DecorationManager;
+  private mgr: ResultsManager;
   private ready: boolean = false;
   private queue: [vscode.TextEditor, number][] = [];
   private running: Promise<any>;
 
   constructor(private context: vscode.ExtensionContext) {
-    this.mgr = new DecorationManager(context);
+    this.mgr = new ResultsManager(context);
     this.execution = new TestExecution();
   }
 

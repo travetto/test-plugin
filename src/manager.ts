@@ -14,23 +14,24 @@ function build<T>(x: (a: string, b: string) => T): Decs<T> {
   return { test: s('test'), assertion: s('assertion'), suite: s('suite') };
 }
 
-export class DecorationManager {
+export class ResultsManager {
   private decStyles: Decs<vscode.TextEditorDecorationType>;
   private decs: Decs<vscode.DecorationOptions[]>;
   private mapping: Decs<{ state: string, dec: vscode.DecorationOptions }[]> = {};
+  private decorations: Decorations;
 
   private _suite: SuiteConfig;
   private _test: TestConfig;
 
-  constructor(private context: vscode.ExtensionContext) { }
+  constructor(private context: vscode.ExtensionContext) {
+    this.decorations = new Decorations(context);
+  }
 
   init() {
     this.decs = build((a, b) => []);
     this.mapping = build((a, b) => []);
     if (!this.decStyles) {
-      this.decStyles = build((k, s) => (k === Entity.ASSERTION) ?
-        Decorations.buildAssert(s) :
-        Decorations.buildImage(this.context, s, k === Entity.TEST ? Style.SMALL_IMAGE : Style.FULL_IMAGE))
+      this.decStyles = build((e, s) => this.decorations.buildStyle(e, s));
     }
   }
 
@@ -69,10 +70,10 @@ export class DecorationManager {
     } else {
       if (e.type === Entity.SUITE) {
         const status = e.suite.skip ? State.UNKNOWN : (e.suite.fail ? State.FAIL : State.SUCCESS);
-        this.store(Entity.SUITE, e.suite.name, status, Decorations.buildSuite(e.suite));
+        this.store(Entity.SUITE, e.suite.name, status, this.decorations.buildSuite(e.suite));
         delete this._suite;
       } else if (e.type === Entity.TEST) {
-        const dec = Decorations.buildTest(e.test);
+        const dec = this.decorations.buildTest(e.test);
         const status = e.test.status === State.SKIP ? State.UNKNOWN : e.test.status;
         this.store(Entity.TEST, `${this._test.suiteName}:${e.test.method}`, status, dec);
         delete this._test;
@@ -85,7 +86,7 @@ export class DecorationManager {
   onAssertion(assertion: Assertion) {
     const status = assertion.error ? State.FAIL : State.SUCCESS;
     const key = `${this._test.suiteName}:${this._test.method}`;
-    const dec = Decorations.buildAssertion(assertion);
+    const dec = this.decorations.buildAssertion(assertion);
     this.store(Entity.ASSERTION, key, status, dec);
   }
 
