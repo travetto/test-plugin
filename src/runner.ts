@@ -17,21 +17,28 @@ export class TestRunner {
     this.execution = new TestExecution();
   }
 
-  async run(editor: vscode.TextEditor, all: boolean = true) {
-    this.queue.push([editor, all ? 0 : editor.selection.active.line]);
-
-    if (this.running) {
-      return this.running;
-    } else {
-      this.running = new Promise(async (resolve, reject) => {
-        while (this.queue.length) {
-          const [rEditor, rLine] = this.queue.shift();
-          await this._run(rEditor, rLine);
-        }
-        resolve();
-      });
-      return this.running;
+  async runQueue() {
+    while (this.queue.length) {
+      const [editor, line] = this.queue.shift();
+      console.log('Running', editor.document.fileName, line);
+      try {
+        await this._run(editor, line);
+      } catch (e) {
+        console.log('Errored', e);
+      }
     }
+  }
+
+  async run(editor: vscode.TextEditor, all: boolean = true) {
+    const line = all ? 0 : editor.selection.active.line;
+    this.queue.push([editor, line]);
+    console.log('Queuing', editor.document.fileName, line);
+
+    if (!this.running) {
+      this.running = this.runQueue()
+        .then(x => delete this.running, x => delete this.running);
+    }
+    return this.running;
   }
 
   async _run(editor: vscode.TextEditor, line: number) {

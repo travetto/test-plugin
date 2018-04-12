@@ -12,7 +12,7 @@ export function activate(context: vscode.ExtensionContext) {
   const runner = new TestRunner();
 
   const isEditor = (o: any): o is vscode.TextEditor => o && 'document' in o;
-  const onUpdate = async (target: vscode.TextEditor | vscode.TextDocument, runAll: boolean = true) => {
+  const onUpdate = async (target: vscode.TextEditor | vscode.TextDocument) => {
 
     if (!isEditor(target)) {
       if (!activeEditor || activeEditor.document !== target) {
@@ -27,7 +27,7 @@ export function activate(context: vscode.ExtensionContext) {
       /@Test\(/.test(activeEditor.document.getText() || '')
     ) {
       try {
-        await runner.run(activeEditor, runAll);
+        await runner.run(activeEditor, isEditor(target));
       } catch (e) {
         console.error(e);
       }
