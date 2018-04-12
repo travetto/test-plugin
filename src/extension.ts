@@ -8,36 +8,28 @@ import { Decorations } from './decoration';
 export function activate(context: vscode.ExtensionContext) {
   Decorations.context = context;
 
-  let activeEditor: vscode.TextEditor;
   const runner = new TestRunner();
-
   const isEditor = (o: any): o is vscode.TextEditor => o && 'document' in o;
-  const onUpdate = async (target: vscode.TextEditor | vscode.TextDocument) => {
+
+  function onUpdate(target?: vscode.TextEditor | vscode.TextDocument) {
+
+    const editor = vscode.window.activeTextEditor;
 
     if (!isEditor(target)) {
-      if (!activeEditor || activeEditor.document !== target) {
+      if (!editor || editor.document !== target) {
         return;
       }
-    } else {
-      activeEditor = activeEditor || target;
     }
 
-    if (activeEditor === vscode.window.activeTextEditor &&
-      activeEditor.document &&
-      /@Test\(/.test(activeEditor.document.getText() || '')
-    ) {
-      try {
-        await runner.run(activeEditor, isEditor(target));
-      } catch (e) {
-        console.error(e);
-      }
+    if (editor.document && /@Test\(/.test(editor.document.getText() || '')) {
+      runner.run(editor, isEditor(target)).catch(e => console.error(e));
     }
   };
 
   vscode.window.onDidChangeActiveTextEditor(onUpdate, null, context.subscriptions);
   vscode.workspace.onDidSaveTextDocument(onUpdate, null, context.subscriptions);
 
-  onUpdate(vscode.window.activeTextEditor);
+  onUpdate();
 
   // Use the console to output diagnostic information (console.log) and errors (console.error)
   // This line of code will only be executed once when your extension is activated
