@@ -1,4 +1,6 @@
 import * as vscode from 'vscode';
+import * as diff from 'diff';
+
 import { TestRunner } from './runner';
 import { TestExecution } from './execution';
 import { Decorations } from './decoration';
@@ -10,6 +12,8 @@ export function activate(context: vscode.ExtensionContext) {
   try {
     const runner = new TestRunner();
 
+    let oldText = '';
+
     function onUpdate(target?: vscode.TextDocument) {
 
       const editor = vscode.window.activeTextEditor;
@@ -19,11 +23,28 @@ export function activate(context: vscode.ExtensionContext) {
       }
 
       if (editor.document && /@Test\(/.test(editor.document.getText() || '')) {
-        runner.run(editor, !target).catch(e => console.error(e));
+
+        const newText = editor.document.getText();
+        const lines = [];
+        if (oldText) {
+          const changes = diff.structuredPatch('a', 'b', oldText, newText, 'a', 'b', { context: 0 });
+          const newLines = changes.hunks.map(x => x.newStart || x.oldStart);
+          if (newLines.length < 3) {
+            lines.push(...newLines);
+          }
+        }
+
+        if (!lines.length) {
+          lines.push(0);
+        }
+
+        runner.run(editor, lines).catch(e => console.error(e));
+
+        oldText = newText;
       }
     };
 
-    vscode.window.onDidChangeActiveTextEditor(x => onUpdate(), null, context.subscriptions);
+    vscode.window.onDidChangeActiveTextEditor(x => { oldText = ''; onUpdate() }, null, context.subscriptions);
     vscode.workspace.onDidSaveTextDocument(onUpdate, null, context.subscriptions);
 
     onUpdate();

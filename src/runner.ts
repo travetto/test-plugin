@@ -1,8 +1,9 @@
 import * as vscode from 'vscode';
 import { ResultsManager } from './results';
-import { Entity, EntityPhase, CWD } from './types';
+import { Entity, EntityPhase, CWD, State } from './types';
 import { TestExecution } from './execution';
 import { TestResult, SuiteResult, Assertion } from '@travetto/test/src/model';
+import { Decorations } from './decoration';
 
 export class TestRunner {
 
@@ -17,31 +18,32 @@ export class TestRunner {
     this.execution = new TestExecution();
   }
 
-  async runQueue() {
+  async _runQueue() {
     while (this.queue.length) {
       const [editor, line] = this.queue.shift();
       console.log('Running', editor.document.fileName, line);
       try {
-        await this._run(editor, line);
+        await this._runJob(editor, line);
       } catch (e) {
         console.log('Errored', e);
       }
     }
   }
 
-  async run(editor: vscode.TextEditor, all: boolean = true) {
-    const line = all ? 0 : editor.selection.active.line;
-    this.queue.push([editor, line]);
-    console.log('Queuing', editor.document.fileName, line);
+  async run(editor: vscode.TextEditor, lines: number[]) {
+    for (const line of lines) {
+      this.queue.push([editor, line]);
+      console.log('Queuing', editor.document.fileName, line);
+    }
 
-    if (!this.running) {
-      this.running = this.runQueue()
+    if (!this.running && this.queue.length) {
+      this.running = this._runQueue()
         .then(x => delete this.running, x => delete this.running);
     }
     return this.running;
   }
 
-  async _run(editor: vscode.TextEditor, line: number) {
+  async _runJob(editor: vscode.TextEditor, line: number) {
 
     let timer: any;
 
@@ -64,7 +66,7 @@ export class TestRunner {
       }, 200);
 
       await this.execution.run(editor.document.fileName, line, e => {
-        this.mgr.onEvent(e);
+        this.mgr.onEvent(e, editor, line);
         pending = true;
       });
 

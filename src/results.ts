@@ -17,7 +17,7 @@ function build<T>(x: (a: string, b: string) => T): Decs<T> {
 export class ResultsManager {
   private decStyles: Decs<vscode.TextEditorDecorationType>;
   private decs: Decs<vscode.DecorationOptions[]>;
-  private mapping: Decs<{ state: string, dec: vscode.DecorationOptions }[]> = {};
+  mapping: Decs<{ state: string, dec: vscode.DecorationOptions }[]> = {};
 
   private _suite: SuiteConfig;
   private _test: TestConfig;
@@ -30,8 +30,8 @@ export class ResultsManager {
     }
   }
 
-  store(level: string, key: string, status: string, val: vscode.DecorationOptions) {
-    this.mapping[level][key].push({ state: status, dec: val });
+  store(level: string, key: string, status: string, val: vscode.DecorationOptions, extra?: any) {
+    this.mapping[level][key].push({ state: status, dec: val, ...(extra || {}) });
     this.decs[level][status].push(val);
     console.log(level, key, status, true);
   }
@@ -52,7 +52,7 @@ export class ResultsManager {
     this.mapping[level][key] = [];
   }
 
-  onEvent(e: TestEvent) {
+  onEvent(e: TestEvent, editor: vscode.TextEditor, line?: number) {
     if (e.phase === EntityPhase.BEFORE) {
       if (e.type === Entity.SUITE) {
         this.reset(Entity.SUITE, e.suite.name);
@@ -70,8 +70,28 @@ export class ResultsManager {
       } else if (e.type === Entity.TEST) {
         const dec = Decorations.buildTest(e.test);
         const status = e.test.status === State.SKIP ? State.UNKNOWN : e.test.status;
-        this.store(Entity.TEST, `${this._test.suiteName}:${e.test.method}`, status, dec);
-        delete this._test;
+        this.store(Entity.TEST, `${this._test.suiteName}:${e.test.method}`, status, dec, { suite: this._test.suiteName });
+
+        if (line &&
+          e.phase === EntityPhase.AFTER &&
+          e.type === Entity.TEST &&
+          line >= this._test.line &&
+          line <= this._test.lineEnd
+        ) { // Update suite
+          const fail = Object.values(this.mapping.test).find(x => x.length && x[0]['suite'] === e.test.suiteName && x[0].state === State.FAIL);
+          this.reset(Entity.SUITE, e.test.suiteName);
+          let suiteLine = 0;
+          while (!suiteLine && line > 1) {
+            const text = editor.document.lineAt(--line);
+            if (text.text.includes('@Suite')) {
+              suiteLine = line;
+            }
+          }
+
+          delete this._test;
+
+          this.store(Entity.SUITE, e.test.suiteName, fail ? State.FAIL : State.SUCCESS, Decorations.buildSuite({ line: suiteLine + 1 } as any));
+        }
       } else if (e.type === Entity.ASSERTION) {
         this.onAssertion(e.assertion);
       }
