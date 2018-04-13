@@ -11,6 +11,7 @@ export function activate(context: vscode.ExtensionContext) {
   Decorations.context = context;
   try {
     const runner = new TestRunner();
+    const status = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
 
     let oldText = '';
 
@@ -23,6 +24,12 @@ export function activate(context: vscode.ExtensionContext) {
       }
 
       if (editor.document && /@Test\(/.test(editor.document.getText() || '')) {
+
+        if (!status.text) {
+          status.text = 'Tests 0/0';
+        }
+
+        status.show();
 
         const newText = editor.document.getText();
         const lines = [];
@@ -38,11 +45,22 @@ export function activate(context: vscode.ExtensionContext) {
           lines.push(0);
         }
 
-        runner.run(editor, lines).catch(e => console.error(e));
+        status.color = '#ccc';
+
+        runner.run(editor, lines)
+          .then(totals => {
+            status.color = totals.failed ? '#f33' : '#8f8';
+            status.text = `Tests ${totals.success}/${totals.total}`;
+          })
+          .catch(e => console.error(e));
 
         oldText = newText;
+      } else {
+        status.hide();
       }
     };
+
+    vscode.window
 
     vscode.window.onDidChangeActiveTextEditor(x => { oldText = ''; onUpdate() }, null, context.subscriptions);
     vscode.workspace.onDidSaveTextDocument(onUpdate, null, context.subscriptions);

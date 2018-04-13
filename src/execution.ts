@@ -31,10 +31,10 @@ export class TestExecution {
     if (!this._init) {
       this._init = new Promise(async (resolve) => {
         await this.listenOnce('ready');
-        console.log('Ready, lets init');
+        console.debug('Ready, lets init');
         this.proc.send({ type: 'init' });
         await this.listenOnce('initComplete');
-        console.log('Init Complete');
+        console.debug('Init Complete');
         resolve();
       });
     }
@@ -45,7 +45,7 @@ export class TestExecution {
     await this.init();
 
     if (this.running) {
-      console.log('Run already in progress', file);
+      console.debug('Run already in progress', file);
       this.kill();
     }
 
@@ -53,11 +53,11 @@ export class TestExecution {
 
     this.running = true;
 
-    console.log('Running', file);
+    console.debug('Running', file);
     this.proc.send({ type: 'run', file, class: line });
 
     await this.listenOnce('runComplete');
-    console.log('Run Complete', file);
+    console.debug('Run Complete', file);
 
     this.kill();
   }

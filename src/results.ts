@@ -9,8 +9,8 @@ type SMap<v> = { [key: string]: v };
 
 type Decs<T> = SMap<SMap<T>>;
 
-function build<T>(x: (a: string, b: string) => T): Decs<T> {
-  const s = (l) => ({ fail: x(l, 'fail'), success: x(l, 'success'), unknown: x(l, 'unknown') });
+function build<T>(x: (a: string, b: string) => T, sub: boolean = true): Decs<T> {
+  const s = (l) => sub ? ({ fail: x(l, 'fail'), success: x(l, 'success'), unknown: x(l, 'unknown') }) : {};
   return { test: s('test'), assertion: s('assertion'), suite: s('suite') };
 }
 
@@ -24,7 +24,7 @@ export class ResultsManager {
 
   init() {
     this.decs = build((a, b) => []);
-    this.mapping = build((a, b) => []);
+    this.mapping = build((a, b) => [], false);
     if (!this.decStyles) {
       this.decStyles = build((e, s) => Decorations.buildStyle(e, s));
     }
@@ -33,7 +33,7 @@ export class ResultsManager {
   store(level: string, key: string, status: string, val: vscode.DecorationOptions, extra?: any) {
     this.mapping[level][key].push({ state: status, dec: val, ...(extra || {}) });
     this.decs[level][status].push(val);
-    console.log(level, key, status, true);
+    console.debug(level, key, status, true);
   }
 
   reset(level: string, key: string) {
@@ -46,7 +46,7 @@ export class ResultsManager {
       const p = this.decs[level][el.state].indexOf(el.dec);
       if (p >= 0) {
         this.decs[level][el.state].splice(p, 1);
-        console.log(level, key, el.state, p, false);
+        console.debug(level, key, el.state, p, false);
       }
     }
     this.mapping[level][key] = [];
@@ -112,5 +112,23 @@ export class ResultsManager {
         editor.setDecorations(this.decStyles[key][type], (data[key] || {})[type] || []);
       }
     }
+  }
+
+  getTotals() {
+    const vals = Object.values(this.mapping.test);
+    const total = vals.length;
+    let success = 0;
+    let unknown = 0;
+    let failed = 0;
+
+    for (const o of vals) {
+      switch (o[0].state) {
+        case State.UNKNOWN: unknown++; break;
+        case State.FAIL: failed++; break;
+        case State.SUCCESS: success++; break;
+      }
+    }
+
+    return { success, unknown, failed, total };
   }
 }
