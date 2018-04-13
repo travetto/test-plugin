@@ -19,15 +19,17 @@ export class TestRunner {
   }
 
   async _runQueue() {
+    let last;
     while (this.queue.length) {
       const [editor, line] = this.queue.shift();
       console.debug('Running', editor.document.fileName, line);
       try {
-        return await this._runJob(editor, line);
+        last = await this._runJob(editor, line);
       } catch (e) {
         console.debug('Errored', e);
       }
     }
+    return last;
   }
 
   async run(editor: vscode.TextEditor, lines: number[]) {
@@ -37,10 +39,9 @@ export class TestRunner {
     }
 
     if (!this.running && this.queue.length) {
-      this.running = this._runQueue()
-        .then(
-          x => { delete this.running; return x; },
-          x => { delete this.running; throw x });
+      this.running = this._runQueue().then(
+        x => { delete this.running; return x; },
+        x => { delete this.running; throw x });
     }
     return this.running;
   }

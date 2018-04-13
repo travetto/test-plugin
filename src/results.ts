@@ -17,7 +17,7 @@ function build<T>(x: (a: string, b: string) => T, sub: boolean = true): Decs<T> 
 export class ResultsManager {
   private decStyles: Decs<vscode.TextEditorDecorationType>;
   private decs: Decs<vscode.DecorationOptions[]>;
-  mapping: Decs<{ state: string, dec: vscode.DecorationOptions }[]> = {};
+  private mapping: Decs<{ state: string, dec: vscode.DecorationOptions }[]> = {};
 
   private _suite: SuiteConfig;
   private _test: TestConfig;

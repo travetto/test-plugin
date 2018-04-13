@@ -25,9 +25,7 @@ export function activate(context: vscode.ExtensionContext) {
 
       if (editor.document && /@Test\(/.test(editor.document.getText() || '')) {
 
-        if (!status.text) {
-          status.text = 'Tests 0/0';
-        }
+        status.text = 'Running...';
 
         status.show();
 
