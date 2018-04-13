@@ -15,7 +15,10 @@ export class TestExecution {
 
   constructor() {
     this.proc = spawn(`node_modules/.bin/travetto-test`, [], {
-      cwd: CWD, env: { EXECUTION: true },
+      cwd: CWD, env: {
+        EXECUTION: true,
+        PATH: process.env.PATH
+      },
       stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
     });
   }
