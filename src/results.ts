@@ -4,6 +4,7 @@ import { Assertion, TestResult, SuiteResult, TestConfig, SuiteConfig, TestEvent 
 
 import { Entity, EntityPhase, State } from './types';
 import { Decorations } from './decoration';
+import { log } from './util';
 
 type SMap<v> = { [key: string]: v };
 
@@ -33,7 +34,7 @@ export class ResultsManager {
   store(level: string, key: string, status: string, val: vscode.DecorationOptions, extra?: any) {
     this.mapping[level][key].push({ state: status, dec: val, ...(extra || {}) });
     this.decs[level][status].push(val);
-    console.debug(level, key, status, true);
+    log(level, key, status, true);
   }
 
   reset(level: string, key: string) {
@@ -46,7 +47,7 @@ export class ResultsManager {
       const p = this.decs[level][el.state].indexOf(el.dec);
       if (p >= 0) {
         this.decs[level][el.state].splice(p, 1);
-        console.debug(level, key, el.state, p, false);
+        log(level, key, el.state, p, false);
       }
     }
     this.mapping[level][key] = [];

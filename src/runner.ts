@@ -4,6 +4,7 @@ import { Entity, EntityPhase, CWD, State } from './types';
 import { TestExecution } from './execution';
 import { TestResult, SuiteResult, Assertion } from '@travetto/test/src/model';
 import { Decorations } from './decoration';
+import { log } from './util';
 
 export class TestRunner {
 
@@ -22,11 +23,11 @@ export class TestRunner {
     let last;
     while (this.queue.length) {
       const [editor, line] = this.queue.shift();
-      console.debug('Running', editor.document.fileName, line);
+      log('Running', editor.document.fileName, line);
       try {
         last = await this._runJob(editor, line);
       } catch (e) {
-        console.debug('Errored', e);
+        log('Errored', e);
       }
     }
     return last;
@@ -35,7 +36,7 @@ export class TestRunner {
   async run(editor: vscode.TextEditor, lines: number[]) {
     for (const line of lines) {
       this.queue.push([editor, line]);
-      console.debug('Queuing', editor.document.fileName, line);
+      log('Queuing', editor.document.fileName, line);
     }
 
     if (!this.running && this.queue.length) {
@@ -59,7 +60,7 @@ export class TestRunner {
       });
 
     } catch (e) {
-      console.debug(e);
+      log(e);
     }
 
     this.mgr.applyDecorations(editor);

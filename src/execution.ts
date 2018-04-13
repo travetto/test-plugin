@@ -3,6 +3,7 @@ import { EntityPhase, Entity, CWD } from './types';
 import { ChildProcess } from 'child_process';
 import * as spawn from 'cross-spawn';
 import { SuiteResult, TestResult, Assertion, SuiteConfig, TestConfig } from '@travetto/test/src/model';
+import { log } from './util';
 
 export class TestExecution {
   private _init: Promise<any>;
@@ -31,10 +32,10 @@ export class TestExecution {
     if (!this._init) {
       this._init = new Promise(async (resolve) => {
         await this.listenOnce('ready');
-        console.debug('Ready, lets init');
+        log('Ready, lets init');
         this.proc.send({ type: 'init' });
         await this.listenOnce('initComplete');
-        console.debug('Init Complete');
+        log('Init Complete');
         resolve();
       });
     }
@@ -45,7 +46,7 @@ export class TestExecution {
     await this.init();
 
     if (this.running) {
-      console.debug('Run already in progress', file);
+      log('Run already in progress', file);
       this.kill();
     }
 
@@ -53,11 +54,11 @@ export class TestExecution {
 
     this.running = true;
 
-    console.debug('Running', file);
+    log('Running', file);
     this.proc.send({ type: 'run', file, class: line });
 
     await this.listenOnce('runComplete');
-    console.debug('Run Complete', file);
+    log('Run Complete', file);
 
     this.kill();
   }
