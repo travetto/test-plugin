@@ -33,6 +33,10 @@ export class TestRunner {
     }
   }
 
+  clear() {
+    this.queue = [];
+  }
+
   async _runQueue() {
 
     this.setStatus('Running...', '#ccc');

@@ -48,7 +48,11 @@ export function activate(context: vscode.ExtensionContext) {
       }
     };
 
-    vscode.window.onDidChangeActiveTextEditor(x => { oldText = ''; onUpdate() }, null, context.subscriptions);
+    vscode.window.onDidChangeActiveTextEditor(x => {
+      oldText = '';
+      onUpdate();
+      runner.clear();
+    }, null, context.subscriptions);
     vscode.workspace.onDidSaveTextDocument(onUpdate, null, context.subscriptions);
 
     onUpdate();
