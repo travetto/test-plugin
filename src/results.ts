@@ -65,7 +65,7 @@ export class ResultsManager {
     this.results = { suite: {}, test: {} };
   }
 
-  store(level: string, key: string, status: string, val: vscode.DecorationOptions, extra?: any) {
+  store(level: string, key: string, status: string, val: vscode.DecorationOptions, extra: any = {}) {
     log(level, key, status, true);
 
     if (level === Entity.ASSERTION) {
@@ -83,10 +83,20 @@ export class ResultsManager {
         this._editor.setDecorations(el.assertStyles[s], groups[s]);
       }
 
-    } else {
-      const el = this.results[level as ('suite' | 'test')][key];
+    } else if (level === 'suite') {
+      const el = this.results.suite[key];
       el.state = status;
       el.decoration = val;
+
+      Object.keys(el.styles).forEach(x => {
+        this._editor.setDecorations(el.styles[x], x === status ? [val] : []);
+      })
+
+    } else {
+      const el = this.results.test[key];
+      el.state = status;
+      el.decoration = val;
+      el.suite = extra.suite;
       this._editor.setDecorations(el.styles[status], [val]);
     }
   }
@@ -129,7 +139,6 @@ export class ResultsManager {
         suiteLine = line;
       }
     }
-    this.reset(Entity.SUITE, test.suiteName);
     this.store(Entity.SUITE, test.suiteName, state, Decorations.buildSuite({ line: suiteLine + 1 }));
   }
 
