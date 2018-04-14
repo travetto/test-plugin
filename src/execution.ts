@@ -1,9 +1,9 @@
 import * as vscode from 'vscode';
-import { EntityPhase, Entity, CWD } from './types';
 import { ChildProcess } from 'child_process';
-import * as spawn from 'cross-spawn';
-import { SuiteResult, TestResult, Assertion, SuiteConfig, TestConfig } from '@travetto/test/src/model';
+import { SuiteConfig, TestConfig } from '@travetto/test/src/model';
+import { CWD } from './types';
 import { log } from './util';
+import * as spawn from 'cross-spawn';
 
 export class TestExecution {
   private _init: Promise<any>;

@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
 import { State, Entity } from './types';
-import { Assertion, SuiteResult, TestResult } from '@travetto/test/src/model';
 
 const rgba = (r = 0, g = 0, b = 0, a = 1) => `rgba(${r},${g},${b},${a})`;
 
@@ -87,12 +86,12 @@ export class Decorations {
     } : this.line(assertion.line);
   }
 
-  static buildSuite(suite: { line: number }) {
-    return { ...this.line(suite.line) };
+  static buildSuite(suite: { lines: { start: number } }) {
+    return { ...this.line(suite.lines.start) };
   }
 
-  static buildTest(test: { line: number, error?: Error }) {
-    return { ...this.line(test.line), hoverMessage: this.buildHover(test.error) };
+  static buildTest(test: { lines: { start: number }, error?: Error }) {
+    return { ...this.line(test.lines.start), hoverMessage: this.buildHover(test.error) };
   }
 
   static buildStyle(entity: string, state: string) {

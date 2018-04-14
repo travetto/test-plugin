@@ -26,7 +26,7 @@ interface ResultState extends Partial<Result> {
 interface TestState extends ResultState {
   assertStyles: ResultStsyles;
   assertions: Result[];
-  suite: string
+  className: string
 }
 
 interface AllState {
@@ -60,15 +60,15 @@ export class ResultsManager {
     this.results = { suite: {}, test: {} };
   }
 
-  store(level: string, key: string, status: string, val: vscode.DecorationOptions, extra: any = {}) {
-    log(level, key, status, true);
+  store(level: string, key: string, state: string, decoration: vscode.DecorationOptions, extra: any = {}) {
+    log(level, key, state, true);
 
     if (level === Entity.ASSERTION) {
-      const tkey = `${this._test.suiteName}:${this._test.method}`;
+      const tkey = `${this._test.className}:${this._test.methodName}`;
       const el = this.results.test[tkey];
       const groups = { success: [], fail: [], unknown: [] };
 
-      el.assertions.push({ state: status, decoration: val });
+      el.assertions.push({ state, decoration });
 
       for (const a of el.assertions) {
         groups[a.state].push(a.decoration);
@@ -80,19 +80,19 @@ export class ResultsManager {
 
     } else if (level === Entity.SUITE) {
       const el = this.results.suite[key];
-      el.state = status;
-      el.decoration = val;
+      el.state = state;
+      el.decoration = decoration;
 
       Object.keys(el.styles).forEach(x => {
-        this._editor.setDecorations(el.styles[x], x === status ? [val] : []);
+        this._editor.setDecorations(el.styles[x], x === state ? [decoration] : []);
       })
 
     } else {
       const el = this.results.test[key];
-      el.state = status;
-      el.decoration = val;
-      el.suite = extra.suite;
-      this._editor.setDecorations(el.styles[status], [val]);
+      el.state = state;
+      el.decoration = decoration;
+      el.className = extra.className;
+      this._editor.setDecorations(el.styles[state], [decoration]);
     }
   }
 
@@ -125,8 +125,8 @@ export class ResultsManager {
     this.results[level][key] = base;
   }
 
-  setSuiteViaTest(test: { line: number, suiteName: string }, state: string) {
-    let line = test.line;
+  setSuiteViaTest(test: { lines: { start: number }, className: string }, state: string) {
+    let line = test.lines.start;
     let suiteLine = 0;
     while (!suiteLine && line > 1) {
       const text = this._editor.document.lineAt(--line);
@@ -134,16 +134,16 @@ export class ResultsManager {
         suiteLine = line;
       }
     }
-    this.store(Entity.SUITE, test.suiteName, state, Decorations.buildSuite({ line: suiteLine + 1 }));
+    this.store(Entity.SUITE, test.className, state, Decorations.buildSuite({ lines: { start: suiteLine + 1 } }));
   }
 
   onEvent(e: TestEvent, line?: number) {
     if (e.phase === EntityPhase.BEFORE) {
       if (e.type === Entity.SUITE) {
-        this.reset(Entity.SUITE, e.suite.name);
-        this.store(Entity.SUITE, e.suite.name, State.UNKNOWN, Decorations.buildSuite(e.suite));
+        this.reset(Entity.SUITE, e.suite.className);
+        this.store(Entity.SUITE, e.suite.className, State.UNKNOWN, Decorations.buildSuite(e.suite));
       } else if (e.type === Entity.TEST) {
-        const key = `${e.test.suiteName}:${e.test.method}`;
+        const key = `${e.test.className}:${e.test.methodName}`;
         this.reset(Entity.TEST, key);
         this.store(Entity.TEST, key, State.UNKNOWN, Decorations.buildTest(e.test));
         if (line) {
@@ -165,27 +165,27 @@ export class ResultsManager {
 
   onSuite(suite: SuiteResult) {
     const status = suite.skip ? State.UNKNOWN : (suite.fail ? State.FAIL : State.SUCCESS);
-    this.store(Entity.SUITE, suite.name, status, Decorations.buildSuite(suite));
+    this.store(Entity.SUITE, suite.className, status, Decorations.buildSuite(suite));
   }
 
   onTest(test: TestResult, line?: number) {
     const dec = Decorations.buildTest(test);
     const status = test.status === State.SKIP ? State.UNKNOWN : test.status;
-    this.store(Entity.TEST, `${this._test.suiteName}:${test.method}`, status, dec, { suite: this._test.suiteName });
+    this.store(Entity.TEST, `${this._test.className}:${test.methodName}`, status, dec, { className: this._test.className });
 
     // Update Suite if doing a single line
     if (line &&
-      line >= this._test.line &&
-      line <= this._test.lineEnd
+      line >= this._test.lines.start &&
+      line <= this._test.lines.end
     ) { // Update suite
-      const fail = Object.values(this.results.test).find(x => x.suite === test.suiteName && x.state === State.FAIL);
+      const fail = Object.values(this.results.test).find(x => x.className === test.className && x.state === State.FAIL);
       this.setSuiteViaTest(test, fail ? State.FAIL : State.SUCCESS);
     }
   }
 
   onAssertion(assertion: Assertion) {
     const status = assertion.error ? State.FAIL : State.SUCCESS;
-    const key = `${this._test.suiteName}:${this._test.method}`;
+    const key = `${this._test.className}:${this._test.methodName}`;
     const dec = Decorations.buildAssertion(assertion);
     this.store(Entity.ASSERTION, key, status, dec);
   }

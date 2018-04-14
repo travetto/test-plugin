@@ -1,9 +1,6 @@
 import * as vscode from 'vscode';
 import { ResultsManager } from './results';
-import { Entity, EntityPhase, CWD, State } from './types';
 import { TestExecution } from './execution';
-import { TestResult, SuiteResult, Assertion } from '@travetto/test/src/model';
-import { Decorations } from './decoration';
 import { log } from './util';
 
 export class TestRunner {
