@@ -10,11 +10,6 @@ type SMap<v> = { [key: string]: v };
 
 type Decs<T> = SMap<SMap<T>>;
 
-function build<T>(x: (a: string, b: string) => T, sub: boolean = true): Decs<T> {
-  const s = (l) => sub ? ({ fail: x(l, 'fail'), success: x(l, 'success'), unknown: x(l, 'unknown') }) : {};
-  return { test: s('test'), assertion: s('assertion'), suite: s('suite') };
-}
-
 interface ResultStsyles {
   [key: string]: vscode.TextEditorDecorationType;
 }
@@ -54,10 +49,10 @@ export class ResultsManager {
   }
 
   resetAll() {
-    for (const l of ['suite', 'test']) {
+    for (const l of [Entity.SUITE, Entity.TEST]) {
       Object.values(this.results[l] as { [key: string]: ResultState }).forEach(e => {
         Object.values(e.styles).forEach(x => x.dispose());
-        if (l === 'test') {
+        if (l === Entity.TEST) {
           Object.values((e as TestState).assertStyles).forEach(x => x.dispose());
         }
       });
@@ -79,11 +74,11 @@ export class ResultsManager {
         groups[a.state].push(a.decoration);
       }
 
-      for (const s of ['success', 'fail', 'unknown']) {
+      for (const s of [State.SUCCESS, State.FAIL, State.UNKNOWN]) {
         this._editor.setDecorations(el.assertStyles[s], groups[s]);
       }
 
-    } else if (level === 'suite') {
+    } else if (level === Entity.SUITE) {
       const el = this.results.suite[key];
       el.state = status;
       el.decoration = val;
@@ -103,13 +98,13 @@ export class ResultsManager {
 
   genStyles(level: EventEntity) {
     return {
-      fail: Decorations.buildStyle(level, 'fail'),
-      success: Decorations.buildStyle(level, 'success'),
-      unknown: Decorations.buildStyle(level, 'unknown')
+      fail: Decorations.buildStyle(level, State.FAIL),
+      success: Decorations.buildStyle(level, State.SUCCESS),
+      unknown: Decorations.buildStyle(level, State.UNKNOWN)
     };
   }
 
-  reset(level: 'suite' | 'test', key: string) {
+  reset(level: typeof Entity.TEST | typeof Entity.SUITE, key: string) {
     const base: ResultState = { styles: this.genStyles(level) };
 
     const existing = this.results[level][key];
@@ -118,10 +113,10 @@ export class ResultsManager {
       Object.values(existing.styles).forEach(x => x.dispose());
     }
 
-    if (level === 'test') {
+    if (level === Entity.TEST) {
       const testBase = (base as TestState);
       testBase.assertions = [];
-      testBase.assertStyles = this.genStyles('assertion')
+      testBase.assertStyles = this.genStyles(Entity.ASSERTION)
 
       if (existing) {
         Object.values((existing as TestState).assertStyles).forEach(x => x.dispose());
@@ -146,13 +141,13 @@ export class ResultsManager {
     if (e.phase === EntityPhase.BEFORE) {
       if (e.type === Entity.SUITE) {
         this.reset(Entity.SUITE, e.suite.name);
-        this.store('suite', e.suite.name, 'unknown', Decorations.buildSuite(e.suite));
+        this.store(Entity.SUITE, e.suite.name, State.UNKNOWN, Decorations.buildSuite(e.suite));
       } else if (e.type === Entity.TEST) {
         const key = `${e.test.suiteName}:${e.test.method}`;
         this.reset(Entity.TEST, key);
-        this.store('test', key, 'unknown', Decorations.buildTest(e.test));
+        this.store(Entity.TEST, key, State.UNKNOWN, Decorations.buildTest(e.test));
         if (line) {
-          this.setSuiteViaTest(e.test, 'unknown');
+          this.setSuiteViaTest(e.test, State.UNKNOWN);
         }
         this._test = e.test;
       }
