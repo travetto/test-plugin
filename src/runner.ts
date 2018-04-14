@@ -13,24 +13,40 @@ export class TestRunner {
   private ready: boolean = false;
   private queue: [vscode.TextEditor, number][] = [];
   private running: Promise<{ total: number, failed: number, unknown: number, success: number }>;
+  private status: vscode.StatusBarItem;
 
-  constructor() {
+  private prev: vscode.TextEditor;
+
+  constructor(private window: typeof vscode.window) {
     this.mgr = new ResultsManager();
     this.execution = new TestExecution();
+    this.status = window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+  }
+  setStatus(message: string, color?: string) {
+    if (!message) {
+      this.status.hide();
+    } else {
+      this.status.color = color || '#fff';
+      this.status.text = message;
+      this.status.show();
+    }
   }
 
   async _runQueue() {
-    let last;
     while (this.queue.length) {
       const [editor, line] = this.queue.shift();
       log('Running', editor.document.fileName, line);
       try {
-        last = await this._runJob(editor, line);
+        await this._runJob(editor, line);
       } catch (e) {
         log('Errored', e);
       }
     }
-    return last;
+    const totals = this.mgr.getTotals();
+
+    this.setStatus(`Tests ${totals.success}/${totals.total}`, totals.failed ? '#f33' : '#8f8');
+
+    return totals;
   }
 
   async run(editor: vscode.TextEditor, lines: number[]) {
@@ -54,17 +70,17 @@ export class TestRunner {
         this.mgr.init();
       }
 
+      if (editor !== this.prev) {
+        this.prev = editor;
+        this.mgr.setEditor(editor);
+      }
+
       await this.execution.run(editor.document.fileName, line, e => {
-        this.mgr.onEvent(e, editor, line);
-        this.mgr.applyDecorations(editor);
+        this.mgr.onEvent(e, line);
       });
 
     } catch (e) {
       log(e);
     }
-
-    this.mgr.applyDecorations(editor);
-
-    return this.mgr.getTotals();
   }
 }

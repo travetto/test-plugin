@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-import { Assertion, TestResult, SuiteResult, TestConfig, SuiteConfig, TestEvent } from '@travetto/test/src/model';
+import { Assertion, TestResult, SuiteResult, TestConfig, SuiteConfig, TestEvent, EventEntity } from '@travetto/test/src/model';
 
 import { Entity, EntityPhase, State } from './types';
 import { Decorations } from './decoration';
@@ -15,51 +15,127 @@ function build<T>(x: (a: string, b: string) => T, sub: boolean = true): Decs<T> 
   return { test: s('test'), assertion: s('assertion'), suite: s('suite') };
 }
 
+interface ResultStsyles {
+  success: vscode.TextEditorDecorationType,
+  fail: vscode.TextEditorDecorationType,
+  unknown: vscode.TextEditorDecorationType
+}
+
+interface Result {
+  state: string;
+  decoration: vscode.DecorationOptions;
+}
+
+interface ResultState extends Partial<Result> {
+  styles: ResultStsyles;
+}
+
+interface TestState extends ResultState {
+  assertStyles: ResultStsyles;
+  assertions: Result[];
+  suite: string
+}
+
+interface AllState {
+  suite: { [key: string]: ResultState };
+  test: { [key: string]: TestState };
+}
+
 export class ResultsManager {
-  private decStyles: Decs<vscode.TextEditorDecorationType>;
-  private decs: Decs<vscode.DecorationOptions[]>;
-  private mapping: Decs<{ state: string, dec: vscode.DecorationOptions }[]> = {};
+  private results: AllState = {
+    suite: {},
+    test: {}
+  };
 
   private _suite: SuiteConfig;
   private _test: TestConfig;
+  private _editor: vscode.TextEditor;
 
   init() {
-    this.decs = build((a, b) => []);
-    this.mapping = build((a, b) => [], false);
-    if (!this.decStyles) {
-      this.decStyles = build((e, s) => Decorations.buildStyle(e, s));
+    this.results = { test: {}, suite: {} };
+  }
+
+  setEditor(e: vscode.TextEditor) {
+    this._editor = e;
+    this.resetAll();
+  }
+
+  resetAll() {
+    for (const l of ['suite', 'test']) {
+      for (const key of Object.keys(this.results[l])) {
+        for (const s of ['success', 'fail', 'unknown']) {
+          this._editor.setDecorations(this.results.suite[key].styles[s], null);
+          if (l === 'test') {
+            this._editor.setDecorations(this.results.test[key].assertStyles[s], null);
+          }
+        }
+      }
     }
   }
 
   store(level: string, key: string, status: string, val: vscode.DecorationOptions, extra?: any) {
-    this.mapping[level][key].push({ state: status, dec: val, ...(extra || {}) });
-    this.decs[level][status].push(val);
     log(level, key, status, true);
+
+    if (level === Entity.ASSERTION) {
+      const tkey = `${this._test.suiteName}:${this._test.method}`;
+      const el = this.results.test[tkey];
+      const groups = { success: [], fail: [], unknown: [] };
+
+      el.assertions.push({ state: status, decoration: val });
+
+      for (const a of el.assertions) {
+        groups[a.state].push(a.decoration);
+      }
+
+      for (const s of ['success', 'fail', 'unknown']) {
+        this._editor.setDecorations(el.assertStyles[s], groups[s].length ? groups[s] : null);
+      }
+
+    } else {
+      const el = this.results[level as ('suite' | 'test')][key];
+      el.state = status;
+      el.decoration = val;
+      this._editor.setDecorations(el.styles[status], [val]);
+    }
   }
 
-  reset(level: string, key: string) {
-    if (!this.mapping[level][key]) {
-      this.mapping[level][key] = [];
-    }
+  genStyles(level: EventEntity) {
+    return {
+      fail: Decorations.buildStyle(level, 'fail'),
+      success: Decorations.buildStyle(level, 'success'),
+      unknown: Decorations.buildStyle(level, 'unknown')
+    };
+  }
 
-    const toRemove = this.mapping[level][key];
-    for (const el of toRemove) {
-      const p = this.decs[level][el.state].indexOf(el.dec);
-      if (p >= 0) {
-        this.decs[level][el.state].splice(p, 1);
-        log(level, key, el.state, p, false);
+  reset(level: 'suite' | 'test', key: string) {
+    const base: ResultState = { styles: this.genStyles(level) };
+
+    const existing = this.results[level][key];
+
+    if (existing) {
+      for (const s of ['state', 'fail', 'unknown']) {
+        this._editor.setDecorations(existing.styles[s], null);
       }
     }
-    this.mapping[level][key] = [];
+
+    if (level === 'test') {
+      const testBase = (base as TestState);
+      testBase.assertions = [];
+      testBase.assertStyles = this.genStyles('assertion')
+
+      for (const s of ['state', 'fail', 'unknown']) {
+        this._editor.setDecorations((existing as TestState).assertStyles[s], null);
+      }
+    }
+    this.results[level][key] = base;
   }
 
-  onEvent(e: TestEvent, editor: vscode.TextEditor, line?: number) {
+  onEvent(e: TestEvent, line?: number) {
     if (e.phase === EntityPhase.BEFORE) {
       if (e.type === Entity.SUITE) {
         this.reset(Entity.SUITE, e.suite.name);
       } else if (e.type === Entity.TEST) {
         const key = `${e.test.suiteName}:${e.test.method}`;
-        this.reset(Entity.ASSERTION, key);
         this.reset(Entity.TEST, key);
         this._test = e.test;
       }
@@ -79,11 +155,12 @@ export class ResultsManager {
           line >= this._test.line &&
           line <= this._test.lineEnd
         ) { // Update suite
-          const fail = Object.values(this.mapping.test).find(x => x.length && x[0]['suite'] === e.test.suiteName && x[0].state === State.FAIL);
+          const fail = Object.values(this.results.test).find(x => x.suite === e.test.suiteName && x.state === State.FAIL);
           this.reset(Entity.SUITE, e.test.suiteName);
+
           let suiteLine = 0;
           while (!suiteLine && line > 1) {
-            const text = editor.document.lineAt(--line);
+            const text = this._editor.document.lineAt(--line);
             if (text.text.includes('@Suite')) {
               suiteLine = line;
             }
@@ -106,17 +183,8 @@ export class ResultsManager {
     this.store(Entity.ASSERTION, key, status, dec);
   }
 
-  applyDecorations(editor: vscode.TextEditor, data: any = undefined) {
-    data = data || this.decs;
-    for (const key of [Entity.SUITE, Entity.TEST, Entity.ASSERTION]) {
-      for (const type of [State.FAIL, State.SUCCESS, State.UNKNOWN]) {
-        editor.setDecorations(this.decStyles[key][type], (data[key] || {})[type] || []);
-      }
-    }
-  }
-
   getTotals() {
-    const vals = Object.values(this.mapping.test);
+    const vals = Object.values(this.results.test);
     const total = vals.length;
     let success = 0;
     let unknown = 0;

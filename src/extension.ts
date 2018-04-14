@@ -9,9 +9,9 @@ import { Decorations } from './decoration';
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
   Decorations.context = context;
+
   try {
-    const runner = new TestRunner();
-    const status = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+    const runner = new TestRunner(vscode.window);
 
     let oldText = '';
 
@@ -25,12 +25,9 @@ export function activate(context: vscode.ExtensionContext) {
 
       if (editor.document && /@Test\(/.test(editor.document.getText() || '')) {
 
-        status.text = 'Running...';
-
-        status.show();
-
         const newText = editor.document.getText();
         const lines = [];
+
         if (oldText) {
           const changes = diff.structuredPatch('a', 'b', oldText, newText, 'a', 'b', { context: 0 });
           const newLines = changes.hunks.map(x => x.newStart || x.oldStart);
@@ -43,22 +40,13 @@ export function activate(context: vscode.ExtensionContext) {
           lines.push(0);
         }
 
-        status.color = '#ccc';
-
-        runner.run(editor, lines)
-          .then(totals => {
-            status.color = totals.failed ? '#f33' : '#8f8';
-            status.text = `Tests ${totals.success}/${totals.total}`;
-          })
-          .catch(e => console.error(e));
+        runner.run(editor, lines).catch(e => console.error(e));
 
         oldText = newText;
       } else {
-        status.hide();
+        runner.setStatus('');
       }
     };
-
-    vscode.window
 
     vscode.window.onDidChangeActiveTextEditor(x => { oldText = ''; onUpdate() }, null, context.subscriptions);
     vscode.workspace.onDidSaveTextDocument(onUpdate, null, context.subscriptions);

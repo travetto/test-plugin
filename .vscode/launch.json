@@ -9,7 +9,7 @@
       "runtimeExecutable": "${execPath}",
       "args": [
         "--extensionDevelopmentPath=${workspaceRoot}",
-        "/home/tim/Code/travetto/test"
+        "${workspaceRoot}/../test"
       ],
       "env": {
         "DEBUG": "1"
