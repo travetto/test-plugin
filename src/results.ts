@@ -2,7 +2,6 @@ import * as vscode from 'vscode';
 
 import { Assertion, TestResult, SuiteResult, TestConfig, SuiteConfig, TestEvent, EventEntity } from '@travetto/test/src/model';
 
-import { Entity, EntityPhase, State } from './types';
 import { Decorations } from './decoration';
 import { log } from './util';
 
@@ -49,10 +48,10 @@ export class ResultsManager {
   }
 
   resetAll() {
-    for (const l of [Entity.SUITE, Entity.TEST]) {
+    for (const l of ['suite', 'test']) {
       Object.values(this.results[l] as { [key: string]: ResultState }).forEach(e => {
         Object.values(e.styles).forEach(x => x.dispose());
-        if (l === Entity.TEST) {
+        if (l === 'test') {
           Object.values((e as TestState).assertStyles).forEach(x => x.dispose());
         }
       });
@@ -63,7 +62,7 @@ export class ResultsManager {
   store(level: string, key: string, state: string, decoration: vscode.DecorationOptions, extra: any = {}) {
     log(level, key, state, true);
 
-    if (level === Entity.ASSERTION) {
+    if (level === 'assertion') {
       const tkey = `${this._test.className}:${this._test.methodName}`;
       const el = this.results.test[tkey];
       const groups = { success: [], fail: [], unknown: [] };
@@ -74,11 +73,11 @@ export class ResultsManager {
         groups[a.state].push(a.decoration);
       }
 
-      for (const s of [State.SUCCESS, State.FAIL, State.UNKNOWN]) {
+      for (const s of ['success', 'fail', 'unknown']) {
         this._editor.setDecorations(el.assertStyles[s], groups[s]);
       }
 
-    } else if (level === Entity.SUITE) {
+    } else if (level === 'suite') {
       const el = this.results.suite[key];
       el.state = state;
       el.decoration = decoration;
@@ -98,13 +97,13 @@ export class ResultsManager {
 
   genStyles(level: EventEntity) {
     return {
-      fail: Decorations.buildStyle(level, State.FAIL),
-      success: Decorations.buildStyle(level, State.SUCCESS),
-      unknown: Decorations.buildStyle(level, State.UNKNOWN)
+      fail: Decorations.buildStyle(level, 'fail'),
+      success: Decorations.buildStyle(level, 'success'),
+      unknown: Decorations.buildStyle(level, 'unknown')
     };
   }
 
-  reset(level: typeof Entity.TEST | typeof Entity.SUITE, key: string) {
+  reset(level: 'test' | 'suite', key: string) {
     const base: ResultState = { styles: this.genStyles(level) };
 
     const existing = this.results[level][key];
@@ -113,10 +112,10 @@ export class ResultsManager {
       Object.values(existing.styles).forEach(x => x.dispose());
     }
 
-    if (level === Entity.TEST) {
+    if (level === 'test') {
       const testBase = (base as TestState);
       testBase.assertions = [];
-      testBase.assertStyles = this.genStyles(Entity.ASSERTION)
+      testBase.assertStyles = this.genStyles('assertion')
 
       if (existing) {
         Object.values((existing as TestState).assertStyles).forEach(x => x.dispose());
@@ -134,60 +133,60 @@ export class ResultsManager {
         suiteLine = line;
       }
     }
-    this.store(Entity.SUITE, test.className, state, Decorations.buildSuite({ lines: { start: suiteLine + 1 } }));
+    this.store('suite', test.className, state, Decorations.buildSuite({ lines: { start: suiteLine + 1 } }));
   }
 
   onEvent(e: TestEvent, line?: number) {
-    if (e.phase === EntityPhase.BEFORE) {
-      if (e.type === Entity.SUITE) {
-        this.reset(Entity.SUITE, e.suite.className);
-        this.store(Entity.SUITE, e.suite.className, State.UNKNOWN, Decorations.buildSuite(e.suite));
-      } else if (e.type === Entity.TEST) {
+    if (e.phase === 'before') {
+      if (e.type === 'suite') {
+        this.reset('suite', e.suite.className);
+        this.store('suite', e.suite.className, 'unknown', Decorations.buildSuite(e.suite));
+      } else if (e.type === 'test') {
         const key = `${e.test.className}:${e.test.methodName}`;
-        this.reset(Entity.TEST, key);
-        this.store(Entity.TEST, key, State.UNKNOWN, Decorations.buildTest(e.test));
+        this.reset('test', key);
+        this.store('test', key, 'unknown', Decorations.buildTest(e.test));
         if (line) {
-          this.setSuiteViaTest(e.test, State.UNKNOWN);
+          this.setSuiteViaTest(e.test, 'unknown');
         }
         this._test = e.test;
       }
     } else {
-      if (e.type === Entity.SUITE) {
+      if (e.type === 'suite') {
         this.onSuite(e.suite);
-      } else if (e.type === Entity.TEST) {
+      } else if (e.type === 'test') {
         this.onTest(e.test, line);
         delete this._test;
-      } else if (e.type === Entity.ASSERTION) {
+      } else if (e.type === 'assertion') {
         this.onAssertion(e.assertion);
       }
     }
   }
 
   onSuite(suite: SuiteResult) {
-    const status = suite.skip ? State.UNKNOWN : (suite.fail ? State.FAIL : State.SUCCESS);
-    this.store(Entity.SUITE, suite.className, status, Decorations.buildSuite(suite));
+    const status = suite.skip ? 'unknown' : (suite.fail ? 'fail' : 'success');
+    this.store('suite', suite.className, status, Decorations.buildSuite(suite));
   }
 
   onTest(test: TestResult, line?: number) {
     const dec = Decorations.buildTest(test);
-    const status = test.status === State.SKIP ? State.UNKNOWN : test.status;
-    this.store(Entity.TEST, `${this._test.className}:${test.methodName}`, status, dec, { className: this._test.className });
+    const status = test.status === 'skip' ? 'unknown' : test.status;
+    this.store('test', `${this._test.className}:${test.methodName}`, status, dec, { className: this._test.className });
 
     // Update Suite if doing a single line
     if (line &&
       line >= this._test.lines.start &&
       line <= this._test.lines.end
     ) { // Update suite
-      const fail = Object.values(this.results.test).find(x => x.className === test.className && x.state === State.FAIL);
-      this.setSuiteViaTest(test, fail ? State.FAIL : State.SUCCESS);
+      const fail = Object.values(this.results.test).find(x => x.className === test.className && x.state === 'fail');
+      this.setSuiteViaTest(test, fail ? 'fail' : 'success');
     }
   }
 
   onAssertion(assertion: Assertion) {
-    const status = assertion.error ? State.FAIL : State.SUCCESS;
+    const status = assertion.error ? 'fail' : 'success';
     const key = `${this._test.className}:${this._test.methodName}`;
     const dec = Decorations.buildAssertion(assertion);
-    this.store(Entity.ASSERTION, key, status, dec);
+    this.store('assertion', key, status, dec);
   }
 
   getTotals() {
@@ -199,9 +198,9 @@ export class ResultsManager {
 
     for (const o of vals) {
       switch (o.state) {
-        case State.UNKNOWN: unknown++; break;
-        case State.FAIL: failed++; break;
-        case State.SUCCESS: success++; break;
+        case 'unknown': unknown++; break;
+        case 'fail': failed++; break;
+        case 'success': success++; break;
       }
     }
 

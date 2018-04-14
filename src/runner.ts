@@ -32,6 +32,7 @@ export class TestRunner {
 
   clear() {
     this.queue = [];
+    this.execution.kill();
   }
 
   async _runQueue() {

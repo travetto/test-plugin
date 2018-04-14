@@ -21,6 +21,12 @@ export class TestExecution {
       },
       stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
     });
+    if (process.env.DEV) {
+      this.proc.on('error', e => console.log('Error', e.message, e));
+      this.proc.on('close', code => console.log('Close', code))
+      this.proc.stderr.pipe(process.stdout);
+      this.proc.stdout.pipe(process.stdout);
+    }
   }
 
   listenOnce(type: string) {
@@ -69,5 +75,7 @@ export class TestExecution {
   kill() {
     delete this.running;
     this.proc.removeAllListeners('message');
+    this.proc.kill();
+    delete this._init;
   }
 }
