@@ -16,9 +16,7 @@ function build<T>(x: (a: string, b: string) => T, sub: boolean = true): Decs<T> 
 }
 
 interface ResultStsyles {
-  success: vscode.TextEditorDecorationType,
-  fail: vscode.TextEditorDecorationType,
-  unknown: vscode.TextEditorDecorationType
+  [key: string]: vscode.TextEditorDecorationType;
 }
 
 interface Result {
@@ -51,12 +49,8 @@ export class ResultsManager {
   private _test: TestConfig;
   private _editor: vscode.TextEditor;
 
-  init() {
-    this.results = { test: {}, suite: {} };
-  }
-
   setEditor(e: vscode.TextEditor) {
-    this._editor = e;
+    this._editor = e as any;
     this.resetAll();
   }
 
@@ -64,13 +58,14 @@ export class ResultsManager {
     for (const l of ['suite', 'test']) {
       for (const key of Object.keys(this.results[l])) {
         for (const s of ['success', 'fail', 'unknown']) {
-          this._editor.setDecorations(this.results.suite[key].styles[s], null);
+          this.results.suite[key].styles[s].dispose();
           if (l === 'test') {
-            this._editor.setDecorations(this.results.test[key].assertStyles[s], null);
+            this.results.test[key].assertStyles[s].dispose();
           }
         }
       }
     }
+    this.results = { suite: {}, test: {} };
   }
 
   store(level: string, key: string, status: string, val: vscode.DecorationOptions, extra?: any) {
@@ -88,7 +83,7 @@ export class ResultsManager {
       }
 
       for (const s of ['success', 'fail', 'unknown']) {
-        this._editor.setDecorations(el.assertStyles[s], groups[s].length ? groups[s] : null);
+        this._editor.setDecorations(el.assertStyles[s], groups[s]);
       }
 
     } else {
@@ -114,7 +109,7 @@ export class ResultsManager {
 
     if (existing) {
       for (const s of ['state', 'fail', 'unknown']) {
-        this._editor.setDecorations(existing.styles[s], null);
+        existing.styles[s].dispose();
       }
     }
 
@@ -124,7 +119,7 @@ export class ResultsManager {
       testBase.assertStyles = this.genStyles('assertion')
 
       for (const s of ['state', 'fail', 'unknown']) {
-        this._editor.setDecorations((existing as TestState).assertStyles[s], null);
+        (existing as TestState).assertStyles[s].dispose();
       }
     }
     this.results[level][key] = base;
