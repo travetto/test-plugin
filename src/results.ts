@@ -45,7 +45,6 @@ export class ResultsManager {
     test: {}
   };
 
-  private _suite: SuiteConfig;
   private _test: TestConfig;
   private _editor: vscode.TextEditor;
 
@@ -121,19 +120,36 @@ export class ResultsManager {
     this.results[level][key] = base;
   }
 
+  setSuiteViaTest(test: { line: number, suiteName: string }, state: string) {
+    let line = test.line;
+    let suiteLine = 0;
+    while (!suiteLine && line > 1) {
+      const text = this._editor.document.lineAt(--line);
+      if (text.text.includes('@Suite')) {
+        suiteLine = line;
+      }
+    }
+    this.reset(Entity.SUITE, test.suiteName);
+    this.store(Entity.SUITE, test.suiteName, state, Decorations.buildSuite({ line: suiteLine + 1 }));
+  }
+
   onEvent(e: TestEvent, line?: number) {
     if (e.phase === EntityPhase.BEFORE) {
       if (e.type === Entity.SUITE) {
         this.reset(Entity.SUITE, e.suite.name);
+        this.store('suite', e.suite.name, 'unknown', Decorations.buildSuite(e.suite));
       } else if (e.type === Entity.TEST) {
         const key = `${e.test.suiteName}:${e.test.method}`;
         this.reset(Entity.TEST, key);
+        this.store('test', key, 'unknown', Decorations.buildTest(e.test));
+        if (line) {
+          this.setSuiteViaTest(e.test, 'unknown');
+        }
         this._test = e.test;
       }
     } else {
       if (e.type === Entity.SUITE) {
         this.onSuite(e.suite);
-        delete this._suite;
       } else if (e.type === Entity.TEST) {
         this.onTest(e.test, line);
         delete this._test;
@@ -159,17 +175,7 @@ export class ResultsManager {
       line <= this._test.lineEnd
     ) { // Update suite
       const fail = Object.values(this.results.test).find(x => x.suite === test.suiteName && x.state === State.FAIL);
-      this.reset(Entity.SUITE, test.suiteName);
-
-      let suiteLine = 0;
-      while (!suiteLine && line > 1) {
-        const text = this._editor.document.lineAt(--line);
-        if (text.text.includes('@Suite')) {
-          suiteLine = line;
-        }
-      }
-
-      this.store(Entity.SUITE, test.suiteName, fail ? State.FAIL : State.SUCCESS, Decorations.buildSuite({ line: suiteLine + 1 } as any));
+      this.setSuiteViaTest(test, fail ? State.FAIL : State.SUCCESS);
     }
   }
 

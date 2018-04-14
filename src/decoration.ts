@@ -74,7 +74,7 @@ export class Decorations {
     });
   }
 
-  static buildAssertion(assertion: Assertion): vscode.DecorationOptions {
+  static buildAssertion(assertion: { error?: Error, line: number, message?: string }): vscode.DecorationOptions {
     return assertion.error ? {
       ...this.line(assertion.line),
       hoverMessage: this.buildHover(assertion.error),
@@ -87,11 +87,11 @@ export class Decorations {
     } : this.line(assertion.line);
   }
 
-  static buildSuite(suite: SuiteResult) {
+  static buildSuite(suite: { line: number }) {
     return { ...this.line(suite.line) };
   }
 
-  static buildTest(test: TestResult) {
+  static buildTest(test: { line: number, error?: Error }) {
     return { ...this.line(test.line), hoverMessage: this.buildHover(test.error) };
   }
 
