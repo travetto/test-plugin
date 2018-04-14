@@ -9,19 +9,20 @@ import { log } from './util';
 export class TestRunner {
 
   private execution: TestExecution;
-  private mgr: ResultsManager;
+  private results: ResultsManager;
   private ready: boolean = false;
   private queue: [vscode.TextEditor, number][] = [];
-  private running: Promise<{ total: number, failed: number, unknown: number, success: number }>;
+  private running: Promise<void>;
   private status: vscode.StatusBarItem;
 
   private prev: vscode.TextEditor;
 
   constructor(private window: typeof vscode.window) {
-    this.mgr = new ResultsManager();
+    this.results = new ResultsManager();
     this.execution = new TestExecution();
     this.status = window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
   }
+
   setStatus(message: string, color?: string) {
     if (!message) {
       this.status.hide();
@@ -33,6 +34,9 @@ export class TestRunner {
   }
 
   async _runQueue() {
+
+    this.setStatus('Running...', '#ccc');
+
     while (this.queue.length) {
       const [editor, line] = this.queue.shift();
       log('Running', editor.document.fileName, line);
@@ -42,11 +46,7 @@ export class TestRunner {
         log('Errored', e);
       }
     }
-    const totals = this.mgr.getTotals();
-
-    this.setStatus(`Tests ${totals.success}/${totals.total}`, totals.failed ? '#f33' : '#8f8');
-
-    return totals;
+    return;
   }
 
   async run(editor: vscode.TextEditor, lines: number[]) {
@@ -67,16 +67,18 @@ export class TestRunner {
 
     try {
       if (!line) {
-        this.mgr.init();
+        this.results.resetAll();
       }
 
       if (editor !== this.prev) {
         this.prev = editor;
-        this.mgr.setEditor(editor);
+        this.results.setEditor(editor);
       }
 
       await this.execution.run(editor.document.fileName, line, e => {
-        this.mgr.onEvent(e, line);
+        this.results.onEvent(e, line);
+        const totals = this.results.getTotals();
+        this.setStatus(`Tests ${totals.success}/${totals.total}`, totals.failed ? '#f33' : '#8f8');
       });
 
     } catch (e) {

@@ -56,14 +56,12 @@ export class ResultsManager {
 
   resetAll() {
     for (const l of ['suite', 'test']) {
-      for (const key of Object.keys(this.results[l])) {
-        for (const s of ['success', 'fail', 'unknown']) {
-          this.results.suite[key].styles[s].dispose();
-          if (l === 'test') {
-            this.results.test[key].assertStyles[s].dispose();
-          }
+      Object.values(this.results[l] as { [key: string]: ResultState }).forEach(e => {
+        Object.values(e.styles).forEach(x => x.dispose());
+        if (l === 'test') {
+          Object.values((e as TestState).assertStyles).forEach(x => x.dispose());
         }
-      }
+      });
     }
     this.results = { suite: {}, test: {} };
   }
@@ -108,9 +106,7 @@ export class ResultsManager {
     const existing = this.results[level][key];
 
     if (existing) {
-      for (const s of ['state', 'fail', 'unknown']) {
-        existing.styles[s].dispose();
-      }
+      Object.values(existing.styles).forEach(x => x.dispose());
     }
 
     if (level === 'test') {
@@ -118,8 +114,8 @@ export class ResultsManager {
       testBase.assertions = [];
       testBase.assertStyles = this.genStyles('assertion')
 
-      for (const s of ['state', 'fail', 'unknown']) {
-        (existing as TestState).assertStyles[s].dispose();
+      if (existing) {
+        Object.values((existing as TestState).assertStyles).forEach(x => x.dispose());
       }
     }
     this.results[level][key] = base;
@@ -136,38 +132,44 @@ export class ResultsManager {
       }
     } else {
       if (e.type === Entity.SUITE) {
-        const status = e.suite.skip ? State.UNKNOWN : (e.suite.fail ? State.FAIL : State.SUCCESS);
-        this.store(Entity.SUITE, e.suite.name, status, Decorations.buildSuite(e.suite));
+        this.onSuite(e.suite);
         delete this._suite;
       } else if (e.type === Entity.TEST) {
-        const dec = Decorations.buildTest(e.test);
-        const status = e.test.status === State.SKIP ? State.UNKNOWN : e.test.status;
-        this.store(Entity.TEST, `${this._test.suiteName}:${e.test.method}`, status, dec, { suite: this._test.suiteName });
-
-        if (line &&
-          e.phase === EntityPhase.AFTER &&
-          e.type === Entity.TEST &&
-          line >= this._test.line &&
-          line <= this._test.lineEnd
-        ) { // Update suite
-          const fail = Object.values(this.results.test).find(x => x.suite === e.test.suiteName && x.state === State.FAIL);
-          this.reset(Entity.SUITE, e.test.suiteName);
-
-          let suiteLine = 0;
-          while (!suiteLine && line > 1) {
-            const text = this._editor.document.lineAt(--line);
-            if (text.text.includes('@Suite')) {
-              suiteLine = line;
-            }
-          }
-
-          delete this._test;
-
-          this.store(Entity.SUITE, e.test.suiteName, fail ? State.FAIL : State.SUCCESS, Decorations.buildSuite({ line: suiteLine + 1 } as any));
-        }
+        this.onTest(e.test, line);
+        delete this._test;
       } else if (e.type === Entity.ASSERTION) {
         this.onAssertion(e.assertion);
       }
+    }
+  }
+
+  onSuite(suite: SuiteResult) {
+    const status = suite.skip ? State.UNKNOWN : (suite.fail ? State.FAIL : State.SUCCESS);
+    this.store(Entity.SUITE, suite.name, status, Decorations.buildSuite(suite));
+  }
+
+  onTest(test: TestResult, line?: number) {
+    const dec = Decorations.buildTest(test);
+    const status = test.status === State.SKIP ? State.UNKNOWN : test.status;
+    this.store(Entity.TEST, `${this._test.suiteName}:${test.method}`, status, dec, { suite: this._test.suiteName });
+
+    // Update Suite if doing a single line
+    if (line &&
+      line >= this._test.line &&
+      line <= this._test.lineEnd
+    ) { // Update suite
+      const fail = Object.values(this.results.test).find(x => x.suite === test.suiteName && x.state === State.FAIL);
+      this.reset(Entity.SUITE, test.suiteName);
+
+      let suiteLine = 0;
+      while (!suiteLine && line > 1) {
+        const text = this._editor.document.lineAt(--line);
+        if (text.text.includes('@Suite')) {
+          suiteLine = line;
+        }
+      }
+
+      this.store(Entity.SUITE, test.suiteName, fail ? State.FAIL : State.SUCCESS, Decorations.buildSuite({ line: suiteLine + 1 } as any));
     }
   }
 
@@ -186,7 +188,7 @@ export class ResultsManager {
     let failed = 0;
 
     for (const o of vals) {
-      switch (o[0].state) {
+      switch (o.state) {
         case State.UNKNOWN: unknown++; break;
         case State.FAIL: failed++; break;
         case State.SUCCESS: success++; break;

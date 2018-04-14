@@ -30,8 +30,8 @@ const Style = {
   },
   IMAGE: {
     isWholeLine: false,
-    rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed
-  },
+    rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed,
+  } as Partial<vscode.DecorationRenderOptions>,
   ASSERT: {
     isWholeLine: false,
     rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed,
@@ -41,7 +41,7 @@ const Style = {
     after: { textDecoration: `none; ${ITALIC}` },
     light: { after: { color: 'darkgrey' } },
     dark: { after: { color: 'grey' } }
-  }
+  } as Partial<vscode.DecorationRenderOptions>
 };
 
 export class Decorations {
@@ -74,7 +74,7 @@ export class Decorations {
     });
   }
 
-  static buildAssertion(assertion: Assertion) {
+  static buildAssertion(assertion: Assertion): vscode.DecorationOptions {
     return assertion.error ? {
       ...this.line(assertion.line),
       hoverMessage: this.buildHover(assertion.error),
