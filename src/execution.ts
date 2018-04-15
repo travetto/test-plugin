@@ -15,16 +15,15 @@ export class TestExecution {
   constructor() {
     this.proc = spawn(`node_modules/.bin/travetto-test`, [], {
       cwd: CWD, env: {
+        DEBUG: process.env.DEBUG,
         EXECUTION: true,
         PATH: process.env.PATH
       },
-      stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
+      stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
     });
-    if (process.env.DEV) {
+    if (process.env.DEBUG) {
       this.proc.on('error', e => console.log('Error', e.message, e));
       this.proc.on('close', code => console.log('Close', code))
-      this.proc.stderr.pipe(process.stdout);
-      this.proc.stdout.pipe(process.stdout);
     }
   }
 

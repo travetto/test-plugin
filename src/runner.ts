@@ -32,7 +32,6 @@ export class TestRunner {
 
   clear() {
     this.queue = [];
-    this.execution.kill();
   }
 
   async _runQueue() {
@@ -41,11 +40,15 @@ export class TestRunner {
 
     while (this.queue.length) {
       const [editor, line] = this.queue.shift();
-      log('Running', editor.document.fileName, line);
-      try {
-        await this._runJob(editor, line);
-      } catch (e) {
-        log('Errored', e);
+
+      if (editor === this.window.activeTextEditor) {
+        log('Running', editor.document.fileName, line);
+
+        try {
+          await this._runJob(editor, line);
+        } catch (e) {
+          log('Errored', e);
+        }
       }
     }
     return;
@@ -78,11 +81,15 @@ export class TestRunner {
       }
 
       await this.execution.run(editor.document.fileName, line, e => {
-        this.results.onEvent(e, line);
-        const totals = this.results.getTotals();
-        this.setStatus(`Tests ${totals.success}/${totals.total}`, totals.failed ? '#f33' : '#8f8');
+        if (process.env.DEBUG) {
+          console.log('Event Recieved', e);
+        }
+        if (editor === this.window.activeTextEditor) {
+          this.results.onEvent(e, line);
+          const totals = this.results.getTotals();
+          this.setStatus(`Tests ${totals.success}/${totals.total}`, totals.failed ? '#f33' : '#8f8');
+        }
       });
-
     } catch (e) {
       log(e);
     }
