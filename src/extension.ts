@@ -5,14 +5,14 @@ import { TestRunner } from './runner';
 import { TestExecution } from './execution';
 import { Decorations } from './decoration';
 
+const runner = new TestRunner(vscode.window);
+
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
   Decorations.context = context;
 
   try {
-    const runner = new TestRunner(vscode.window);
-
     let oldText = '';
 
     function onUpdate(target?: vscode.TextDocument) {
@@ -51,7 +51,6 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.window.onDidChangeActiveTextEditor(x => {
       oldText = '';
       onUpdate();
-      runner.clear();
     }, null, context.subscriptions);
     vscode.workspace.onDidSaveTextDocument(onUpdate, null, context.subscriptions);
 
@@ -63,4 +62,8 @@ export function activate(context: vscode.ExtensionContext) {
   } catch (e) {
     console.error('WOAH', e);
   }
+}
+
+async function deactivate() {
+  runner.shutdown();
 }

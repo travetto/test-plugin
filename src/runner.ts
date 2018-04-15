@@ -51,12 +51,12 @@ export class TestRunner {
       const exec = await this.pool.acquire();
 
       this._runJob(exec, editor, line)
-        .then(() => {
-          this.pool.release(exec);
-        }, e => {
-          this.pool.release(exec);
-          log('Errored', e);
-        });
+        .then(
+          () => this.pool.release(exec),
+          e => {
+            this.pool.release(exec);
+            log('Errored', e);
+          });
     }
   }
 
@@ -96,5 +96,10 @@ export class TestRunner {
     } catch (e) {
       log(e);
     }
+  }
+
+  async shutdown() {
+    await this.pool.drain();
+    this.pool.clear();
   }
 }
