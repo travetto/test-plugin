@@ -1,37 +1,8 @@
 import * as vscode from 'vscode';
 
-import { Assertion, TestResult, SuiteResult, TestConfig, SuiteConfig, TestEvent, EventEntity } from '@travetto/test/src/model';
-
 import { Decorations } from './decoration';
 import { log } from './util';
-
-type SMap<v> = { [key: string]: v };
-
-type Decs<T> = SMap<SMap<T>>;
-
-interface ResultStsyles {
-  [key: string]: vscode.TextEditorDecorationType;
-}
-
-interface Result {
-  state: string;
-  decoration: vscode.DecorationOptions;
-}
-
-interface ResultState extends Partial<Result> {
-  styles: ResultStsyles;
-}
-
-interface TestState extends ResultState {
-  assertStyles: ResultStsyles;
-  assertions: Result[];
-  className: string
-}
-
-interface AllState {
-  suite: { [key: string]: ResultState };
-  test: { [key: string]: TestState };
-}
+import { AllState, TestConfig, TestState, ResultState, TestEvent, SuiteResult, TestResult, Assertion } from './types';
 
 export class ResultsManager {
   private results: AllState = {
@@ -95,7 +66,7 @@ export class ResultsManager {
     }
   }
 
-  genStyles(level: EventEntity) {
+  genStyles(level: 'suite' | 'test' | 'assertion') {
     return {
       fail: Decorations.buildStyle(level, 'fail'),
       success: Decorations.buildStyle(level, 'success'),

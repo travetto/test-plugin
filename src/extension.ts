@@ -31,7 +31,7 @@ export function activate(context: vscode.ExtensionContext) {
         if (oldText) {
           const changes = diff.structuredPatch('a', 'b', oldText, newText, 'a', 'b', { context: 0 });
           const newLines = changes.hunks.map(x => x.newStart || x.oldStart);
-          if (newLines.length < 3) {
+          if (newLines.length < 5) {
             lines.push(...newLines);
           }
         }
@@ -65,5 +65,5 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 async function deactivate() {
-  runner.shutdown();
+  await runner.shutdown();
 }

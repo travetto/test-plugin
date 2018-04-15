@@ -37,7 +37,6 @@
     "vscode": "^1.1.14"
   },
   "dependencies": {
-    "@travetto/test": "0.x.x",
     "@types/cross-spawn": "^6.0.0",
     "@types/diff": "^3.5.1",
     "@types/generic-pool": "^3.1.2",

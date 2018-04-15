@@ -20,7 +20,7 @@ export class TestExecution {
       if (e.type === type) {
         resolve();
       }
-    }))
+    }));
   }
 
   async _init() {
