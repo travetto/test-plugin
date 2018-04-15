@@ -1,5 +1,4 @@
 import * as vscode from 'vscode';
-import { State, Entity } from './types';
 
 const rgba = (r = 0, g = 0, b = 0, a = 1) => `rgba(${r},${g},${b},${a})`;
 
@@ -23,9 +22,9 @@ const Style = {
   SMALL_IMAGE: '40%',
   FULL_IMAGE: 'auto',
   COLORS: {
-    [State.FAIL]: rgba(255, 0, 0, 0.5),
-    [State.SUCCESS]: rgba(0, 255, 0, .5),
-    [State.UNKNOWN]: rgba(255, 255, 255, .5)
+    fail: rgba(255, 0, 0, 0.5),
+    success: rgba(0, 255, 0, .5),
+    unknown: rgba(255, 255, 255, .5)
   },
   IMAGE: {
     isWholeLine: false,
@@ -60,7 +59,7 @@ export class Decorations {
     return vscode.window.createTextEditorDecorationType({
       ...Style.ASSERT,
       borderColor: color,
-      overviewRulerColor: state === State.FAIL ? color : '',
+      overviewRulerColor: state === 'fail' ? color : '',
     });
   }
 
@@ -95,8 +94,8 @@ export class Decorations {
   }
 
   static buildStyle(entity: string, state: string) {
-    return (entity === Entity.ASSERTION) ?
+    return (entity === 'assertion') ?
       this.buildAssert(state) :
-      this.buildImage(state, entity === Entity.TEST ? Style.SMALL_IMAGE : Style.FULL_IMAGE);
+      this.buildImage(state, entity === 'test' ? Style.SMALL_IMAGE : Style.FULL_IMAGE);
   }
 }

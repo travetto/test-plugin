@@ -1,8 +1,7 @@
 import * as vscode from 'vscode';
 import { ChildProcess } from 'child_process';
 import { SuiteConfig, TestConfig } from '@travetto/test/src/model';
-import { CWD } from './types';
-import { log } from './util';
+import { log, CWD } from './util';
 import * as spawn from 'cross-spawn';
 
 export class TestExecution {
