@@ -10,7 +10,6 @@ export class ResultsManager {
     test: {}
   };
 
-  private _test: TestConfig;
   private _editor: vscode.TextEditor;
 
   setEditor(e: vscode.TextEditor) {
@@ -119,14 +118,12 @@ export class ResultsManager {
         if (line) {
           this.setSuiteViaTest(e.test, 'unknown');
         }
-        this._test = e.test;
       }
     } else {
       if (e.type === 'suite') {
         this.onSuite(e.suite);
       } else if (e.type === 'test') {
         this.onTest(e.test, line);
-        delete this._test;
       } else if (e.type === 'assertion') {
         this.onAssertion(e.assertion);
       }
@@ -141,7 +138,7 @@ export class ResultsManager {
   onTest(test: TestResult, line?: number) {
     const dec = Decorations.buildTest(test);
     const status = test.status === 'skip' ? 'unknown' : test.status;
-    this.store('test', `${this._test.className}:${test.methodName}`, status, dec, { className: this._test.className });
+    this.store('test', `${test.className}:${test.methodName}`, status, dec, { className: test.className });
 
     // Update Suite if doing a single line
     if (line &&
@@ -155,7 +152,7 @@ export class ResultsManager {
 
   onAssertion(assertion: Assertion) {
     const status = assertion.error ? 'fail' : 'success';
-    const key = `${this._test.className}:${this._test.methodName}`;
+    const key = `${assertion.className}:${assertion.methodName}`;
     const dec = Decorations.buildAssertion(assertion);
     this.store('assertion', key, status, dec);
   }

@@ -73,6 +73,17 @@ export class TestRunner {
       this.setStatus('Running...', '#ccc');
     }
 
+    let timeout: NodeJS.Timer;
+    const extend = (again: boolean = true) => {
+      if (timeout) {
+        clearTimeout(timeout);
+      }
+      if (again) {
+        timeout = setTimeout(this.pool.release.bind(this.pool, exec), 20000); // Force 20 sec max between comms
+        timeout.unref();
+      }
+    }
+
     try {
       if (!line) {
         this.results.resetAll();
@@ -84,6 +95,7 @@ export class TestRunner {
       }
 
       await exec.run(editor.document.fileName, line, e => {
+        extend();
         if (process.env.DEBUG) {
           console.log('Event Recieved', e);
         }
@@ -96,6 +108,8 @@ export class TestRunner {
     } catch (e) {
       log(e);
     }
+
+    extend(false);
   }
 
   async shutdown() {
