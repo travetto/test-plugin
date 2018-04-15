@@ -1,11 +1,11 @@
 import * as vscode from 'vscode';
+import { Pool, Factory, createPool, Options } from 'generic-pool';
 import { ResultsManager } from './results';
 import { TestExecution } from './execution';
 import { log } from './util';
 
 export class TestRunner {
 
-  private execution: TestExecution;
   private results: ResultsManager;
   private ready: boolean = false;
   private queue: [vscode.TextEditor, number][] = [];
@@ -13,10 +13,24 @@ export class TestRunner {
   private status: vscode.StatusBarItem;
 
   private prev: vscode.TextEditor;
+  private pool: Pool<TestExecution>;
 
   constructor(private window: typeof vscode.window) {
     this.results = new ResultsManager();
-    this.execution = new TestExecution();
+    this.pool = createPool<TestExecution>({
+      async create() {
+        const exec = new TestExecution();
+        await exec.init();
+        return exec;
+      },
+      async destroy(exec) {
+        exec.kill();
+        return undefined;
+      },
+      async validate(exec) {
+        return exec.active;
+      }
+    }, { min: 0, max: 4 });
     this.status = window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
   }
 
@@ -30,45 +44,34 @@ export class TestRunner {
     }
   }
 
-  clear() {
-    this.queue = [];
-  }
+  async _runNext(editor: vscode.TextEditor, line: number) {
+    if (editor === this.window.activeTextEditor) {
+      log('Running', editor.document.fileName, line);
 
-  async _runQueue() {
+      const exec = await this.pool.acquire();
 
-    this.setStatus('Running...', '#ccc');
-
-    while (this.queue.length) {
-      const [editor, line] = this.queue.shift();
-
-      if (editor === this.window.activeTextEditor) {
-        log('Running', editor.document.fileName, line);
-
-        try {
-          await this._runJob(editor, line);
-        } catch (e) {
+      this._runJob(exec, editor, line)
+        .then(() => {
+          this.pool.release(exec);
+        }, e => {
+          this.pool.release(exec);
           log('Errored', e);
-        }
-      }
+        });
     }
-    return;
   }
 
   async run(editor: vscode.TextEditor, lines: number[]) {
     for (const line of lines) {
-      this.queue.push([editor, line]);
+      this._runNext(editor, line);
       log('Queuing', editor.document.fileName, line);
     }
-
-    if (!this.running && this.queue.length) {
-      this.running = this._runQueue().then(
-        x => { delete this.running; return x; },
-        x => { delete this.running; throw x });
-    }
-    return this.running;
   }
 
-  async _runJob(editor: vscode.TextEditor, line: number) {
+  async _runJob(exec: TestExecution, editor: vscode.TextEditor, line: number) {
+
+    if (editor === this.window.activeTextEditor) {
+      this.setStatus('Running...', '#ccc');
+    }
 
     try {
       if (!line) {
@@ -80,7 +83,7 @@ export class TestRunner {
         this.results.setEditor(editor);
       }
 
-      await this.execution.run(editor.document.fileName, line, e => {
+      await exec.run(editor.document.fileName, line, e => {
         if (process.env.DEBUG) {
           console.log('Event Recieved', e);
         }
