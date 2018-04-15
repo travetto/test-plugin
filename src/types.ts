@@ -48,6 +48,8 @@ export interface TestResult extends TestConfig {
 }
 
 export interface Assertion {
+  className: string;
+  methodName: string;
   status: 'skip' | 'fail' | 'success';
   error?: Error;
   message?: string;

@@ -33,8 +33,7 @@ export class ResultsManager {
     log(level, key, state, true);
 
     if (level === 'assertion') {
-      const tkey = `${this._test.className}:${this._test.methodName}`;
-      const el = this.results.test[tkey];
+      const el = this.results.test[key];
       const groups = { success: [], fail: [], unknown: [] };
 
       el.assertions.push({ state, decoration });
@@ -142,8 +141,8 @@ export class ResultsManager {
 
     // Update Suite if doing a single line
     if (line &&
-      line >= this._test.lines.start &&
-      line <= this._test.lines.end
+      line >= test.lines.start &&
+      line <= test.lines.end
     ) { // Update suite
       const fail = Object.values(this.results.test).find(x => x.className === test.className && x.state === 'fail');
       this.setSuiteViaTest(test, fail ? 'fail' : 'success');
