@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 
 import { Decorations } from './decoration';
 import { log } from './util';
-import { AllState, TestConfig, TestState, ResultState, TestEvent, SuiteResult, TestResult, Assertion } from './types';
+import { AllState, TestConfig, TestState, ResultState, TestEvent, SuiteResult, TestResult, Assertion, SuiteState } from './types';
 
 export class ResultsManager {
   private results: AllState = {
@@ -11,6 +11,11 @@ export class ResultsManager {
   };
 
   private _editor: vscode.TextEditor;
+  private diagnostics: vscode.DiagnosticCollection;
+
+  constructor() {
+    this.diagnostics = vscode.languages.createDiagnosticCollection('Travetto Test');
+  }
 
   setEditor(e: vscode.TextEditor) {
     this._editor = e as any;
@@ -19,7 +24,7 @@ export class ResultsManager {
 
   resetAll() {
     for (const l of ['suite', 'test']) {
-      Object.values(this.results[l] as { [key: string]: ResultState }).forEach(e => {
+      Object.values(this.results[l] as { [key: string]: ResultState<any> }).forEach(e => {
         Object.values(e.styles).forEach(x => x.dispose());
         if (l === 'test') {
           Object.values((e as TestState).assertStyles).forEach(x => x.dispose());
@@ -29,17 +34,17 @@ export class ResultsManager {
     this.results = { suite: {}, test: {} };
   }
 
-  store(level: string, key: string, state: string, decoration: vscode.DecorationOptions, extra: any = {}) {
-    log(level, key, state, true);
+  store(level: string, key: string, status: string, decoration: vscode.DecorationOptions, src?: any) {
+    log(level, key, status, true);
 
     if (level === 'assertion') {
       const el = this.results.test[key];
       const groups = { success: [], fail: [], unknown: [] };
 
-      el.assertions.push({ state, decoration });
+      el.assertions.push({ status, decoration, src });
 
       for (const a of el.assertions) {
-        groups[a.state].push(a.decoration);
+        groups[a.status].push(a.decoration);
       }
 
       for (const s of ['success', 'fail', 'unknown']) {
@@ -48,20 +53,20 @@ export class ResultsManager {
 
     } else if (level === 'suite') {
       const el = this.results.suite[key];
-      el.state = state;
+      el.src = src;
+      el.status = status;
       el.decoration = decoration;
 
       Object.keys(el.styles).forEach(x => {
-        this._editor.setDecorations(el.styles[x], x === state ? [decoration] : []);
+        this._editor.setDecorations(el.styles[x], x === status ? [decoration] : []);
       })
 
     } else {
       const el = this.results.test[key];
-      el.state = state;
+      el.src = src;
+      el.status = status;
       el.decoration = decoration;
-      el.className = extra.className;
-      el.methodName = extra.methodName;
-      this._editor.setDecorations(el.styles[state], [decoration]);
+      this._editor.setDecorations(el.styles[status], [decoration]);
     }
   }
 
@@ -74,9 +79,8 @@ export class ResultsManager {
   }
 
   reset(level: 'test' | 'suite', key: string) {
-    const base: ResultState = { styles: this.genStyles(level) };
-
     const existing = this.results[level][key];
+    const base: ResultState<any> = { styles: this.genStyles(level), src: (existing && existing.src) };
 
     if (existing) {
       Object.values(existing.styles).forEach(x => x.dispose());
@@ -85,13 +89,16 @@ export class ResultsManager {
     if (level === 'test') {
       const testBase = (base as TestState);
       testBase.assertions = [];
-      testBase.assertStyles = this.genStyles('assertion')
+      testBase.assertStyles = this.genStyles('assertion');
 
       if (existing) {
         Object.values((existing as TestState).assertStyles).forEach(x => x.dispose());
       }
+      this.results[level][key] = testBase;
+    } else if (level === 'suite') {
+      const suiteBase = (base as SuiteState);
+      this.results[level][key] = suiteBase;
     }
-    this.results[level][key] = base;
   }
 
   setSuiteViaTest(test: { lines: { start: number }, className: string }, state: string) {
@@ -103,21 +110,24 @@ export class ResultsManager {
         suiteLine = line;
       }
     }
-    this.store('suite', test.className, state, Decorations.buildSuite({ lines: { start: suiteLine + 1 } }));
+    this.store('suite', test.className, state, Decorations.buildSuite({ lines: { start: suiteLine + 1 } }), test);
   }
 
   onEvent(e: TestEvent, line?: number) {
     if (e.phase === 'before') {
       if (e.type === 'suite') {
         this.reset('suite', e.suite.className);
-        this.store('suite', e.suite.className, 'unknown', Decorations.buildSuite(e.suite));
-        for (let test of Object.values(this.results.test).filter(x => x.className === e.suite.className)) {
-          this.reset('test', `${test.className}:${test.methodName}`);
+        this.store('suite', e.suite.className, 'unknown', Decorations.buildSuite(e.suite), e.suite);
+        for (let test of Object.values(this.results.test).filter(x => x.src.className === e.suite.className)) {
+          this.reset('test', `${test.src.className}:${test.src.methodName}`);
         }
+
+        // Clear diags
+        this.diagnostics.delete(vscode.Uri.file(e.suite.file));
       } else if (e.type === 'test') {
         const key = `${e.test.className}:${e.test.methodName}`;
         this.reset('test', key);
-        this.store('test', key, 'unknown', Decorations.buildTest(e.test));
+        this.store('test', key, 'unknown', Decorations.buildTest(e.test), e.test);
 
         // IF running a single test        
         if (line) {
@@ -137,20 +147,33 @@ export class ResultsManager {
 
   onSuite(suite: SuiteResult) {
     const status = suite.skip ? 'unknown' : (suite.fail ? 'fail' : 'success');
-    this.store('suite', suite.className, status, Decorations.buildSuite(suite));
+    this.store('suite', suite.className, status, Decorations.buildSuite(suite), suite);
+
+    const tests = Object.values(this.results.test).filter(x => x.src.className === suite.className && x.status === 'fail');
+
+    // Set diagnostics
+    const diagnostics = tests
+      .map(x => {
+        const asrt = x.assertions.find(y => y.status === 'fail');
+        if (asrt) {
+          return new vscode.Diagnostic(Decorations.line(asrt.src.line).range, `${asrt.src}: ${asrt.src.message}`, vscode.DiagnosticSeverity.Error);
+        }
+      }).filter(x => !!x);
+
+    this.diagnostics.set(vscode.Uri.file(suite.file), diagnostics);
   }
 
   onTest(test: TestResult, line?: number) {
     const dec = Decorations.buildTest(test);
     const status = test.status === 'skip' ? 'unknown' : test.status;
-    this.store('test', `${test.className}:${test.methodName}`, status, dec, { className: test.className, methodName: test.methodName });
+    this.store('test', `${test.className}:${test.methodName}`, status, dec, test);
 
     // Update Suite if doing a single line
     if (line &&
       line >= test.lines.start &&
       line <= test.lines.end
     ) { // Update suite
-      const fail = Object.values(this.results.test).find(x => x.className === test.className && x.state === 'fail');
+      const fail = Object.values(this.results.test).find(x => x.src.className === test.className && x.status === 'fail');
       this.setSuiteViaTest(test, fail ? 'fail' : 'success');
     }
   }
@@ -159,7 +182,7 @@ export class ResultsManager {
     const status = assertion.error ? 'fail' : 'success';
     const key = `${assertion.className}:${assertion.methodName}`;
     const dec = Decorations.buildAssertion(assertion);
-    this.store('assertion', key, status, dec);
+    this.store('assertion', key, status, dec, assertion);
   }
 
   getTotals() {
@@ -170,7 +193,7 @@ export class ResultsManager {
     let failed = 0;
 
     for (const o of vals) {
-      switch (o.state) {
+      switch (o.status) {
         case 'unknown': unknown++; break;
         case 'fail': failed++; break;
         case 'success': success++; break;

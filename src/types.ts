@@ -9,27 +9,30 @@ export interface ResultStsyles {
 }
 
 export interface Result {
-  state: string;
+  status: string;
   decoration: vscode.DecorationOptions;
 }
 
-export interface ResultState extends Partial<Result> {
+export interface ResultState<T> extends Partial<Result> {
   styles: ResultStsyles;
+  src: T;
 }
 
-export interface TestState extends ResultState {
+export interface SuiteState extends ResultState<SuiteConfig | SuiteResult> {
+}
+
+export interface TestState extends ResultState<TestConfig | TestResult> {
   assertStyles: ResultStsyles;
-  assertions: Result[];
-  className: string;
-  methodName: string;
+  assertions: (Result & { src: Assertion })[];
 }
 
 export interface AllState {
-  suite: { [key: string]: ResultState };
+  suite: { [key: string]: SuiteState };
   test: { [key: string]: TestState };
 }
 
 export interface SuiteConfig {
+  file: string;
   className: string;
   lines: { start: number, end: number };
 }
