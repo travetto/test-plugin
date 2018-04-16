@@ -33,8 +33,10 @@ export class TestExecution {
       stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
     });
 
-    logit(this.proc.stdout);
-    logit(this.proc.stderr);
+    if (process.env.DEBUG) {
+      logit(this.proc.stdout);
+      logit(this.proc.stderr);
+    }
 
     this.waitForKill = new Promise((_, reject) => {
       for (const k of ['error', 'close', 'exit']) {
