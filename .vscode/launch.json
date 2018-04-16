@@ -9,7 +9,7 @@
       "runtimeExecutable": "${execPath}",
       "args": [
         "--extensionDevelopmentPath=${workspaceRoot}",
-        "${workspaceRoot}/../test"
+        "${workspaceRoot}/../model-mongo"
       ],
       "env": {
         "DEBUG": "1"
