@@ -156,7 +156,7 @@ export class ResultsManager {
       .map(x => {
         const asrt = x.assertions.find(y => y.status === 'fail');
         if (asrt) {
-          return new vscode.Diagnostic(Decorations.line(asrt.src.line).range, `${asrt.src}: ${asrt.src.message}`, vscode.DiagnosticSeverity.Error);
+          return new vscode.Diagnostic(Decorations.line(asrt.src.line).range, `${asrt.src.methodName}: ${asrt.src.message}`, vscode.DiagnosticSeverity.Error);
         }
       }).filter(x => !!x);
 
