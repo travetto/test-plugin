@@ -30,7 +30,7 @@ export class TestRunner {
       async validate(exec) {
         return exec.active;
       }
-    }, { min: 0, max: 4 });
+    }, { min: 0, max: 4, testOnBorrow: true, autostart: true });
     this.status = window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
   }
 
@@ -52,8 +52,12 @@ export class TestRunner {
 
       this._runJob(exec, editor, line)
         .then(
-          () => this.pool.release(exec),
+          () => {
+            exec.release();
+            this.pool.release(exec);
+          },
           e => {
+            exec.release();
             this.pool.release(exec);
             log('Errored', e);
           });
@@ -80,7 +84,6 @@ export class TestRunner {
       }
       if (again) {
         timeout = setTimeout(this.pool.release.bind(this.pool, exec), 20000); // Force 20 sec max between comms
-        timeout.unref();
       }
     }
 

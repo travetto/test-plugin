@@ -40,6 +40,7 @@ export class TestExecution {
       for (const k of ['error', 'close', 'exit']) {
         this.proc.on(k, (...args) => {
           console.log(k, args);
+          delete this.proc;
           reject(EXIT);
         });
       }
@@ -72,11 +73,17 @@ export class TestExecution {
     } catch (e) {
       console.log
     }
+
+    this.proc.removeListener('message', handler);
   }
 
   kill() {
     this.proc.kill('SIGKILL');
     delete this.proc;
+  }
+
+  release() {
+    this.proc.removeAllListeners('message');
   }
 
   get active() {
