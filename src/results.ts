@@ -2,7 +2,11 @@ import * as vscode from 'vscode';
 
 import { Decorations } from './decoration';
 import { log } from './util';
-import { AllState, TestConfig, TestState, ResultState, TestEvent, SuiteResult, TestResult, Assertion, SuiteState } from './types';
+import {
+  AllState, TestConfig, TestState, ResultState,
+  TestEvent, SuiteResult, TestResult, Assertion,
+  SuiteState
+} from './types';
 
 export class ResultsManager {
   private results: AllState = {
@@ -11,11 +15,6 @@ export class ResultsManager {
   };
 
   private _editor: vscode.TextEditor;
-  private diagnostics: vscode.DiagnosticCollection;
-
-  constructor() {
-    this.diagnostics = vscode.languages.createDiagnosticCollection('Travetto Test');
-  }
 
   setEditor(e: vscode.TextEditor) {
     this._editor = e as any;
@@ -101,7 +100,7 @@ export class ResultsManager {
     }
   }
 
-  setSuiteViaTest(test: { lines: { start: number }, className: string }, state: string) {
+  setSuiteViaTest(test: TestConfig, status: string) {
     let line = test.lines.start;
     let suiteLine = 0;
     while (!suiteLine && line > 1) {
@@ -110,7 +109,8 @@ export class ResultsManager {
         suiteLine = line;
       }
     }
-    this.store('suite', test.className, state, Decorations.buildSuite({ lines: { start: suiteLine + 1 } }), test);
+
+    this.store('suite', test.className, status, Decorations.buildSuite({ lines: { start: suiteLine + 1 } }), test);
   }
 
   onEvent(e: TestEvent, line?: number) {
@@ -118,12 +118,12 @@ export class ResultsManager {
       if (e.type === 'suite') {
         this.reset('suite', e.suite.className);
         this.store('suite', e.suite.className, 'unknown', Decorations.buildSuite(e.suite), e.suite);
+
         for (let test of Object.values(this.results.test).filter(x => x.src.className === e.suite.className)) {
           this.reset('test', `${test.src.className}:${test.src.methodName}`);
         }
 
         // Clear diags
-        this.diagnostics.delete(vscode.Uri.file(e.suite.file));
       } else if (e.type === 'test') {
         const key = `${e.test.className}:${e.test.methodName}`;
         this.reset('test', key);
@@ -148,19 +148,6 @@ export class ResultsManager {
   onSuite(suite: SuiteResult) {
     const status = suite.skip ? 'unknown' : (suite.fail ? 'fail' : 'success');
     this.store('suite', suite.className, status, Decorations.buildSuite(suite), suite);
-
-    const tests = Object.values(this.results.test).filter(x => x.src.className === suite.className && x.status === 'fail');
-
-    // Set diagnostics
-    const diagnostics = tests
-      .map(x => {
-        const asrt = x.assertions.find(y => y.status === 'fail');
-        if (asrt) {
-          return new vscode.Diagnostic(Decorations.line(asrt.src.line).range, `${asrt.src.methodName}: ${asrt.src.message}`, vscode.DiagnosticSeverity.Error);
-        }
-      }).filter(x => !!x);
-
-    this.diagnostics.set(vscode.Uri.file(suite.file), diagnostics);
   }
 
   onTest(test: TestResult, line?: number) {
