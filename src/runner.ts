@@ -73,10 +73,6 @@ export class TestRunner {
 
   async _runJob(exec: TestExecution, editor: vscode.TextEditor, line: number) {
 
-    if (editor === this.window.activeTextEditor) {
-      this.setStatus('Running...', '#ccc');
-    }
-
     let timeout: NodeJS.Timer;
     const extend = (again: boolean = true) => {
       if (timeout) {
@@ -87,6 +83,8 @@ export class TestRunner {
       }
     }
 
+    let interval: NodeJS.Timer;
+
     try {
       if (!line) {
         this.results.resetAll();
@@ -95,6 +93,17 @@ export class TestRunner {
       if (editor !== this.prev) {
         this.prev = editor;
         this.results.setEditor(editor);
+      }
+
+      if (editor === this.window.activeTextEditor) {
+        let i = 0;
+        interval = setInterval(() => {
+          this.setStatus('Running' +
+            ('.'.repeat(i + 1)) +
+            (' '.repeat(2 - i))
+            , '#ccc');
+          i = (i + 1) % 3;
+        }, 500);
       }
 
       await exec.run(editor.document.fileName, line, e => {
@@ -110,6 +119,10 @@ export class TestRunner {
       });
     } catch (e) {
       log(e);
+    }
+
+    if (interval) {
+      clearInterval(interval);
     }
 
     extend(false);
