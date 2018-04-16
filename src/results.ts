@@ -60,6 +60,7 @@ export class ResultsManager {
       el.state = state;
       el.decoration = decoration;
       el.className = extra.className;
+      el.methodName = extra.methodName;
       this._editor.setDecorations(el.styles[state], [decoration]);
     }
   }
@@ -110,10 +111,15 @@ export class ResultsManager {
       if (e.type === 'suite') {
         this.reset('suite', e.suite.className);
         this.store('suite', e.suite.className, 'unknown', Decorations.buildSuite(e.suite));
+        for (let test of Object.values(this.results.test).filter(x => x.className === e.suite.className)) {
+          this.reset('test', `${test.className}:${test.methodName}`);
+        }
       } else if (e.type === 'test') {
         const key = `${e.test.className}:${e.test.methodName}`;
         this.reset('test', key);
         this.store('test', key, 'unknown', Decorations.buildTest(e.test));
+
+        // IF running a single test        
         if (line) {
           this.setSuiteViaTest(e.test, 'unknown');
         }
@@ -137,7 +143,7 @@ export class ResultsManager {
   onTest(test: TestResult, line?: number) {
     const dec = Decorations.buildTest(test);
     const status = test.status === 'skip' ? 'unknown' : test.status;
-    this.store('test', `${test.className}:${test.methodName}`, status, dec, { className: test.className });
+    this.store('test', `${test.className}:${test.methodName}`, status, dec, { className: test.className, methodName: test.methodName });
 
     // Update Suite if doing a single line
     if (line &&

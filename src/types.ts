@@ -20,7 +20,8 @@ export interface ResultState extends Partial<Result> {
 export interface TestState extends ResultState {
   assertStyles: ResultStsyles;
   assertions: Result[];
-  className: string
+  className: string;
+  methodName: string;
 }
 
 export interface AllState {
