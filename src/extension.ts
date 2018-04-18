@@ -89,7 +89,12 @@ vscode.commands.registerCommand('extension.triggerDebug', async config => {
       runtimeArgs: [
         "--nolazy"
       ],
-      smartStep: true,
+      skipFiles: [
+        '**/async_hooks.js',
+        '**/trace.js',
+        '**/stack-chain.js',
+        '**/inspector_async_hook.js'
+      ],
       args: [
         '-m',
         'single',
