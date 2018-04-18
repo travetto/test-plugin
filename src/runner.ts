@@ -132,4 +132,8 @@ export class TestRunner {
     await this.pool.drain();
     this.pool.clear();
   }
+
+  async setEditor(editor: vscode.TextEditor, refresh = false) {
+    this.results.setEditor(editor, refresh);
+  }
 }

@@ -16,9 +16,13 @@ export class ResultsManager {
 
   private _editor: vscode.TextEditor;
 
-  setEditor(e: vscode.TextEditor) {
+  setEditor(e: vscode.TextEditor, refresh: boolean = false) {
     this._editor = e as any;
-    this.resetAll();
+    if (refresh) {
+      this.refresh();
+    } else {
+      this.resetAll();
+    }
   }
 
   resetAll() {
@@ -31,6 +35,27 @@ export class ResultsManager {
       });
     }
     this.results = { suite: {}, test: {} };
+  }
+
+  refresh() {
+    for (const suite of Object.values(this.results.suite)) {
+      if (suite.decoration) {
+        this._editor.setDecorations(suite.styles[suite.status], [suite.decoration]);
+      }
+    }
+    for (const test of Object.values(this.results.test)) {
+      if (test.decoration) {
+        const key = `${test.src.className}:${test.src.methodName}`;
+        this._editor.setDecorations(test.styles[test.status], [test.decoration]);
+        const out = { success: [], fail: [], unknown: [] };
+        for (let asrt of test.assertions) {
+          out[asrt.status].push(asrt.decoration);
+        }
+        for (const k of Object.keys(out)) {
+          this._editor.setDecorations(test.assertStyles[k], out[k]);
+        }
+      }
+    }
   }
 
   store(level: string, key: string, status: string, decoration: vscode.DecorationOptions, src?: any) {

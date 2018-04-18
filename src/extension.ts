@@ -13,6 +13,8 @@ const runner = new TestRunner(vscode.window);
 export function activate(context: vscode.ExtensionContext) {
   Decorations.context = context;
 
+  let prevEditor: vscode.TextEditor;
+
   try {
     let oldText = '';
 
@@ -25,6 +27,7 @@ export function activate(context: vscode.ExtensionContext) {
       }
 
       if (editor.document && /@Test\(/.test(editor.document.getText() || '')) {
+        prevEditor = editor;
 
         const newText = editor.document.getText();
         const lines = [];
@@ -49,11 +52,25 @@ export function activate(context: vscode.ExtensionContext) {
       }
     };
 
-    vscode.window.onDidChangeActiveTextEditor(x => {
-      oldText = '';
-      onUpdate(undefined, 1);
+    vscode.window.onDidChangeActiveTextEditor(() => {
+      if (vscode.window.activeTextEditor) {
+        const sameAsPrev =
+          prevEditor &&
+          prevEditor.document &&
+          vscode.window.activeTextEditor.document &&
+          vscode.window.activeTextEditor.document.fileName === prevEditor.document.fileName;
+
+        if (!prevEditor || !sameAsPrev) {
+          oldText = '';
+          onUpdate(undefined, 1);
+        } else if (sameAsPrev) {
+          runner.setEditor(vscode.window.activeTextEditor, true);
+        }
+      }
     }, null, context.subscriptions);
-    vscode.workspace.onDidSaveTextDocument(x => onUpdate(x, vscode.window.activeTextEditor.selection.start.line), null, context.subscriptions);
+    vscode.workspace.onDidSaveTextDocument(
+      x => onUpdate(x, vscode.window.activeTextEditor.selection.start.line),
+      null, context.subscriptions);
 
     onUpdate();
 
@@ -91,9 +108,10 @@ vscode.commands.registerCommand('extension.triggerDebug', async config => {
       ],
       skipFiles: [
         '<node_internals>/**',
-        '**/node_modules/cls-hooked/**/*.js',
-        '**/node_modules/trace/**/*.js',
-        '**/node_modules/stack-chain/**/*.js'
+        '**/@travetto/base/**/stacktrace.**',
+        '**/node_modules/cls-hooked/**/*',
+        '**/node_modules/trace/**/*',
+        '**/node_modules/stack-chain/**/*'
       ],
       args: [
         '-m',
