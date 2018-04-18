@@ -4,6 +4,7 @@ import * as diff from 'diff';
 import { TestRunner } from './runner';
 import { TestExecution } from './execution';
 import { Decorations } from './decoration';
+import { CWD } from './util';
 
 const runner = new TestRunner(vscode.window);
 
@@ -67,3 +68,36 @@ export function activate(context: vscode.ExtensionContext) {
 async function deactivate() {
   await runner.shutdown();
 }
+
+vscode.commands.registerCommand('extension.triggerDebug', async config => {
+  const editor = vscode.window.activeTextEditor;
+
+  if (editor.document && /@Test\(/.test(editor.document.getText() || '')) {
+    await vscode.debug.startDebugging(vscode.workspace.workspaceFolders[0], {
+      type: 'node',
+      request: 'launch',
+      protocol: 'inspector',
+      env: {
+        DEBUG: '',
+        DEBUGGER: true
+      },
+      cwd: CWD,
+      name: 'Debug Travetto',
+      program: '${workspaceFolder}/node_modules/.bin/travetto-test',
+      stopOnEntry: false,
+      sourceMaps: true,
+      runtimeArgs: [
+        "--nolazy"
+      ],
+      args: [
+        '-m',
+        'single',
+        '--',
+        `${editor.document.fileName}`,
+        `${editor.selection.start.line + 1}`
+      ],
+      console: 'internalConsole',
+      internalConsoleOptions: 'openOnSessionStart'
+    });
+  }
+});

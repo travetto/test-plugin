@@ -19,6 +19,7 @@
   ],
   "activationEvents": [
     "onLanguage:typescript",
+    "onCommand:extension.triggerDebug",
     "workspaceContains:**/node_modules/@travetto/test"
   ],
   "main": "./out/extension",
@@ -28,6 +29,31 @@
     "watch": "tsc -watch -p ./",
     "postinstall": "node ./node_modules/vscode/bin/install",
     "test": "npm run compile && node ./node_modules/vscode/bin/test"
+  },
+  "contributes": {
+    "commands": [{
+      "command": "extension.triggerDebug",
+      "title": "Debug @Tests",
+      "category": "travetto"
+    }],
+    "keybindings": [{
+      "command": "extension.triggerDebug",
+      "key": "ctrl+shift+t",
+      "mac": "cmd+shift+t",
+      "when": "resourceLangId == typescript && editorTextFocus"
+    }],
+    "menus": {
+      "editor/context": [{
+        "when": "resourceLangId == typescript",
+        "command": "extension.triggerDebug",
+        "group": "travetto"
+      }],
+      "commandPalette": [{
+        "when": "resourceLangId == typescript",
+        "command": "extension.triggerDebug",
+        "group": "travetto"
+      }]
+    }
   },
   "files": [
     "src/"
