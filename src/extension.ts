@@ -16,7 +16,7 @@ export function activate(context: vscode.ExtensionContext) {
   try {
     let oldText = '';
 
-    function onUpdate(target?: vscode.TextDocument) {
+    function onUpdate(target?: vscode.TextDocument, line?: number) {
 
       const editor = vscode.window.activeTextEditor;
 
@@ -29,7 +29,7 @@ export function activate(context: vscode.ExtensionContext) {
         const newText = editor.document.getText();
         const lines = [];
 
-        if (oldText) {
+        if (!lines.length && oldText) {
           const changes = diff.structuredPatch('a', 'b', oldText, newText, 'a', 'b', { context: 0 });
           const newLines = changes.hunks.map(x => x.newStart || x.oldStart);
           if (newLines.length < 5) {
@@ -38,7 +38,7 @@ export function activate(context: vscode.ExtensionContext) {
         }
 
         if (!lines.length) {
-          lines.push(0);
+          lines.push(line || 1);
         }
 
         runner.run(editor, lines).catch(e => console.error(e));
@@ -51,9 +51,9 @@ export function activate(context: vscode.ExtensionContext) {
 
     vscode.window.onDidChangeActiveTextEditor(x => {
       oldText = '';
-      onUpdate();
+      onUpdate(undefined, 1);
     }, null, context.subscriptions);
-    vscode.workspace.onDidSaveTextDocument(onUpdate, null, context.subscriptions);
+    vscode.workspace.onDidSaveTextDocument(x => onUpdate(x, vscode.window.activeTextEditor.selection.start.line), null, context.subscriptions);
 
     onUpdate();
 
@@ -89,6 +89,7 @@ vscode.commands.registerCommand('extension.triggerDebug', async config => {
       runtimeArgs: [
         "--nolazy"
       ],
+      smartStep: true,
       args: [
         '-m',
         'single',
