@@ -17,11 +17,6 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [
-    "onLanguage:typescript",
-    "onCommand:extension.triggerDebug",
-    "workspaceContains:**/node_modules/@travetto/test"
-  ],
   "main": "./out/extension",
   "scripts": {
     "vscode:prepublish": "npm run compile",
@@ -29,6 +24,32 @@
     "watch": "tsc -watch -p ./",
     "postinstall": "node ./node_modules/vscode/bin/install",
     "test": "npm run compile && node ./node_modules/vscode/bin/test"
+  },
+  "files": [
+    "src/"
+  ],
+  "devDependencies": {
+    "@types/node": "^9.4.7",
+    "vscode": "^1.1.14"
+  },
+  "dependencies": {
+    "@types/cross-spawn": "^6.0.0",
+    "@types/diff": "^3.5.1",
+    "@types/generic-pool": "^3.1.2",
+    "cross-spawn": "^6.0.5",
+    "diff": "^3.5.0",
+    "generic-pool": "^3.4.2",
+    "typescript": "^2.8.1"
+  },
+  "activationEvents": [
+    "onLanguage:typescript",
+    "onCommand:extension.triggerDebug",
+    "workspaceContains:**/node_modules/@travetto/test"
+  ],
+  "icon": "images/logo.png",
+  "galleryBanner": {
+    "color": "#4CAF50",
+    "theme": "light"
   },
   "contributes": {
     "commands": [{
@@ -54,21 +75,5 @@
         "group": "travetto"
       }]
     }
-  },
-  "files": [
-    "src/"
-  ],
-  "devDependencies": {
-    "@types/node": "^9.4.7",
-    "vscode": "^1.1.14"
-  },
-  "dependencies": {
-    "@types/cross-spawn": "^6.0.0",
-    "@types/diff": "^3.5.1",
-    "@types/generic-pool": "^3.1.2",
-    "cross-spawn": "^6.0.5",
-    "diff": "^3.5.0",
-    "generic-pool": "^3.4.2",
-    "typescript": "^2.8.1"
   }
 }
