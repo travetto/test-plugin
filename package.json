@@ -12,7 +12,7 @@
     "url": "https://github.com/travetto/test-plugin.git"
   },
   "engines": {
-    "vscode": "^1.15.0"
+    "vscode": "^1.22.0"
   },
   "categories": [
     "Other"
@@ -22,7 +22,7 @@
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "postinstall": "node ./node_modules/vscode/bin/install",
+    "postinstall": "node ./node_modules/vscode/bin/install && curl https://raw.githubusercontent.com/Microsoft/vscode/1.22.2/src/vs/vscode.d.ts > src/vscode.d.ts",
     "test": "npm run compile && node ./node_modules/vscode/bin/test"
   },
   "files": [
@@ -44,6 +44,7 @@
   "activationEvents": [
     "onLanguage:typescript",
     "onCommand:extension.triggerDebug",
+    "onCommand:extension.triggerDebugKey",
     "workspaceContains:**/node_modules/@travetto/test"
   ],
   "icon": "images/logo.png",
@@ -52,24 +53,28 @@
     "theme": "light"
   },
   "contributes": {
-    "commands": [{
+    "commands": [
+    {
       "command": "extension.triggerDebug",
       "title": "Debug @Tests",
       "category": "travetto"
     }],
-    "keybindings": [{
-      "command": "extension.triggerDebug",
+    "keybindings": [
+    {
+      "command": "extension.triggerDebugKey",
       "key": "ctrl+shift+t",
       "mac": "cmd+shift+t",
       "when": "resourceLangId == typescript && editorTextFocus"
     }],
     "menus": {
-      "editor/context": [{
+      "editor/context": [
+      {
         "when": "resourceLangId == typescript",
         "command": "extension.triggerDebug",
         "group": "travetto"
       }],
-      "commandPalette": [{
+      "commandPalette": [
+      {
         "when": "resourceLangId == typescript",
         "command": "extension.triggerDebug",
         "group": "travetto"

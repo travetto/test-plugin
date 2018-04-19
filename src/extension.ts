@@ -86,10 +86,25 @@ async function deactivate() {
   await runner.shutdown();
 }
 
-vscode.commands.registerCommand('extension.triggerDebug', async config => {
+async function debug(addBreakpoint: boolean = false) {
   const editor = vscode.window.activeTextEditor;
 
   if (editor.document && /@Test\(/.test(editor.document.getText() || '')) {
+    const line = editor.selection.start.line + 1;
+
+    if (addBreakpoint) {
+      const uri = editor.document.uri;
+      const pos = new vscode.Position(line - 1, 0);
+      const loc = new vscode.Location(uri, pos);
+      let breakpoint = new vscode.SourceBreakpoint(loc, true);
+      vscode.debug.addBreakpoints([breakpoint]);
+
+      const remove = vscode.debug.onDidTerminateDebugSession(e => {
+        vscode.debug.removeBreakpoints([breakpoint]);
+        remove.dispose();
+      });
+    }
+
     await vscode.debug.startDebugging(vscode.workspace.workspaceFolders[0], {
       type: 'node',
       request: 'launch',
@@ -118,10 +133,13 @@ vscode.commands.registerCommand('extension.triggerDebug', async config => {
         'single',
         '--',
         `${editor.document.fileName}`,
-        `${editor.selection.start.line + 1}`
+        `${line}`
       ],
       console: 'internalConsole',
       internalConsoleOptions: 'openOnSessionStart'
     });
   }
-});
+}
+
+vscode.commands.registerCommand('extension.triggerDebug', async config => debug());
+vscode.commands.registerCommand('extension.triggerDebugKey', async config => debug(true));
