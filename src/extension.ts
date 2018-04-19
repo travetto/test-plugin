@@ -131,6 +131,8 @@ async function debug(addBreakpoint: boolean = false) {
       args: [
         '-m',
         'single',
+        '-f',
+        'tap',
         '--',
         `${editor.document.fileName}`,
         `${line}`

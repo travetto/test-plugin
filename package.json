@@ -22,7 +22,7 @@
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "postinstall": "node ./node_modules/vscode/bin/install && curl https://raw.githubusercontent.com/Microsoft/vscode/1.22.2/src/vs/vscode.d.ts > src/vscode.d.ts",
+    "postinstall": "node ./node_modules/vscode/bin/install",
     "test": "npm run compile && node ./node_modules/vscode/bin/test"
   },
   "files": [
