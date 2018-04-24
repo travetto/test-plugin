@@ -1,15 +1,19 @@
-# travetto-test-plugin README
+# travetto-test-plugin 
 
-This plugin integrates with the travetto frameweork's testing module, to provide realtime feedback of tests in the UI.
+This plugin integrates with the travetto frameweork's testing module, to provide realtime feedback of tests in the editor.
 
 ## Features
 
-TODO
+* Realtime feedback in test files
+  - Run all tests on file load
+  - Run individual tests on file save (depending on current line)
+* The ability to debug any test (Ctrl-Shift-T)
+  - Will automaticallly add/remove a break point at the current line, and run the test in debug
 
 
 ## Requirements
 
-This plugin only works with the testing module provided by the travetto framework.
+This plugin only works with the `@travetto/test`, in files with `@Suite()` declarations.
 
 ## Known Issues
 
@@ -17,6 +21,6 @@ Calling out known issues can help limit users opening duplicate issues against y
 
 ## Release Notes
 
-### 0.0.10
+### 0.0.x
 
-Initial release of plugin
+Alpha development of plugin, continously updating.
