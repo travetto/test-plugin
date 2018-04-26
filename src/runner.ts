@@ -72,6 +72,9 @@ export class TestRunner {
   }
 
   async _runJob(exec: TestExecution, editor: vscode.TextEditor, line: number) {
+    if (editor !== this.window.activeTextEditor) {
+      return;
+    }
 
     let timeout: NodeJS.Timer;
     const extend = (again: boolean = true) => {
@@ -83,48 +86,32 @@ export class TestRunner {
       }
     }
 
-    let interval: NodeJS.Timer;
+    if (!line) {
+      this.results.resetAll();
+    }
 
-    try {
-      if (!line) {
-        this.results.resetAll();
-      }
+    if (editor !== this.prev) {
+      this.prev = editor;
+      this.results.setEditor(editor);
+    }
 
-      if (editor !== this.prev) {
-        this.prev = editor;
-        this.results.setEditor(editor);
-      }
+    this.window.withProgress({ cancellable: true, title: 'Running tests', location: vscode.ProgressLocation.Notification },
+      async (progress, cancel) => {
+        cancel.onCancellationRequested(exec.kill.bind(exec));
 
-      if (editor === this.window.activeTextEditor) {
-        let i = 0;
-        interval = setInterval(() => {
-          this.setStatus('Running' +
-            ('.'.repeat(i + 1)) +
-            (' '.repeat(2 - i))
-            , '#ccc');
-          i = (i + 1) % 3;
-        }, 500);
-      }
-
-      await exec.run(editor.document.fileName, line, e => {
-        extend();
-        if (process.env.DEBUG) {
-          console.log('Event Recieved', e);
-        }
-        if (editor === this.window.activeTextEditor) {
-          this.results.onEvent(e, line);
-          const totals = this.results.getTotals();
-          this.setStatus(`Tests ${totals.success}/${totals.total}`, totals.failed ? '#f33' : '#8f8');
+        try {
+          await exec.run(editor.document.fileName, line, e => {
+            extend();
+            if (process.env.DEBUG) {
+              log('Event Recieved', e);
+            }
+            this.results.onEvent(e, line);
+            progress.report({});
+          });
+        } catch (e) {
+          log(e);
         }
       });
-    } catch (e) {
-      log(e);
-    }
-
-    if (interval) {
-      clearInterval(interval);
-    }
-
     extend(false);
   }
 
