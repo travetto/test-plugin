@@ -3,6 +3,7 @@ import { Pool, Factory, createPool, Options } from 'generic-pool';
 import { ResultsManager } from './results';
 import { TestExecution } from './execution';
 import { log, debug } from './util';
+import * as ts from 'typescript';
 
 export class TestRunner {
 
@@ -97,19 +98,67 @@ export class TestRunner {
         this.results.setEditor(editor);
       }
 
-      extend();
-      await this.window.withProgress({ cancellable: true, title: 'Running tests', location: vscode.ProgressLocation.Notification },
+
+      let title = 'Running all suites/tests';
+
+      if (line > 1) {
+        let method: ts.MethodDeclaration;
+        let suite: ts.ClassDeclaration;
+
+        const sourceFile = ts.createSourceFile('text', editor.document.getText(), ts.ScriptTarget.ES2018);
+        let cls;
+        for (let l = 0; l < sourceFile.statements.length; l++) {
+          const stmt = sourceFile.statements[l];
+          const locStart = ts.getLineAndCharacterOfPosition(sourceFile, stmt.pos);
+          const locEnd = ts.getLineAndCharacterOfPosition(sourceFile, stmt.end);
+          if (locStart.line <= (line - 1) && locEnd.line > (line - 1)) {
+            if (ts.isClassDeclaration(stmt) && stmt.decorators) {
+              if (stmt.decorators!.find(x => ts.isCallExpression(x.expression) && ts.isIdentifier(x.expression.expression) && x.expression.expression.text === 'Suite')) {
+                suite = stmt;
+              }
+            }
+            break;
+          }
+        }
+
+        if (suite) {
+          for (let l = 0; l < suite.members.length; l++) {
+            const stmt = suite.members[l];
+            const locStart = ts.getLineAndCharacterOfPosition(sourceFile, stmt.pos);
+            const locEnd = ts.getLineAndCharacterOfPosition(sourceFile, stmt.end);
+            if (locStart.line <= (line - 1) && locEnd.line > (line - 1)) {
+              if (ts.isMethodDeclaration(stmt) && stmt.decorators) {
+                if (stmt.decorators!.find(x => ts.isCallExpression(x.expression) && ts.isIdentifier(x.expression.expression) && x.expression.expression.text === 'Test')) {
+                  method = stmt;
+                }
+              }
+              break;
+            }
+          }
+        }
+        if (suite && method) {
+          title = `Running test ${suite.name!.text}.${method.name['text']}`;
+        } else if (suite) {
+          title = `Running suite ${suite.name!.text}`;
+        }
+      }
+
+      await this.window.withProgress({ cancellable: true, title, location: vscode.ProgressLocation.Notification },
         async (progress, cancel) => {
           cancel.onCancellationRequested(exec.kill.bind(exec));
 
           try {
+            extend();
             await exec.run(editor.document.fileName, line, e => {
               extend();
               if (process.env.DEBUG) {
                 debug('Event Recieved', e);
               }
               this.results.onEvent(e, line);
-              progress.report({});
+              const totals = this.results.getTotals();
+              if (!(line > 1)) {
+                progress.report({ message: `Tests: Success ${totals.success}, Failed ${totals.failed}` });
+              }
             });
           } catch (e) {
             debug(e.message, e);

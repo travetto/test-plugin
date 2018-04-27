@@ -39,7 +39,7 @@
     "cross-spawn": "^6.0.5",
     "diff": "^3.5.0",
     "generic-pool": "^3.4.2",
-    "typescript": "^2.8.1"
+    "typescript": "^2.8.3"
   },
   "activationEvents": [
     "onLanguage:typescript",
