@@ -108,7 +108,7 @@ export class TestRunner {
         this.results.setEditor(editor);
       }
 
-      await this.window.withProgress({ cancellable: true, title, location: method ? vscode.ProgressLocation.Notification : vscode.ProgressLocation.Window },
+      await this.window.withProgress({ cancellable: !method, title, location: method ? vscode.ProgressLocation.Window : vscode.ProgressLocation.Notification },
         async (progress, cancel) => {
           if (cancel) {
             cancel.onCancellationRequested(exec.kill.bind(exec));
