@@ -111,7 +111,7 @@ export class TestRunner {
           const stmt = sourceFile.statements[l];
           const locStart = ts.getLineAndCharacterOfPosition(sourceFile, stmt.pos);
           const locEnd = ts.getLineAndCharacterOfPosition(sourceFile, stmt.end);
-          if (locStart.line <= (line - 1) && locEnd.line > (line - 1)) {
+          if (locStart.line <= line && locEnd.line > line) {
             if (ts.isClassDeclaration(stmt) && stmt.decorators) {
               if (stmt.decorators!.find(x => ts.isCallExpression(x.expression) && ts.isIdentifier(x.expression.expression) && x.expression.expression.text === 'Suite')) {
                 suite = stmt;
@@ -126,7 +126,7 @@ export class TestRunner {
             const stmt = suite.members[l];
             const locStart = ts.getLineAndCharacterOfPosition(sourceFile, stmt.pos);
             const locEnd = ts.getLineAndCharacterOfPosition(sourceFile, stmt.end);
-            if (locStart.line <= (line - 1) && locEnd.line > (line - 1)) {
+            if (locStart.line <= line && locEnd.line >= line) {
               if (ts.isMethodDeclaration(stmt) && stmt.decorators) {
                 if (stmt.decorators!.find(x => ts.isCallExpression(x.expression) && ts.isIdentifier(x.expression.expression) && x.expression.expression.text === 'Test')) {
                   method = stmt;
