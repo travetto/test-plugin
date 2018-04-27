@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { ChildProcess } from 'child_process';
-import { log, CWD, channel, } from './util';
+import { log, CWD, channel, debug, } from './util';
 import * as spawn from 'cross-spawn';
 
 function logit(str: NodeJS.ReadableStream) {
@@ -50,12 +50,12 @@ export class TestExecution {
       });
 
       await this.listenOnce('ready');
-      log('Ready, lets init');
+      debug('Ready, lets init');
       this.proc.send({ type: 'init' });
       await this.listenOnce('initComplete');
-      log('Init Complete');
+      debug('Init Complete');
     } catch (e) {
-      log(`Error: ${e.message}`, e);
+      debug(`Error: ${e.message}`, e);
     }
   }
 
@@ -84,7 +84,7 @@ export class TestExecution {
     }
 
     if (this.proc) {
-      this.proc.removeAllListeners();
+      this.proc.removeListener('message', handler);
     }
   }
 
@@ -97,7 +97,7 @@ export class TestExecution {
   }
 
   release() {
-    this.proc.removeAllListeners();
+    this.proc.removeAllListeners('message');
   }
 
   get active() {

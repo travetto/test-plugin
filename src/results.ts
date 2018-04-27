@@ -48,7 +48,7 @@ export class ResultsManager {
         const key = `${test.src.className}:${test.src.methodName}`;
         this._editor.setDecorations(test.styles[test.status], [test.decoration]);
         const out = { success: [], fail: [], unknown: [] };
-        for (let asrt of test.assertions) {
+        for (const asrt of test.assertions) {
           out[asrt.status].push(asrt.decoration);
         }
         for (const k of Object.keys(out)) {
@@ -144,7 +144,7 @@ export class ResultsManager {
         this.reset('suite', e.suite.className);
         this.store('suite', e.suite.className, 'unknown', Decorations.buildSuite(e.suite), e.suite);
 
-        for (let test of Object.values(this.results.test).filter(x => x.src.className === e.suite.className)) {
+        for (const test of Object.values(this.results.test).filter(x => x.src.className === e.suite.className)) {
           this.reset('test', `${test.src.className}:${test.src.methodName}`);
         }
 
@@ -154,7 +154,7 @@ export class ResultsManager {
         this.reset('test', key);
         this.store('test', key, 'unknown', Decorations.buildTest(e.test), e.test);
 
-        // IF running a single test        
+        // IF running a single test
         if (line) {
           this.setSuiteViaTest(e.test, 'unknown');
         }

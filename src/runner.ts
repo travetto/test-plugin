@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { Pool, Factory, createPool, Options } from 'generic-pool';
 import { ResultsManager } from './results';
 import { TestExecution } from './execution';
-import { log } from './util';
+import { log, debug } from './util';
 
 export class TestRunner {
 
@@ -59,7 +59,7 @@ export class TestRunner {
           e => {
             exec.release();
             this.pool.release(exec);
-            log('Errored', e);
+            debug('Errored', e);
           });
     }
   }
@@ -82,7 +82,9 @@ export class TestRunner {
         clearTimeout(timeout);
       }
       if (again) {
-        timeout = setTimeout(this.pool.release.bind(this.pool, exec), 20000); // Force 20 sec max between comms
+        timeout = setTimeout(() => {
+          this.pool.release(exec);
+        }, 20000); // Force 20 sec max between comms
       }
     }
     try {
@@ -95,7 +97,8 @@ export class TestRunner {
         this.results.setEditor(editor);
       }
 
-      this.window.withProgress({ cancellable: true, title: 'Running tests', location: vscode.ProgressLocation.Notification },
+      extend();
+      await this.window.withProgress({ cancellable: true, title: 'Running tests', location: vscode.ProgressLocation.Notification },
         async (progress, cancel) => {
           cancel.onCancellationRequested(exec.kill.bind(exec));
 
@@ -103,17 +106,17 @@ export class TestRunner {
             await exec.run(editor.document.fileName, line, e => {
               extend();
               if (process.env.DEBUG) {
-                log('Event Recieved', e);
+                debug('Event Recieved', e);
               }
               this.results.onEvent(e, line);
               progress.report({});
             });
           } catch (e) {
-            log(e.message, e);
+            debug(e.message, e);
           }
         });
     } catch (e) {
-      log(e.message, e);
+      debug(e.message, e);
     }
     extend(false);
   }
