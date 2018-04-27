@@ -85,33 +85,36 @@ export class TestRunner {
         timeout = setTimeout(this.pool.release.bind(this.pool, exec), 20000); // Force 20 sec max between comms
       }
     }
+    try {
+      if (!line) {
+        this.results.resetAll();
+      }
 
-    if (!line) {
-      this.results.resetAll();
+      if (editor !== this.prev) {
+        this.prev = editor;
+        this.results.setEditor(editor);
+      }
+
+      this.window.withProgress({ cancellable: true, title: 'Running tests', location: vscode.ProgressLocation.Notification },
+        async (progress, cancel) => {
+          cancel.onCancellationRequested(exec.kill.bind(exec));
+
+          try {
+            await exec.run(editor.document.fileName, line, e => {
+              extend();
+              if (process.env.DEBUG) {
+                log('Event Recieved', e);
+              }
+              this.results.onEvent(e, line);
+              progress.report({});
+            });
+          } catch (e) {
+            log(e.message, e);
+          }
+        });
+    } catch (e) {
+      log(e.message, e);
     }
-
-    if (editor !== this.prev) {
-      this.prev = editor;
-      this.results.setEditor(editor);
-    }
-
-    this.window.withProgress({ cancellable: true, title: 'Running tests', location: vscode.ProgressLocation.Notification },
-      async (progress, cancel) => {
-        cancel.onCancellationRequested(exec.kill.bind(exec));
-
-        try {
-          await exec.run(editor.document.fileName, line, e => {
-            extend();
-            if (process.env.DEBUG) {
-              log('Event Recieved', e);
-            }
-            this.results.onEvent(e, line);
-            progress.report({});
-          });
-        } catch (e) {
-          log(e);
-        }
-      });
     extend(false);
   }
 

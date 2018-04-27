@@ -96,7 +96,7 @@ async function debug(addBreakpoint: boolean = false) {
       const uri = editor.document.uri;
       const pos = new vscode.Position(line - 1, 0);
       const loc = new vscode.Location(uri, pos);
-      let breakpoint = new vscode.SourceBreakpoint(loc, true);
+      const breakpoint = new vscode.SourceBreakpoint(loc, true);
       vscode.debug.addBreakpoints([breakpoint]);
 
       const remove = vscode.debug.onDidTerminateDebugSession(e => {
@@ -119,7 +119,7 @@ async function debug(addBreakpoint: boolean = false) {
       stopOnEntry: false,
       sourceMaps: true,
       runtimeArgs: [
-        "--nolazy"
+        '--nolazy'
       ],
       skipFiles: [
         '<node_internals>/**',

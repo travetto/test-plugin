@@ -66,4 +66,3 @@ export type TestEvent =
   { phase: 'before', type: 'test', test: TestConfig } |
   { phase: 'after', type: 'test', test: TestResult } |
   { phase: 'after', type: 'assertion', assertion: Assertion };
-
