@@ -128,6 +128,7 @@ export class ResultsManager {
   setSuiteViaTest(test: TestConfig, status: string) {
     let line = test.lines.start;
     let suiteLine = 0;
+
     while (!suiteLine && line > 1) {
       const text = this._editor.document.lineAt(--line);
       if (text.text.includes('@Suite')) {

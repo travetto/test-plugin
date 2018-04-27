@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { Pool, Factory, createPool, Options } from 'generic-pool';
 import { ResultsManager } from './results';
 import { TestExecution } from './execution';
-import { log, debug } from './util';
+import { log, debug, getCurrentClassMethod } from './util';
 import * as ts from 'typescript';
 
 export class TestRunner {
@@ -101,46 +101,11 @@ export class TestRunner {
 
       let title = 'Running all suites/tests';
 
-      if (line > 1) {
-        let method: ts.MethodDeclaration;
-        let suite: ts.ClassDeclaration;
-
-        const sourceFile = ts.createSourceFile('text', editor.document.getText(), ts.ScriptTarget.ES2018);
-        let cls;
-        for (let l = 0; l < sourceFile.statements.length; l++) {
-          const stmt = sourceFile.statements[l];
-          const locStart = ts.getLineAndCharacterOfPosition(sourceFile, stmt.pos);
-          const locEnd = ts.getLineAndCharacterOfPosition(sourceFile, stmt.end);
-          if (locStart.line <= line && locEnd.line > line) {
-            if (ts.isClassDeclaration(stmt) && stmt.decorators) {
-              if (stmt.decorators!.find(x => ts.isCallExpression(x.expression) && ts.isIdentifier(x.expression.expression) && x.expression.expression.text === 'Suite')) {
-                suite = stmt;
-              }
-            }
-            break;
-          }
-        }
-
-        if (suite) {
-          for (let l = 0; l < suite.members.length; l++) {
-            const stmt = suite.members[l];
-            const locStart = ts.getLineAndCharacterOfPosition(sourceFile, stmt.pos);
-            const locEnd = ts.getLineAndCharacterOfPosition(sourceFile, stmt.end);
-            if (locStart.line <= line && locEnd.line >= line) {
-              if (ts.isMethodDeclaration(stmt) && stmt.decorators) {
-                if (stmt.decorators!.find(x => ts.isCallExpression(x.expression) && ts.isIdentifier(x.expression.expression) && x.expression.expression.text === 'Test')) {
-                  method = stmt;
-                }
-              }
-              break;
-            }
-          }
-        }
-        if (suite && method) {
-          title = `Running test ${suite.name!.text}.${method.name['text']}`;
-        } else if (suite) {
-          title = `Running suite ${suite.name!.text}`;
-        }
+      const { method, suite } = getCurrentClassMethod(editor, line);
+      if (method) {
+        title = `Running @Test ${suite.name!.text}.${method.name['text']}`;
+      } else if (suite) {
+        title = `Running @Suite ${suite.name!.text}`;
       }
 
       await this.window.withProgress({ cancellable: true, title, location: vscode.ProgressLocation.Notification },
