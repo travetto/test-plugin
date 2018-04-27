@@ -89,15 +89,6 @@ export class TestRunner {
       }
     }
     try {
-      if (!line) {
-        this.results.resetAll();
-      }
-
-      if (editor !== this.prev) {
-        this.prev = editor;
-        this.results.setEditor(editor);
-      }
-
 
       let title = 'Running all suites/tests';
 
@@ -108,9 +99,20 @@ export class TestRunner {
         title = `Running @Suite ${suite.name!.text}`;
       }
 
-      await this.window.withProgress({ cancellable: true, title, location: vscode.ProgressLocation.Notification },
+      if (!suite) {
+        this.results.resetAll();
+      }
+
+      if (editor !== this.prev) {
+        this.prev = editor;
+        this.results.setEditor(editor);
+      }
+
+      await this.window.withProgress({ cancellable: true, title, location: method ? vscode.ProgressLocation.Notification : vscode.ProgressLocation.Window },
         async (progress, cancel) => {
-          cancel.onCancellationRequested(exec.kill.bind(exec));
+          if (cancel) {
+            cancel.onCancellationRequested(exec.kill.bind(exec));
+          }
 
           try {
             extend();
@@ -121,7 +123,7 @@ export class TestRunner {
               }
               this.results.onEvent(e, line);
               const totals = this.results.getTotals();
-              if (!(line > 1)) {
+              if (!method) {
                 progress.report({ message: `Tests: Success ${totals.success}, Failed ${totals.failed}` });
               }
             });
@@ -132,7 +134,11 @@ export class TestRunner {
     } catch (e) {
       debug(e.message, e);
     }
+
     extend(false);
+
+    const totals = this.results.getTotals();
+    this.setStatus(`Success ${totals.success}, Failed ${totals.failed}`, totals.failed ? '#f33' : '#8f8');
   }
 
   async shutdown() {

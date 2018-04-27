@@ -47,12 +47,11 @@ export function activate(context: vscode.ExtensionContext) {
         runner.run(editor, lines).catch(e => console.error(e));
 
         oldText = newText;
-      } else {
-        runner.setStatus('');
       }
     };
 
     vscode.window.onDidChangeActiveTextEditor(() => {
+      runner.setStatus('');
       if (vscode.window.activeTextEditor) {
         const sameAsPrev =
           prevEditor &&
@@ -68,6 +67,7 @@ export function activate(context: vscode.ExtensionContext) {
         }
       }
     }, null, context.subscriptions);
+
     vscode.workspace.onDidSaveTextDocument(
       x => onUpdate(x, vscode.window.activeTextEditor.selection.start.line),
       null, context.subscriptions);
