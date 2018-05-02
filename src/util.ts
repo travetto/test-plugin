@@ -31,8 +31,8 @@ export function getCurrentClassMethod(editor: vscode.TextEditor, line: number) {
       const stmt = children[l];
       const locStart = ts.getLineAndCharacterOfPosition(sourceFile, stmt.pos);
       const locEnd = ts.getLineAndCharacterOfPosition(sourceFile, stmt.end);
-      const start = locStart.line + offset + 1;
-      const end = locEnd.line + offset + 1;
+      const start = locStart.line + 1;
+      const end = locEnd.line + 1;
       if (start <= line && end > line) {
         if (stmt.kind === type
           && stmt.decorators
