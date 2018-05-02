@@ -92,15 +92,15 @@ export class TestRunner {
 
       let title = 'Running all suites/tests';
 
+      if (editor.document !== (this.prev && this.prev.document)) {
+        this.results.setEditor(this.prev = editor);
+        line = 0;
+      }
+
       const { method, suite } = getCurrentClassMethod(editor, line);
 
       if (!suite) {
         this.results.resetAll();
-      }
-
-      if (editor.document !== (this.prev && this.prev.document)) {
-        this.results.setEditor(this.prev = editor);
-        line = 0;
       }
 
       if (method) {
