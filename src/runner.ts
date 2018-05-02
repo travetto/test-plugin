@@ -93,19 +93,20 @@ export class TestRunner {
       let title = 'Running all suites/tests';
 
       const { method, suite } = getCurrentClassMethod(editor, line);
-      if (method) {
-        title = `Running @Test ${suite.name!.text}.${method.name['text']}`;
-      } else if (suite) {
-        title = `Running @Suite ${suite.name!.text}`;
-      }
 
       if (!suite) {
         this.results.resetAll();
       }
 
-      if (editor !== this.prev) {
-        this.prev = editor;
-        this.results.setEditor(editor);
+      if (editor.document !== (this.prev && this.prev.document)) {
+        this.results.setEditor(this.prev = editor);
+        line = 0;
+      }
+
+      if (method) {
+        title = `Running @Test ${suite.name!.text}.${method.name['text']}`;
+      } else if (suite) {
+        title = `Running @Suite ${suite.name!.text}`;
       }
 
       await this.window.withProgress({ cancellable: !method, title, location: method ? vscode.ProgressLocation.Window : vscode.ProgressLocation.Notification },
