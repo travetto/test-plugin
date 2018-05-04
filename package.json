@@ -2,7 +2,7 @@
   "name": "travetto-test-plugin",
   "displayName": "Travetto Test Plugin",
   "description": "UI integration for travetto testing",
-  "version": "0.6.13",
+  "version": "0.6.14",
   "publisher": "arcsine",
   "author": {
     "email": "timothy.soehnlin@gmail.com",
@@ -49,7 +49,7 @@
   ],
   "icon": "images/logo.png",
   "galleryBanner": {
-    "color": "#4CAF50",
+    "color": "#c6cdd3",
     "theme": "light"
   },
   "contributes": {
