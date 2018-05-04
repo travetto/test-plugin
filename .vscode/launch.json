@@ -9,7 +9,7 @@
       "runtimeExecutable": "${execPath}",
       "args": [
         "--extensionDevelopmentPath=${workspaceRoot}",
-        "${workspaceRoot}/../test"
+        "${workspaceRoot}/../di"
       ],
       "env": {
         "DEBUG": "1"
