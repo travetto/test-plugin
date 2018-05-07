@@ -1,7 +1,6 @@
 import * as vscode from 'vscode';
-import { ChildProcess } from 'child_process';
+import { ChildProcess, spawn } from 'child_process';
 import { log, CWD, channel, debug, } from './util';
-import * as spawn from 'cross-spawn';
 
 function logit(str: NodeJS.ReadableStream) {
   str.on('data', (b: Buffer) => channel.append(b.toString()));
@@ -25,8 +24,9 @@ export class TestExecution {
 
   async _init() {
     try {
-      this.proc = spawn(`node_modules/.bin/travetto-test`, [], {
+      this.proc = spawn('node', [`node_modules/.bin/travetto-test`], {
         cwd: CWD,
+        shell: true,
         env: {
           EXECUTION: true,
           PATH: process.env.PATH
