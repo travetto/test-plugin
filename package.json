@@ -77,13 +77,13 @@
     "menus": {
       "editor/context": [
       {
-        "when": "resourceLangId == typescript",
+        "when": "resourceLangId == typescript && editorTextFocus",
         "command": "extension.triggerDebug",
         "group": "travetto"
       }],
       "commandPalette": [
       {
-        "when": "resourceLangId == typescript",
+        "when": "resourceLangId == typescript && editorTextFocus",
         "command": "extension.triggerDebug",
         "group": "travetto"
       }]
