@@ -9,10 +9,13 @@ import {
 } from './types';
 
 export class ResultsManager {
+
   private results: AllState = {
     suite: {},
     test: {}
   };
+
+  private failedAssertions: { [key: number]: Assertion };
 
   private _editor: vscode.TextEditor;
 
@@ -34,6 +37,7 @@ export class ResultsManager {
         }
       });
     }
+    this.failedAssertions = {};
     this.results = { suite: {}, test: {} };
   }
 
@@ -195,6 +199,9 @@ export class ResultsManager {
     const status = assertion.error ? 'fail' : 'success';
     const key = `${assertion.className}:${assertion.methodName}`;
     const dec = Decorations.buildAssertion(assertion);
+    if (status === 'fail') {
+      this.failedAssertions[Decorations.line(assertion.line).range.start.line] = assertion;
+    }
     this.store('assertion', key, status, dec, assertion);
   }
 

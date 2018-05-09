@@ -7,7 +7,7 @@ import * as ts from 'typescript';
 
 export class TestRunner {
 
-  private results: ResultsManager;
+  public results: ResultsManager;
   private ready: boolean = false;
   private queue: [vscode.TextEditor, number][] = [];
   private running: Promise<void>;

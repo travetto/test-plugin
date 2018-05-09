@@ -1,4 +1,6 @@
 import * as vscode from 'vscode';
+import * as esp from 'error-stack-parser';
+import { CWD } from './util';
 
 const rgba = (r = 0, g = 0, b = 0, a = 1) => `rgba(${r},${g},${b},${a})`;
 
@@ -47,10 +49,28 @@ export class Decorations {
   static context: vscode.ExtensionContext;
 
   static buildHover(err?: Error) {
-    return err ? { language: 'html', value: `${deserializeError(err).stack}` } : undefined;
+    return err ? new vscode.MarkdownString(
+      err.message + '\n\n' + esp.parse(deserializeError(err))
+        .reduce(
+          (acc, x) => {
+            x.fileName = x.fileName.replace(CWD + '/', '').replace('node_modules', 'n_m');
+            if (!acc.length || acc[acc.length - 1].fileName !== x.fileName) {
+              acc.push(x);
+            }
+            return acc;
+          }, [] as esp.StackFrame[])
+        .map(x => {
+          const functionName = x.getFunctionName() || '(anonymous)';
+          const args = '(' + (x.getArgs() || []).join(', ') + ')';
+          const fileName = x.getFileName() ? (`at ${x.getFileName()}`) : '';
+          const lineNumber = x.getLineNumber() !== undefined ? (':' + x.getLineNumber()) : '';
+          return `\t${functionName + args} ${fileName + lineNumber}`;
+        })
+        .join('  \n')
+    ) : undefined;
   }
 
-  static line(n: number) {
+  static line(n: number): vscode.DecorationOptions {
     return { range: new vscode.Range(n - 1, 0, n - 1, 100000000000) }
   }
 
@@ -73,16 +93,23 @@ export class Decorations {
   }
 
   static buildAssertion(assertion: { error?: Error, line: number, message?: string }): vscode.DecorationOptions {
-    return assertion.error ? {
-      ...this.line(assertion.line),
-      hoverMessage: this.buildHover(assertion.error),
-      renderOptions: {
-        after: {
-          textDecoration: ITALIC,
-          contentText: `    ${assertion.message}`
+    let out = this.line(assertion.line);
+    if (assertion.error) {
+      const lines = (assertion.error.message === assertion.message ? assertion.error.stack : assertion.message).split(/\n/g);
+      const firstLine = lines[0]
+
+      out = {
+        ...out,
+        hoverMessage: this.buildHover(assertion.error),
+        renderOptions: {
+          after: {
+            textDecoration: ITALIC,
+            contentText: `    ${firstLine}`
+          }
         }
       }
-    } : this.line(assertion.line);
+    }
+    return out;
   }
 
   static buildSuite(suite: { lines: { start: number } }) {
