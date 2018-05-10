@@ -2,7 +2,8 @@ import * as vscode from 'vscode';
 import * as esp from 'error-stack-parser';
 import * as util from 'util';
 import { CWD } from './util';
-import { Assertion } from './types';
+import { Assertion, TestResult } from './types';
+import { isThisTypeNode } from 'typescript';
 
 const rgba = (r = 0, g = 0, b = 0, a = 1) => `rgba(${r},${g},${b},${a})`;
 
@@ -58,7 +59,7 @@ export class Decorations {
       let body: string;
       if ('errors' in asrt.error) {
         title = asrt.error!.message;
-        suffix = `(${title}) ${((asrt.error as any).errors).map(x => x.message).join(', ')}`;
+        suffix = `(${title}) ${((asrt.error as any).errors).map(x => typeof x === 'string' ? x : x.message).join(', ')}`;
         if (suffix.length > 60) {
           suffix = title;
         }
@@ -128,7 +129,7 @@ export class Decorations {
   }
 
   static buildImage(state: string, size = Style.FULL_IMAGE) {
-    const img = Decorations.context.asAbsolutePath(`images / ${state}.png`);
+    const img = Decorations.context.asAbsolutePath(`images/${state}.png`);
     return vscode.window.createTextEditorDecorationType({
       ...Style.IMAGE,
       gutterIconPath: img,
@@ -159,8 +160,17 @@ export class Decorations {
     return { ...this.line(suite.lines.start) };
   }
 
-  static buildTest(test: { lines: { start: number }, assertions?: Assertion[], error?: Error }) {
-    return { ...this.line(test.lines.start), hoverMessage: this.buildHover((test.assertions).find(x => x.status === 'fail') || { error: test.error }) };
+  static buildTest(test: { lines: { start: number } }) {
+    if ('error' in test) {
+      const tt = test as TestResult;
+      const hover = this.buildHover((tt.assertions).find(x => x.status === 'fail') || { error: tt.error, message: tt.error.message });
+      return {
+        ...this.line(tt.lines.start),
+        hoverMessage: hover.markdown
+      }
+    } else {
+      return this.line(test.lines.start);
+    };
   }
 
   static buildStyle(entity: string, state: string) {
