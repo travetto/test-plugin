@@ -55,7 +55,10 @@ export class Decorations {
       let title = asrt.message;
 
       let body: string;
-      if (asrt.expected !== undefined && asrt.actual !== undefined) {
+      if ('errors' in asrt.error) {
+        title = asrt.error!.message;
+        body = '\t' + ((asrt.error as any).errors).map(x => x.message).join('  \n\t') + '  ';
+      } else if (asrt.expected !== undefined && asrt.actual !== undefined) {
         title = title
           .replace(/^.*should/, 'Should');
 
@@ -75,9 +78,11 @@ export class Decorations {
 
       } else {
         body = esp.parse(deserializeError(asrt.error))
+          .filter(x => !/@travetto\/(test|base|compile|registry|exec)/.test(x.fileName)) // Exclude framework boilerplate
           .reduce(
             (acc, x) => {
               x.fileName = x.fileName.replace(CWD + '/', '').replace('node_modules', 'n_m');
+              x.fileName = x.fileName.replace(/n_m\/@travetto\/([^/]+)\/src/g, (a, p) => `@trv/${p}`)
               if (!acc.length || acc[acc.length - 1].fileName !== x.fileName) {
                 acc.push(x);
               }
@@ -86,7 +91,7 @@ export class Decorations {
           .map(x => {
             const functionName = x.getFunctionName() || '(anonymous)';
             const args = '(' + (x.getArgs() || []).join(', ') + ')';
-            const fileName = x.getFileName() ? (`at ${x.getFileName()} `) : '';
+            const fileName = x.getFileName() ? (`at ${x.getFileName()}`) : '';
             const lineNumber = x.getLineNumber() !== undefined ? (':' + x.getLineNumber()) : '';
             return `\t${functionName + args} ${fileName + lineNumber} `;
           })
@@ -124,7 +129,7 @@ export class Decorations {
     if (assertion.error) {
       const { title, markdown } = this.buildHover(assertion);
       const lines = (assertion.error.message === assertion.message ? assertion.error.stack : assertion.message).split(/\n/g);
-      const firstLine = lines[0].length > 20 ? title : lines[0]
+      const firstLine = lines[0].length > 50 ? title : lines[0]
 
       out = {
         ...out,
