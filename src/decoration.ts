@@ -52,18 +52,27 @@ export class Decorations {
 
   static buildHover(asrt: Partial<Assertion>) {
     if (asrt.error) {
-      let title = asrt.message;
+      let title: string;
+      let suffix = asrt.message;
 
       let body: string;
       if ('errors' in asrt.error) {
         title = asrt.error!.message;
+        suffix = `*${title}* ${((asrt.error as any).errors).map(x => x.message).join(', ')}`;
+        if (suffix.length > 60) {
+          suffix = title;
+        }
         body = '\t' + ((asrt.error as any).errors).map(x => x.message).join('  \n\t') + '  ';
       } else if (asrt.expected !== undefined && asrt.actual !== undefined) {
-        title = title
+        title = asrt.message
           .replace(/^.*should/, 'Should');
 
         const extra = title.split(/^Should(?:\s+[a-z]+)+/)[1];
         title = title.replace(extra, '');
+
+        if (suffix.length > 50) {
+          suffix = title;
+        }
 
         const getVal = str => {
           try {
@@ -77,6 +86,9 @@ export class Decorations {
           `\tActual:  \n\t${getVal(asrt.actual)}  \n`;
 
       } else {
+        title = asrt.error.message;
+        suffix = asrt.error.message;
+
         body = esp.parse(deserializeError(asrt.error))
           .filter(x => !/@travetto\/(test|base|compile|registry|exec)/.test(x.fileName)) // Exclude framework boilerplate
           .reduce(
@@ -98,7 +110,7 @@ export class Decorations {
           .join('  \n');
       }
 
-      return { title, markdown: new vscode.MarkdownString(`${title} \n\n${body}`) };
+      return { suffix, title, markdown: new vscode.MarkdownString(`${title} \n\n${body}`) };
     }
   }
 
@@ -127,9 +139,7 @@ export class Decorations {
   static buildAssertion(assertion: { error?: Error, line: number, message?: string }): vscode.DecorationOptions {
     let out = this.line(assertion.line);
     if (assertion.error) {
-      const { title, markdown } = this.buildHover(assertion);
-      const lines = (assertion.error.message === assertion.message ? assertion.error.stack : assertion.message).split(/\n/g);
-      const firstLine = lines[0].length > 50 ? title : lines[0]
+      const { suffix, title, markdown } = this.buildHover(assertion);
 
       out = {
         ...out,
@@ -137,7 +147,7 @@ export class Decorations {
         renderOptions: {
           after: {
             textDecoration: ITALIC,
-            contentText: `    ${firstLine}`
+            contentText: `    ${suffix}`
           }
         }
       }
