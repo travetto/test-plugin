@@ -1,6 +1,8 @@
 import * as vscode from 'vscode';
 import * as esp from 'error-stack-parser';
+import * as util from 'util';
 import { CWD } from './util';
+import { Assertion } from './types';
 
 const rgba = (r = 0, g = 0, b = 0, a = 1) => `rgba(${r},${g},${b},${a})`;
 
@@ -48,26 +50,51 @@ export class Decorations {
 
   static context: vscode.ExtensionContext;
 
-  static buildHover(err?: Error) {
-    return err ? new vscode.MarkdownString(
-      err.message + '\n\n' + esp.parse(deserializeError(err))
-        .reduce(
-          (acc, x) => {
-            x.fileName = x.fileName.replace(CWD + '/', '').replace('node_modules', 'n_m');
-            if (!acc.length || acc[acc.length - 1].fileName !== x.fileName) {
-              acc.push(x);
-            }
-            return acc;
-          }, [] as esp.StackFrame[])
-        .map(x => {
-          const functionName = x.getFunctionName() || '(anonymous)';
-          const args = '(' + (x.getArgs() || []).join(', ') + ')';
-          const fileName = x.getFileName() ? (`at ${x.getFileName()}`) : '';
-          const lineNumber = x.getLineNumber() !== undefined ? (':' + x.getLineNumber()) : '';
-          return `\t${functionName + args} ${fileName + lineNumber}`;
-        })
-        .join('  \n')
-    ) : undefined;
+  static buildHover(asrt: Partial<Assertion>) {
+    if (asrt.error) {
+      let title = asrt.message;
+
+      let body: string;
+      if (asrt.expected !== undefined && asrt.actual !== undefined) {
+        title = title
+          .replace(/^.*should/, 'Should');
+
+        const extra = title.split(/^Should(?:\s+[a-z]+)+/)[1];
+        title = title.replace(extra, '');
+
+        const getVal = str => {
+          try {
+            return util.inspect(JSON.parse(str), false, 10).replace(/\n/g, '  \n\t');
+          } catch (e) {
+            return str;
+          }
+        }
+
+        body = `\tExpected:  \n\t${getVal(asrt.expected)}  \n` +
+          `\tActual:  \n\t${getVal(asrt.actual)}  \n`;
+
+      } else {
+        body = esp.parse(deserializeError(asrt.error))
+          .reduce(
+            (acc, x) => {
+              x.fileName = x.fileName.replace(CWD + '/', '').replace('node_modules', 'n_m');
+              if (!acc.length || acc[acc.length - 1].fileName !== x.fileName) {
+                acc.push(x);
+              }
+              return acc;
+            }, [] as esp.StackFrame[])
+          .map(x => {
+            const functionName = x.getFunctionName() || '(anonymous)';
+            const args = '(' + (x.getArgs() || []).join(', ') + ')';
+            const fileName = x.getFileName() ? (`at ${x.getFileName()} `) : '';
+            const lineNumber = x.getLineNumber() !== undefined ? (':' + x.getLineNumber()) : '';
+            return `\t${functionName + args} ${fileName + lineNumber} `;
+          })
+          .join('  \n');
+      }
+
+      return { title, markdown: new vscode.MarkdownString(`${title} \n\n${body}`) };
+    }
   }
 
   static line(n: number): vscode.DecorationOptions {
@@ -84,7 +111,7 @@ export class Decorations {
   }
 
   static buildImage(state: string, size = Style.FULL_IMAGE) {
-    const img = Decorations.context.asAbsolutePath(`images/${state}.png`);
+    const img = Decorations.context.asAbsolutePath(`images / ${state}.png`);
     return vscode.window.createTextEditorDecorationType({
       ...Style.IMAGE,
       gutterIconPath: img,
@@ -95,12 +122,13 @@ export class Decorations {
   static buildAssertion(assertion: { error?: Error, line: number, message?: string }): vscode.DecorationOptions {
     let out = this.line(assertion.line);
     if (assertion.error) {
+      const { title, markdown } = this.buildHover(assertion);
       const lines = (assertion.error.message === assertion.message ? assertion.error.stack : assertion.message).split(/\n/g);
-      const firstLine = lines[0]
+      const firstLine = lines[0].length > 20 ? title : lines[0]
 
       out = {
         ...out,
-        hoverMessage: this.buildHover(assertion.error),
+        hoverMessage: markdown,
         renderOptions: {
           after: {
             textDecoration: ITALIC,
@@ -116,8 +144,8 @@ export class Decorations {
     return { ...this.line(suite.lines.start) };
   }
 
-  static buildTest(test: { lines: { start: number }, error?: Error }) {
-    return { ...this.line(test.lines.start), hoverMessage: this.buildHover(test.error) };
+  static buildTest(test: { lines: { start: number }, assertions?: Assertion[], error?: Error }) {
+    return { ...this.line(test.lines.start), hoverMessage: this.buildHover((test.assertions).find(x => x.status === 'fail') || { error: test.error }) };
   }
 
   static buildStyle(entity: string, state: string) {
