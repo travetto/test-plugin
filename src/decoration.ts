@@ -58,7 +58,7 @@ export class Decorations {
       let body: string;
       if ('errors' in asrt.error) {
         title = asrt.error!.message;
-        suffix = `*${title}* ${((asrt.error as any).errors).map(x => x.message).join(', ')}`;
+        suffix = `(${title}) ${((asrt.error as any).errors).map(x => x.message).join(', ')}`;
         if (suffix.length > 60) {
           suffix = title;
         }
