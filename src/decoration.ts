@@ -22,6 +22,40 @@ function deserializeError(e: any) {
   }
 }
 
+export function simplifyStack(err: Error, cwd = process.cwd()) {
+  const getName = (x: string) => {
+    const l = x.split(cwd)[1];
+    if (l) {
+      return l.split(/[.][tj]s/)[0];
+    }
+    return undefined;
+  }
+
+  let lastName: string = '';
+  const body = err.stack!.split('\n')
+    .filter(x => !/\/@travetto\/(test|base|compile|registry|exec|pool)/.test(x)) // Exclude framework boilerplate
+    .reduce((acc, l) => {
+      const name = getName(l);
+      if (name === lastName) {
+        // Do nothing
+      } else {
+        if (name) {
+          lastName = name;
+        }
+        acc.push(l);
+      }
+      return acc;
+    }, [] as string[])
+    .map(x => x.replace(`${process.cwd()}/`, '')
+      .replace('node_modules', 'n_m')
+      .replace(/n_m\/@travetto\/([^/]+)\/src/g, (a, p) => `@trv/${p}`)
+    )
+    .join('  \n');
+
+  return body;
+}
+
+
 const ITALIC = 'font-style: italic;';
 const Style = {
   SMALL_IMAGE: '40%',
@@ -90,27 +124,9 @@ export class Decorations {
         title = asrt.error.message;
         suffix = asrt.error.message;
 
-        body = esp.parse(deserializeError(asrt.error))
-          .filter(x => !/@travetto\/(test|base|compile|registry|exec)/.test(x.fileName)) // Exclude framework boilerplate
-          .reduce(
-            (acc, x) => {
-              x.fileName = x.fileName.replace(CWD + '/', '').replace('node_modules', 'n_m');
-              x.fileName = x.fileName.replace(/n_m\/@travetto\/([^/]+)\/src/g, (a, p) => `@trv/${p}`)
-              if (!acc.length || acc[acc.length - 1].fileName !== x.fileName) {
-                acc.push(x);
-              }
-              return acc;
-            }, [] as esp.StackFrame[])
-          .map(x => {
-            const functionName = x.getFunctionName() || '(anonymous)';
-            const args = '(' + (x.getArgs() || []).join(', ') + ')';
-            const fileName = x.getFileName() ? (`at ${x.getFileName()}`) : '';
-            const lineNumber = x.getLineNumber() !== undefined ? (':' + x.getLineNumber()) : '';
-            return `\t${functionName + args} ${fileName + lineNumber} `;
-          })
-          .join('  \n');
-      }
+        body = simplifyStack(deserializeError(asrt.error));
 
+      }
       return { suffix, title, markdown: new vscode.MarkdownString(`${title} \n\n${body}`) };
     }
   }
