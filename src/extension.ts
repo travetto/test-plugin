@@ -3,6 +3,7 @@ import { CWD } from './util';
 process.chdir(CWD);
 require('util.promisify').shim();
 require('@travetto/base/bin/travetto');
+if (!console.debug) { console.debug = () => { }; }
 
 import * as vscode from 'vscode';
 import * as diff from 'diff';
