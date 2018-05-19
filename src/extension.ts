@@ -1,13 +1,17 @@
+import { CWD } from './util';
+
+process.chdir(CWD);
+require('util.promisify').shim();
+require('@travetto/base/bin/travetto');
+
 import * as vscode from 'vscode';
 import * as diff from 'diff';
 
 import { TestRunner } from './runner';
 import { TestExecution } from './execution';
 import { Decorations } from './decoration';
-import { CWD } from './util';
 
 // Register typescript import
-
 const runner = new TestRunner(vscode.window);
 
 // this method is called when your extension is activated
@@ -84,7 +88,7 @@ export function activate(context: vscode.ExtensionContext) {
   }
 }
 
-async function deactivate() {
+export async function deactivate() {
   await runner.shutdown();
 }
 

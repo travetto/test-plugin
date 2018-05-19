@@ -4,9 +4,10 @@ import { ResultsManager } from './results';
 import { TestExecution } from './execution';
 import { log, debug, getCurrentClassMethod, CWD } from './util';
 import * as ts from 'typescript';
+import { execSync } from 'child_process';
+import { Shutdown } from '@travetto/base/src/shutdown';
 
 export class TestRunner {
-  private activated = false;
   public results: ResultsManager;
   private ready: boolean = false;
   private queue: [vscode.TextEditor, number][] = [];
@@ -15,19 +16,19 @@ export class TestRunner {
 
   private prev: vscode.TextEditor;
   private pool: Pool<TestExecution>;
+  private active = false;
+  private dockerNS = `test-${process.pid}`;
 
   constructor(private window: typeof vscode.window) {
     this.results = new ResultsManager();
-    let results: any[];
+    process.env.DOCKER_NS = this.dockerNS;
+
     this.pool = createPool<TestExecution>({
       async create() {
-        if (!results) {
-          process.chdir(CWD);
-          require('util.promisify').shim();
-          require('@travetto/base/bin/travetto');
+        if (!this.active) {
           const { PhaseManager } = require('@travetto/base/src/phase');
-
-          results = await new PhaseManager('test').load().run();
+          await new PhaseManager('test').load().run();
+          this.active = true;
         }
 
         const exec = new TestExecution();
@@ -35,14 +36,6 @@ export class TestRunner {
         return exec;
       },
       async destroy(exec) {
-        if (results) {
-          for (const res of results) {
-            if (res.forceDestroy) {
-              await res.forceDestroy();
-            }
-          }
-          results = undefined;
-        }
         exec.kill();
         return undefined;
       },
@@ -161,8 +154,16 @@ export class TestRunner {
   }
 
   async shutdown() {
+    console.log('Shutting down');
+    const lines = execSync('docker ps -a').toString().split('\n');
+    const ids = lines.filter(x => x.includes(this.dockerNS)).map(x => x.split(' ')[0]);
+
+    if (ids.length) {
+      execSync(`docker rm -f ${ids.join(' ')}`)
+    }
     await this.pool.drain();
     this.pool.clear();
+    this.active = false;
   }
 
   async setEditor(editor: vscode.TextEditor, refresh = false) {
