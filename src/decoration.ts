@@ -1,9 +1,7 @@
 import * as vscode from 'vscode';
-import * as esp from 'error-stack-parser';
 import * as util from 'util';
 import { CWD } from './util';
 import { Assertion, TestResult } from './types';
-import { isThisTypeNode } from 'typescript';
 
 const rgba = (r = 0, g = 0, b = 0, a = 1) => `rgba(${r},${g},${b},${a})`;
 
