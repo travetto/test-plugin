@@ -2,11 +2,11 @@ import * as vscode from 'vscode';
 import { Pool, Factory, createPool, Options } from 'generic-pool';
 import { ResultsManager } from './results';
 import { TestExecution } from './execution';
-import { log, debug, getCurrentClassMethod } from './util';
+import { log, debug, getCurrentClassMethod, CWD } from './util';
 import * as ts from 'typescript';
 
 export class TestRunner {
-
+  private activated = false;
   public results: ResultsManager;
   private ready: boolean = false;
   private queue: [vscode.TextEditor, number][] = [];
@@ -18,13 +18,31 @@ export class TestRunner {
 
   constructor(private window: typeof vscode.window) {
     this.results = new ResultsManager();
+    let results: any[];
     this.pool = createPool<TestExecution>({
       async create() {
+        if (!results) {
+          process.chdir(CWD);
+          require('util.promisify').shim();
+          require('@travetto/base/bin/travetto');
+          const { PhaseManager } = require('@travetto/base/src/phase');
+
+          results = await new PhaseManager('test').load().run();
+        }
+
         const exec = new TestExecution();
         await exec.init();
         return exec;
       },
       async destroy(exec) {
+        if (results) {
+          for (const res of results) {
+            if (res.forceDestroy) {
+              await res.forceDestroy();
+            }
+          }
+          results = undefined;
+        }
         exec.kill();
         return undefined;
       },
@@ -123,9 +141,9 @@ export class TestRunner {
                 debug('Event Recieved', e);
               }
               this.results.onEvent(e, line);
-              const totals = this.results.getTotals();
+              const progressTotals = this.results.getTotals();
               if (!method) {
-                progress.report({ message: `Tests: Success ${totals.success}, Failed ${totals.failed}` });
+                progress.report({ message: `Tests: Success ${progressTotals.success}, Failed ${progressTotals.failed}` });
               }
             });
           } catch (e) {

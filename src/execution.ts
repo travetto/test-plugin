@@ -28,6 +28,7 @@ export class TestExecution {
         cwd: CWD,
         shell: true,
         env: {
+          ...process.env,
           EXECUTION: true,
           PATH: process.env.PATH
         },

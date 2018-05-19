@@ -6,6 +6,8 @@ import { TestExecution } from './execution';
 import { Decorations } from './decoration';
 import { CWD } from './util';
 
+// Register typescript import
+
 const runner = new TestRunner(vscode.window);
 
 // this method is called when your extension is activated

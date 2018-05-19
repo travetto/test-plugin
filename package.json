@@ -33,11 +33,14 @@
     "vscode": "^1.1.14"
   },
   "dependencies": {
+    "@travetto/base": "0.0.94",
+    "@travetto/exec": "0.0.22",
     "@types/diff": "^3.5.1",
     "@types/generic-pool": "^3.1.2",
     "diff": "^3.5.0",
     "generic-pool": "^3.4.2",
-    "typescript": "^2.8.3"
+    "typescript": "^2.8.3",
+    "util.promisify": "^1.0.0"
   },
   "activationEvents": [
     "onLanguage:typescript",
@@ -62,31 +65,35 @@
       }
     },
     "commands": [
-    {
-      "command": "extension.triggerDebug",
-      "title": "Debug @Tests",
-      "category": "travetto"
-    }],
+      {
+        "command": "extension.triggerDebug",
+        "title": "Debug @Tests",
+        "category": "travetto"
+      }
+    ],
     "keybindings": [
-    {
-      "command": "extension.triggerDebugKey",
-      "key": "ctrl+shift+t",
-      "mac": "cmd+shift+t",
-      "when": "resourceLangId == typescript && editorTextFocus"
-    }],
+      {
+        "command": "extension.triggerDebugKey",
+        "key": "ctrl+shift+t",
+        "mac": "cmd+shift+t",
+        "when": "resourceLangId == typescript && editorTextFocus"
+      }
+    ],
     "menus": {
       "editor/context": [
-      {
-        "when": "resourceLangId == typescript && editorTextFocus",
-        "command": "extension.triggerDebug",
-        "group": "travetto"
-      }],
+        {
+          "when": "resourceLangId == typescript && editorTextFocus",
+          "command": "extension.triggerDebug",
+          "group": "travetto"
+        }
+      ],
       "commandPalette": [
-      {
-        "when": "resourceLangId == typescript && editorTextFocus",
-        "command": "extension.triggerDebug",
-        "group": "travetto"
-      }]
+        {
+          "when": "resourceLangId == typescript && editorTextFocus",
+          "command": "extension.triggerDebug",
+          "group": "travetto"
+        }
+      ]
     }
   }
 }
