@@ -65,31 +65,35 @@
       }
     },
     "commands": [
-    {
-      "command": "extension.triggerDebug",
-      "title": "Debug @Tests",
-      "category": "travetto"
-    }],
+      {
+        "command": "extension.triggerDebug",
+        "title": "Debug @Tests",
+        "category": "travetto"
+      }
+    ],
     "keybindings": [
-    {
-      "command": "extension.triggerDebugKey",
-      "key": "ctrl+shift+t",
-      "mac": "cmd+shift+t",
-      "when": "resourceLangId == typescript && editorTextFocus"
-    }],
+      {
+        "command": "extension.triggerDebugKey",
+        "key": "ctrl+shift+t",
+        "mac": "cmd+shift+t",
+        "when": "resourceLangId == typescript && editorTextFocus"
+      }
+    ],
     "menus": {
       "editor/context": [
-      {
-        "when": "resourceLangId == typescript && editorTextFocus",
-        "command": "extension.triggerDebug",
-        "group": "travetto"
-      }],
+        {
+          "when": "resourceLangId == typescript && editorTextFocus",
+          "command": "extension.triggerDebug",
+          "group": "travetto"
+        }
+      ],
       "commandPalette": [
-      {
-        "when": "resourceLangId == typescript && editorTextFocus",
-        "command": "extension.triggerDebug",
-        "group": "travetto"
-      }]
+        {
+          "when": "resourceLangId == typescript && editorTextFocus",
+          "command": "extension.triggerDebug",
+          "group": "travetto"
+        }
+      ]
     }
   }
 }

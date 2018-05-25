@@ -53,7 +53,6 @@ export function simplifyStack(err: Error, cwd = process.cwd()) {
   return body;
 }
 
-
 const ITALIC = 'font-style: italic;';
 const Style = {
   SMALL_IMAGE: '40%',
@@ -95,7 +94,7 @@ export class Decorations {
         if (suffix.length > 60) {
           suffix = title;
         }
-        body = '\t' + ((asrt.error as any).errors).map(x => x.message).join('  \n\t') + '  ';
+        body = `\t${((asrt.error as any).errors).map(x => x.message).join('  \n\t')}  `;
       } else if (asrt.expected !== undefined && asrt.actual !== undefined) {
         title = asrt.message
           .replace(/^.*should/, 'Should');
@@ -115,8 +114,7 @@ export class Decorations {
           }
         }
 
-        body = `\tExpected:  \n\t${getVal(asrt.expected)}  \n` +
-          `\tActual:  \n\t${getVal(asrt.actual)}  \n`;
+        body = `\tExpected: \n\t${getVal(asrt.expected)} \n\tActual: \n\t${getVal(asrt.actual)} \n`;
 
       } else {
         title = asrt.error.message;
@@ -125,7 +123,7 @@ export class Decorations {
         body = simplifyStack(deserializeError(asrt.error));
 
       }
-      return { suffix, title, markdown: new vscode.MarkdownString(`${title} \n\n${body}`) };
+      return { suffix, title, markdown: new vscode.MarkdownString(`${title} \n\n${body} `) };
     }
   }
 
@@ -143,7 +141,7 @@ export class Decorations {
   }
 
   static buildImage(state: string, size = Style.FULL_IMAGE) {
-    const img = Decorations.context.asAbsolutePath(`images/${state}.png`);
+    const img = Decorations.context.asAbsolutePath(`images / ${state}.png`);
     return vscode.window.createTextEditorDecorationType({
       ...Style.IMAGE,
       gutterIconPath: img,
@@ -162,7 +160,7 @@ export class Decorations {
         renderOptions: {
           after: {
             textDecoration: ITALIC,
-            contentText: `    ${suffix}`
+            contentText: `    ${suffix} `
           }
         }
       }

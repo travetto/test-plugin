@@ -26,7 +26,7 @@ export function getCurrentClassMethod(editor: vscode.TextEditor, line: number) {
     decoration: string,
     offset: number = 0
   ) {
-    let ret;
+
     for (let l = 0; l < children.length; l++) {
       const stmt = children[l];
       const locStart = ts.getLineAndCharacterOfPosition(sourceFile, stmt.pos);
@@ -47,11 +47,11 @@ export function getCurrentClassMethod(editor: vscode.TextEditor, line: number) {
     return;
   }
   const out: Partial<{ suite: ts.ClassDeclaration, method: ts.MethodDeclaration }> = {}
-  let suiteRes = getElementByDecoration<ts.ClassDeclaration>(sourceFile.statements, ts.SyntaxKind.ClassDeclaration, 'Suite');
+  const suiteRes = getElementByDecoration<ts.ClassDeclaration>(sourceFile.statements, ts.SyntaxKind.ClassDeclaration, 'Suite');
   if (suiteRes) {
     out.suite = suiteRes.node;
   }
-  let methRes = suiteRes ? getElementByDecoration<ts.MethodDeclaration>(suiteRes.node.members, ts.SyntaxKind.MethodDeclaration, 'Test', suiteRes.start) : undefined;
+  const methRes = suiteRes ? getElementByDecoration<ts.MethodDeclaration>(suiteRes.node.members, ts.SyntaxKind.MethodDeclaration, 'Test', suiteRes.start) : undefined;
   if (methRes) {
     out.method = methRes.node;
   }
