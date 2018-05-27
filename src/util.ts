@@ -46,7 +46,7 @@ export function getCurrentClassMethod(editor: vscode.TextEditor, line: number) {
     }
     return;
   }
-  const out: Partial<{ suite: ts.ClassDeclaration, method: ts.MethodDeclaration }> = {}
+  const out: Partial<{ suite: ts.ClassDeclaration, method: ts.MethodDeclaration }> = {};
   const suiteRes = getElementByDecoration<ts.ClassDeclaration>(sourceFile.statements, ts.SyntaxKind.ClassDeclaration, 'Suite');
   if (suiteRes) {
     out.suite = suiteRes.node;

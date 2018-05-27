@@ -55,7 +55,7 @@ export function activate(context: vscode.ExtensionContext) {
 
         oldText = newText;
       }
-    };
+    }
 
     vscode.window.onDidChangeActiveTextEditor(() => {
       runner.setStatus('');

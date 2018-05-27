@@ -8,7 +8,6 @@ import { execSync } from 'child_process';
 import { Shutdown } from '@travetto/base/src/shutdown';
 
 export class TestRunner {
-  public results: ResultsManager;
   private ready: boolean = false;
   private queue: [vscode.TextEditor, number][] = [];
   private running: Promise<void>;
@@ -18,6 +17,7 @@ export class TestRunner {
   private pool: Pool<TestExecution>;
   private active = false;
   private dockerNS = `test-${process.pid}`;
+  public results: ResultsManager;
 
   constructor(private window: typeof vscode.window) {
     this.results = new ResultsManager();
@@ -98,7 +98,8 @@ export class TestRunner {
           this.pool.release(exec);
         }, 20000); // Force 20 sec max between comms
       }
-    }
+    };
+
     try {
 
       let title = 'Running all suites/tests';
@@ -159,7 +160,7 @@ export class TestRunner {
     const ids = lines.filter(x => x.includes(this.dockerNS)).map(x => x.split(' ')[0]);
 
     if (ids.length) {
-      execSync(`docker rm -f ${ids.join(' ')}`)
+      execSync(`docker rm -f ${ids.join(' ')}`);
     }
     await this.pool.drain();
     this.pool.clear();

@@ -49,8 +49,8 @@ export interface TestConfig extends SuiteConfig {
 
 export interface TestResult extends TestConfig {
   status: 'skip' | 'fail' | 'success';
-  assertions?: Assertion[]
-  error?: Error
+  assertions?: Assertion[];
+  error?: Error;
 }
 
 export interface Assertion {

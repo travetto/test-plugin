@@ -27,7 +27,7 @@ export function simplifyStack(err: Error, cwd = process.cwd()) {
       return l.split(/[.][tj]s/)[0];
     }
     return undefined;
-  }
+  };
 
   let lastName: string = '';
   const body = err.stack!.split('\n')
@@ -112,7 +112,7 @@ export class Decorations {
           } catch (e) {
             return str;
           }
-        }
+        };
 
         body = `\tExpected: \n\t${getVal(asrt.expected)} \n\tActual: \n\t${getVal(asrt.actual)} \n`;
 
@@ -128,7 +128,7 @@ export class Decorations {
   }
 
   static line(n: number): vscode.DecorationOptions {
-    return { range: new vscode.Range(n - 1, 0, n - 1, 100000000000) }
+    return { range: new vscode.Range(n - 1, 0, n - 1, 100000000000) };
   }
 
   static buildAssert(state: string) {
@@ -163,7 +163,7 @@ export class Decorations {
             contentText: `    ${suffix} `
           }
         }
-      }
+      };
     }
     return out;
   }
@@ -179,10 +179,10 @@ export class Decorations {
       return {
         ...this.line(tt.lines.start),
         hoverMessage: hover.markdown
-      }
+      };
     } else {
       return this.line(test.lines.start);
-    };
+    }
   }
 
   static buildStyle(entity: string, state: string) {

@@ -87,7 +87,7 @@ export class ResultsManager {
 
       Object.keys(el.styles).forEach(x => {
         this._editor.setDecorations(el.styles[x], x === status ? [decoration] : []);
-      })
+      });
 
     } else {
       const el = this.results.test[key];
