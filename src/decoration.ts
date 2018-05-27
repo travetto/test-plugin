@@ -141,7 +141,7 @@ export class Decorations {
   }
 
   static buildImage(state: string, size = Style.FULL_IMAGE) {
-    const img = Decorations.context.asAbsolutePath(`images / ${state}.png`);
+    const img = Decorations.context.asAbsolutePath(`images/${state}.png`);
     return vscode.window.createTextEditorDecorationType({
       ...Style.IMAGE,
       gutterIconPath: img,
