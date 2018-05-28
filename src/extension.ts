@@ -1,4 +1,5 @@
 import { CWD } from './util';
+process.env.TS_CACHE_DIR = require('path').join(require('os').tmpdir(), `travetto-plugin-${CWD.replace(/[:\\\/]/g, '_')}`);
 process.chdir(CWD);
 
 require('util.promisify').shim();

@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { Pool, Factory, createPool, Options } from 'generic-pool';
 import { ResultsManager } from './results';
 import { TestExecution } from './execution';
-import { log, debug, getCurrentClassMethod, CWD } from './util';
+import { log, debug, getCurrentClassMethod } from './util';
 import * as ts from 'typescript';
 import { execSync } from 'child_process';
 import { Shutdown } from '@travetto/base/src/shutdown';
