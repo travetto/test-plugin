@@ -122,6 +122,7 @@ async function debug(addBreakpoint: boolean = false) {
       },
       cwd: CWD,
       name: 'Debug Travetto',
+      // tslint:disable-next-line:no-invalid-template-strings
       program: '${workspaceFolder}/node_modules/.bin/travetto-test',
       stopOnEntry: false,
       sourceMaps: true,

@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
 import * as util from 'util';
-import { CWD } from './util';
 import { Assertion, TestResult } from './types';
 import { simplifyStack } from '@travetto/base';
 

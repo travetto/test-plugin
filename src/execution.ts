@@ -24,7 +24,7 @@ export class TestExecution {
 
   async _init() {
     try {
-      this.proc = spawn('node', [`node_modules/.bin/travetto-test`], {
+      this.proc = spawn('node', ['node_modules/@travetto/test/bin/travetto-test'], {
         cwd: CWD,
         shell: true,
         env: {
