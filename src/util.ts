@@ -4,7 +4,7 @@ import * as fs from 'fs';
 import * as ts from 'typescript';
 import * as path from 'path';
 
-export const CWD = `${vscode.workspace.workspaceFolders[0].uri.path}`.replace(/[\\\/]/g, path.sep);
+export const CWD = `${vscode.workspace.workspaceFolders[0].uri.path}`.replace(/[\\\/]/g, path.sep).replace(/^[\\\/]([A-Z]:)/i, (a, b) => b);
 
 export const channel = vscode.window.createOutputChannel('@travetto/test');
 
