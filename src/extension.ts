@@ -1,5 +1,5 @@
 import { CWD, requireLocal } from './util';
-process.env.INIT_CWD = CWD;
+process.chdir(CWD);
 
 require('util.promisify').shim();
 requireLocal('@travetto/base/bin/travetto');
@@ -16,7 +16,7 @@ import { Decorations } from './decoration';
 const runner = new TestRunner(vscode.window);
 
 process.on('exit', () => runner.shutdown());
-process.on('SIGKILL', () => runner.shutdown());
+process.on('SIGINT', () => runner.shutdown());
 process.on('SIGTERM', () => runner.shutdown());
 
 // this method is called when your extension is activated
