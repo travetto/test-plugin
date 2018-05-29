@@ -26,7 +26,7 @@ export class TestExecution {
     try {
       this.proc = spawn('node', ['node_modules/@travetto/test/bin/travetto-test'], {
         cwd: CWD,
-        shell: true,
+        shell: false,
         env: {
           ...process.env,
           EXECUTION: true,
