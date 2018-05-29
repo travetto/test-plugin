@@ -2,7 +2,7 @@
   "name": "travetto-test-plugin",
   "displayName": "Travetto Test Plugin",
   "description": "UI integration for travetto testing",
-  "version": "0.6.23",
+  "version": "0.6.24",
   "publisher": "arcsine",
   "author": {
     "email": "timothy.soehnlin@gmail.com",
@@ -33,8 +33,6 @@
     "vscode": "^1.1.14"
   },
   "dependencies": {
-    "@travetto/base": "0.x.x",
-    "@travetto/exec": "0.x.x",
     "@types/diff": "^3.5.1",
     "@types/generic-pool": "^3.1.2",
     "diff": "^3.5.0",
