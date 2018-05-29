@@ -6,6 +6,8 @@ import * as path from 'path';
 
 export const CWD = `${vscode.workspace.workspaceFolders[0].uri.path}`.replace(/[\\\/]/g, path.sep).replace(/^[\\\/]([A-Z]:)/i, (a, b) => b);
 
+export const requireLocal = (p: string) => require(`${CWD.replace(/[\\]/g, '/')}/node_modules/${p}`);
+
 export const channel = vscode.window.createOutputChannel('@travetto/test');
 
 export function log(message: string, ...args: any[]) {

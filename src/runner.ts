@@ -2,10 +2,9 @@ import * as vscode from 'vscode';
 import { Pool, Factory, createPool, Options } from 'generic-pool';
 import { ResultsManager } from './results';
 import { TestExecution } from './execution';
-import { log, debug, getCurrentClassMethod } from './util';
+import { log, debug, getCurrentClassMethod, requireLocal } from './util';
 import * as ts from 'typescript';
 import { execSync } from 'child_process';
-import { Shutdown } from '@travetto/base/src/shutdown';
 
 export class TestRunner {
   private ready: boolean = false;
@@ -26,7 +25,7 @@ export class TestRunner {
     this.pool = createPool<TestExecution>({
       async create() {
         if (!this.active) {
-          const { PhaseManager } = require('@travetto/base/src/phase');
+          const { PhaseManager } = requireLocal('@travetto/base/src/phase');
           await new PhaseManager('test').load().run();
           this.active = true;
         }

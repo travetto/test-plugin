@@ -1,7 +1,8 @@
 import * as vscode from 'vscode';
 import * as util from 'util';
+import { requireLocal } from './util';
 import { Assertion, TestResult } from './types';
-import { simplifyStack } from '@travetto/base';
+const { simplifyStack } = requireLocal('@travetto/base');
 
 const rgba = (r = 0, g = 0, b = 0, a = 1) => `rgba(${r},${g},${b},${a})`;
 

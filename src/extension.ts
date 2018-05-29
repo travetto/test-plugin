@@ -1,9 +1,8 @@
-import { CWD } from './util';
-process.env.TS_CACHE_DIR = require('path').join(require('os').tmpdir(), `travetto-plugin-${CWD.replace(/[:\\\/]/g, '_')}`);
-process.chdir(CWD);
+import { CWD, requireLocal } from './util';
+process.env.INIT_CWD = CWD;
 
 require('util.promisify').shim();
-require('@travetto/base/bin/travetto');
+requireLocal('@travetto/base/bin/travetto');
 if (!console.debug) { console.debug = () => { }; }
 
 import * as vscode from 'vscode';
@@ -15,6 +14,10 @@ import { Decorations } from './decoration';
 
 // Register typescript import
 const runner = new TestRunner(vscode.window);
+
+process.on('exit', () => runner.shutdown());
+process.on('SIGKILL', () => runner.shutdown());
+process.on('SIGTERM', () => runner.shutdown());
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
