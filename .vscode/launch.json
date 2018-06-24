@@ -9,7 +9,7 @@
       "runtimeExecutable": "${execPath}",
       "args": [
         "--extensionDevelopmentPath=${workspaceRoot}",
-        "${workspaceRoot}/../starter"
+        "${workspaceRoot}/../model-elasticsearch"
       ],
       "env": {
         "DEBUG": "1"

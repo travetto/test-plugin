@@ -154,7 +154,7 @@ export class TestRunner {
   }
 
   async shutdown() {
-    console.log('Shutting down');
+    console.debug('Shutting down');
     const lines = execSync('docker ps -a').toString().split('\n');
     const ids = lines.filter(x => x.includes(this.dockerNS)).map(x => x.split(' ')[0]);
 

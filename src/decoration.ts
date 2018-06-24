@@ -3,23 +3,8 @@ import * as util from 'util';
 import { requireLocal } from './util';
 import { Assertion, TestResult } from './types';
 const { simplifyStack } = requireLocal('@travetto/base');
-
+const { deserializeError } = requireLocal('@travetto/exec');
 const rgba = (r = 0, g = 0, b = 0, a = 1) => `rgba(${r},${g},${b},${a})`;
-
-function deserializeError(e: any) {
-  if (e && e.$) {
-    const err = new Error();
-    for (const k of Object.keys(e)) {
-      (err as any)[k] = e[k];
-    }
-    err.message = e.message;
-    err.stack = e.stack;
-    err.name = e.name;
-    return err;
-  } else if (e) {
-    return e;
-  }
-}
 
 const ITALIC = 'font-style: italic;';
 const Style = {

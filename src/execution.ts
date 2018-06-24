@@ -43,7 +43,7 @@ export class TestExecution {
       this.waitForKill = new Promise((_, reject) => {
         for (const k of ['error', 'close', 'exit']) {
           this.proc.on(k, (...args) => {
-            console.log(k, args);
+            console.debug(k, args);
             delete this.proc;
             reject(EXIT);
           });
