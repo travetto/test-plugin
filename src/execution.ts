@@ -30,7 +30,9 @@ export class TestExecution {
         env: {
           ...process.env,
           EXECUTION: true,
+
           TRAVETTO_DEV: true,
+          NODE_PRESERVE_SYMLINKS: true,
           PATH: process.env.PATH
         },
         stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
