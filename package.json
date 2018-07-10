@@ -2,7 +2,7 @@
   "name": "travetto-test-plugin",
   "displayName": "Travetto Test Plugin",
   "description": "VS Code plugin for running interactive testing with the travetto framework ",
-  "version": "0.6.27",
+  "version": "0.6.28",
   "homepage": "https://travetto.io",
   "keywords": [
     "vscode",
