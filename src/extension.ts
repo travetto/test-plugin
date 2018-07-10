@@ -122,7 +122,8 @@ async function debug(addBreakpoint: boolean = false) {
       protocol: 'inspector',
       env: {
         DEBUG: '',
-        DEBUGGER: true
+        DEBUGGER: true,
+        LOCAL_DEV: true
       },
       cwd: CWD,
       name: 'Debug Travetto',
