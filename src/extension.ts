@@ -123,8 +123,8 @@ async function debug(addBreakpoint: boolean = false) {
       env: {
         DEBUG: '',
         DEBUGGER: true,
-        TRAVETTO_DEV: true,
-        NODE_PRESERVE_SYMLINKS: true
+        TRAVETTO_DEV: process.env.TRAVETTO_DEV,
+        NODE_PRESERVE_SYMLINKS: process.env.NODE_PRESERVE_SYMLINKS
       },
       cwd: CWD,
       name: 'Debug Travetto',

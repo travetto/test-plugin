@@ -30,8 +30,8 @@ export class TestExecution {
       const env = {
         ...process.env,
         EXECUTION: true,
-        TRAVETTO_DEV: 1,
-        NODE_PRESERVE_SYMLINKS: 1
+        TRAVETTO_DEV: process.env.TRAVETTO_DEV,
+        NODE_PRESERVE_SYMLINKS: process.env.NODE_PRESERVE_SYMLINKS
       };
       this.proc = spawn('node', ['node_modules/@travetto/test/bin/travetto-test'], {
         cwd: CWD,
