@@ -27,15 +27,16 @@ export class TestExecution {
 
   async _init() {
     try {
+      const env = {
+        ...process.env,
+        EXECUTION: true,
+        TRAVETTO_DEV: 1,
+        NODE_PRESERVE_SYMLINKS: 1
+      };
       this.proc = spawn('node', ['node_modules/@travetto/test/bin/travetto-test'], {
         cwd: CWD,
         shell: false,
-        env: {
-          ...process.env,
-          EXECUTION: true,
-          TRAVETTO_DEV: 1,
-          NODE_PRESERVE_SYMLINKS: 1
-        },
+        env,
         stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
       });
 
