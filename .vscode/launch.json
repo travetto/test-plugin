@@ -2,40 +2,41 @@
 {
   "version": "0.2.0",
   "configurations": [
-    {
-      "name": "Launch Extension",
-      "type": "extensionHost",
-      "request": "launch",
-      "runtimeExecutable": "${execPath}",
-      "args": [
-        "--extensionDevelopmentPath=${workspaceRoot}",
-        "${workspaceRoot}/../model-elasticsearch"
-      ],
-      "env": {
-        "DEBUG": "1"
-      },
-      "stopOnEntry": false,
-      "sourceMaps": true,
-      "outFiles": [
-        "${workspaceRoot}/out/src/**/*.js"
-      ],
-      "preLaunchTask": "npm"
+  {
+    "name": "Launch Extension",
+    "type": "extensionHost",
+    "request": "launch",
+    "runtimeExecutable": "${execPath}",
+    "args": [
+      "--extensionDevelopmentPath=${workspaceRoot}",
+      "${workspaceRoot}/../../travetto/module/di/"
+    ],
+    "env": {
+      "DEBUG": "1",
+      "NODE_PRESERVE_SYMLINKS": "1",
+      "TRAVETTO_DEV": "1"
     },
-    {
-      "name": "Launch Tests",
-      "type": "extensionHost",
-      "request": "launch",
-      "runtimeExecutable": "${execPath}",
-      "args": [
-        "--extensionDevelopmentPath=${workspaceRoot}",
-        "--extensionTestsPath=${workspaceRoot}/out/test"
-      ],
-      "stopOnEntry": false,
-      "sourceMaps": true,
-      "outFiles": [
-        "${workspaceRoot}/out/test/**/*.js"
-      ],
-      "preLaunchTask": "npm"
-    }
-  ]
+    "stopOnEntry": false,
+    "sourceMaps": true,
+    "outFiles": [
+      "${workspaceRoot}/out/src/**/*.js"
+    ],
+    "preLaunchTask": "npm"
+  },
+  {
+    "name": "Launch Tests",
+    "type": "extensionHost",
+    "request": "launch",
+    "runtimeExecutable": "${execPath}",
+    "args": [
+      "--extensionDevelopmentPath=${workspaceRoot}",
+      "--extensionTestsPath=${workspaceRoot}/out/test"
+    ],
+    "stopOnEntry": false,
+    "sourceMaps": true,
+    "outFiles": [
+      "${workspaceRoot}/out/test/**/*.js"
+    ],
+    "preLaunchTask": "npm"
+  }]
 }

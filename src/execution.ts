@@ -3,7 +3,10 @@ import { ChildProcess, spawn } from 'child_process';
 import { log, CWD, channel, debug, } from './util';
 
 function logit(str: NodeJS.ReadableStream) {
-  str.on('data', (b: Buffer) => channel.append(b.toString()));
+  str.on('data', (b: Buffer) => {
+    // console.log(b.toString());
+    channel.append(b.toString());
+  });
   return str;
 }
 
@@ -30,9 +33,8 @@ export class TestExecution {
         env: {
           ...process.env,
           EXECUTION: true,
-          TRAVETTO_DEV: true,
-          NODE_PRESERVE_SYMLINKS: true,
-          PATH: process.env.PATH
+          TRAVETTO_DEV: 1,
+          NODE_PRESERVE_SYMLINKS: 1
         },
         stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
       });

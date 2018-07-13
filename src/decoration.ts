@@ -2,8 +2,8 @@ import * as vscode from 'vscode';
 import * as util from 'util';
 import { requireLocal } from './util';
 import { Assertion, TestResult } from './types';
-const { simplifyStack } = requireLocal('@travetto/base');
-const { deserializeError } = requireLocal('@travetto/exec');
+const { Stacktrace } = requireLocal('@travetto/base');
+const { ExecUtil } = requireLocal('@travetto/exec');
 const rgba = (r = 0, g = 0, b = 0, a = 1) => `rgba(${r},${g},${b},${a})`;
 
 const ITALIC = 'font-style: italic;';
@@ -73,7 +73,7 @@ export class Decorations {
         title = asrt.error.message;
         suffix = asrt.error.message;
 
-        body = simplifyStack(deserializeError(asrt.error));
+        body = Stacktrace.simplifyStack(ExecUtil.deserializeError(asrt.error));
 
       }
       return { suffix, title, markdown: new vscode.MarkdownString(`${title} \n\n${body} `) };
