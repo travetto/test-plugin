@@ -6,7 +6,10 @@ import * as path from 'path';
 
 export const CWD = `${vscode.workspace.workspaceFolders[0].uri.path}`.replace(/[\\\/]/g, path.sep).replace(/^[\\\/]([A-Z]:)/i, (a, b) => b);
 
-export const requireLocal = (p: string) => require(`${CWD.replace(/[\\]/g, '/')}/node_modules/${p}`);
+export const toLocalFile = (p: string) => `${CWD.replace(/[\\]/g, '/')}/node_modules/${p}`;
+export const requireLocal = (p: string) => require(toLocalFile(p));
+
+export const NEW_CLI = fs.existsSync(toLocalFile('@travetto/base/bin/bootstrap.js'));
 
 export const channel = vscode.window.createOutputChannel('@travetto/test');
 

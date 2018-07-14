@@ -13,8 +13,7 @@
     ],
     "env": {
       "DEBUG": 1,
-      "NODE_PRESERVE_SYMLINKS": 1,
-      "TRAVETTO_DEV": 1
+      "NODE_PRESERVE_SYMLINKS": 1
     },
     "stopOnEntry": false,
     "sourceMaps": true,

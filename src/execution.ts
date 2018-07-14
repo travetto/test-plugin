@@ -1,6 +1,9 @@
 import * as vscode from 'vscode';
+import * as fs from 'fs';
 import { ChildProcess, spawn } from 'child_process';
-import { log, CWD, channel, debug, } from './util';
+import { log, CWD, channel, debug, requireLocal, toLocalFile, NEW_CLI, } from './util';
+
+const { Env } = requireLocal('@travetto/base/src/env');
 
 function logit(str: NodeJS.ReadableStream) {
   str.on('data', (b: Buffer) => {
@@ -11,6 +14,12 @@ function logit(str: NodeJS.ReadableStream) {
 }
 
 const EXIT = Symbol('EXIT');
+
+const TEST_BIN = 'node_modules/@travetto/test/bin'
+
+const TEST_SERVER_EXEC = NEW_CLI ?
+  `${TEST_BIN}/travetto-test-server` :
+  `${TEST_BIN}/travetto-test`;
 
 export class TestExecution {
   private proc: ChildProcess;
@@ -27,13 +36,16 @@ export class TestExecution {
 
   async _init() {
     try {
-      const env = {
+      const env: { [key: string]: any } = {
         ...process.env,
         EXECUTION: true,
-        TRAVETTO_DEV: process.env.TRAVETTO_DEV,
-        NODE_PRESERVE_SYMLINKS: process.env.NODE_PRESERVE_SYMLINKS
       };
-      this.proc = spawn('node', ['node_modules/@travetto/test/bin/travetto-test'], {
+
+      if (Env.frameworkDev) {
+        env.NODE_PRESERVE_SYMLINKS = 1;
+      }
+
+      this.proc = spawn('node', [TEST_SERVER_EXEC], {
         cwd: CWD,
         shell: false,
         env,

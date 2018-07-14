@@ -1,8 +1,15 @@
-import { CWD, requireLocal } from './util';
+import * as fs from 'fs';
+import { CWD, requireLocal, toLocalFile, NEW_CLI } from './util';
 process.chdir(CWD);
 
 require('util.promisify').shim();
-requireLocal('@travetto/base/bin/travetto');
+
+if (NEW_CLI) {
+  requireLocal('@travetto/base/bin/bootstrap');
+} else {
+  requireLocal('@travetto/base/bin/travetto');
+}
+
 if (!console.debug) { console.debug = () => { }; }
 
 import * as vscode from 'vscode';
@@ -11,6 +18,8 @@ import * as diff from 'diff';
 import { TestRunner } from './runner';
 import { TestExecution } from './execution';
 import { Decorations } from './decoration';
+
+const { Env } = requireLocal('@travetto/base/src/env');
 
 // Register typescript import
 const runner = new TestRunner(vscode.window);
@@ -116,20 +125,26 @@ async function debug(addBreakpoint: boolean = false) {
       });
     }
 
+    const env: { [key: string]: any } = {
+      DEBUG: '',
+      DEBUGGER: true
+    };
+
+    if (Env.frameworkDev) {
+      env.NODE_PRESERVE_SYMLINKS = 1;
+    }
+
     await vscode.debug.startDebugging(vscode.workspace.workspaceFolders[0], {
       type: 'node',
       request: 'launch',
       protocol: 'inspector',
-      env: {
-        DEBUG: '',
-        DEBUGGER: true,
-        TRAVETTO_DEV: process.env.TRAVETTO_DEV,
-        NODE_PRESERVE_SYMLINKS: process.env.NODE_PRESERVE_SYMLINKS
-      },
+      env,
       cwd: CWD,
       name: 'Debug Travetto',
       // tslint:disable-next-line:no-invalid-template-strings
-      program: '${workspaceFolder}/node_modules/@travetto/test/bin/travetto-test',
+      program: NEW_CLI ?
+        '${workspaceFolder}/node_modules/@travetto/base/bin/travetto' :
+        '${workspaceFolder}/node_modules/@travetto/test/bin/travetto-test',
       stopOnEntry: false,
       sourceMaps: true,
       runtimeArgs: [
@@ -144,6 +159,7 @@ async function debug(addBreakpoint: boolean = false) {
         '**/node_modules/stack-chain/**/*'
       ],
       args: [
+        NEW_CLI ? 'test' : '',
         '-m',
         'single',
         '-f',
@@ -151,7 +167,7 @@ async function debug(addBreakpoint: boolean = false) {
         '--',
         `${editor.document.fileName}`,
         `${line}`
-      ],
+      ].filter(x => x != ''),
       console: 'internalConsole',
       internalConsoleOptions: 'openOnSessionStart'
     });
