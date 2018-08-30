@@ -143,7 +143,7 @@ async function debug(addBreakpoint: boolean = false) {
       name: 'Debug Travetto',
       // tslint:disable-next-line:no-invalid-template-strings
       program: NEW_CLI ?
-        '${workspaceFolder}/node_modules/@travetto/base/bin/travetto' :
+        '${workspaceFolder}/node_modules/@travetto/cli/bin/travetto' :
         '${workspaceFolder}/node_modules/@travetto/test/bin/travetto-test',
       stopOnEntry: false,
       sourceMaps: true,
