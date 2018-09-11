@@ -1,5 +1,5 @@
 import * as fs from 'fs';
-import { CWD, requireLocal, toLocalFile, NEW_CLI } from './util';
+import { CWD, requireLocal, toLocalFile, NEW_CLI, NEW_CLI_v0 } from './util';
 process.chdir(CWD);
 
 require('util.promisify').shim();
@@ -143,7 +143,9 @@ async function debug(addBreakpoint: boolean = false) {
       name: 'Debug Travetto',
       // tslint:disable-next-line:no-invalid-template-strings
       program: NEW_CLI ?
-        '${workspaceFolder}/node_modules/@travetto/cli/bin/travetto' :
+        (NEW_CLI_v0 ?
+          '${workspaceFolder}/node_modules/@travetto/cli/bin/travetto' :
+          '${workspaceFolder}/node_modules/@travetto/test/bin/travetto-cli-test') :
         '${workspaceFolder}/node_modules/@travetto/test/bin/travetto-test',
       stopOnEntry: false,
       sourceMaps: true,
@@ -159,12 +161,9 @@ async function debug(addBreakpoint: boolean = false) {
         '**/node_modules/stack-chain/**/*'
       ],
       args: [
-        NEW_CLI ? 'test' : '',
-        '-m',
-        'single',
-        '-f',
-        'tap',
-        '--',
+        ...(NEW_CLI ?
+          (NEW_CLI_v0 ? ['test', '-m', 'single', '-f', 'tap'] : []) :
+          ['-m', 'single', '-f', 'tap', '--',]),
         `${editor.document.fileName}`,
         `${line}`
       ].filter(x => x != ''),

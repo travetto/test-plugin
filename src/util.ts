@@ -9,7 +9,9 @@ export const CWD = `${vscode.workspace.workspaceFolders[0].uri.path}`.replace(/[
 export const toLocalFile = (p: string) => `${CWD.replace(/[\\]/g, '/')}/node_modules/${p}`;
 export const requireLocal = (p: string) => require(toLocalFile(p));
 
-export const NEW_CLI = fs.existsSync(toLocalFile('@travetto/base/bin/bootstrap.js'));
+export const NEW_CLI = fs.existsSync(toLocalFile('@travetto/test/bin/travetto-cli-test.js'));
+export const NEW_CLI_v0 = fs.existsSync(toLocalFile('@travetto/cli/bin/travetto.js'));
+
 
 export const channel = vscode.window.createOutputChannel('@travetto/test');
 
