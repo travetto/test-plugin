@@ -155,7 +155,8 @@ async function debug(addBreakpoint: boolean = false) {
       skipFiles: [
         '<node_internals>/**',
         '**/@travetto/context/**/*',
-        '**/@travetto/base/**/stacktrace.**',
+        '**/@travetto/base/**/stacktrace.*',
+        '**/@travetto/compiler/**/proxy.*',
         '**/node_modules/cls-hooked/**/*',
         '**/node_modules/trace/**/*',
         '**/node_modules/stack-chain/**/*'
