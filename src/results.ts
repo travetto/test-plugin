@@ -146,6 +146,7 @@ export class ResultsManager {
   onEvent(e: TestEvent, line?: number) {
     if (e.phase === 'before') {
       if (e.type === 'suite') {
+        this.clearTotalError();
         this.reset('suite', e.suite.className);
         this.store('suite', e.suite.className, 'unknown', Decorations.buildSuite(e.suite), e.suite);
 
@@ -203,6 +204,34 @@ export class ResultsManager {
       this.failedAssertions[Decorations.line(assertion.line).range.start.line] = assertion;
     }
     this.store('assertion', key, status, dec, assertion);
+  }
+
+  clearTotalError() {
+    this.reset('test', 'unknown:unknown');
+  }
+
+  setTotalError(editor: vscode.TextEditor, error: Error) {
+    const assertion: Assertion = {
+      status: 'fail',
+      className: 'unknown',
+      methodName: 'unknown',
+      error,
+      line: 1,
+      lineEnd: editor.document.lineCount + 1
+    };
+
+    const t: TestResult = {
+      status: 'fail',
+      assertions: [assertion],
+      className: 'unknown',
+      methodName: 'unknown',
+      file: editor.document.fileName,
+      error,
+      lines: { start: 1, end: editor.document.lineCount + 1 }
+    }
+    this.onEvent({ type: 'test', phase: 'before', test: t });
+    this.onEvent({ type: 'assertion', phase: 'after', assertion });
+    this.onEvent({ type: 'test', phase: 'after', test: t });
   }
 
   getTotals() {

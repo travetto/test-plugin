@@ -131,7 +131,10 @@ export class TestRunner {
             await exec.run(editor.document.fileName, line, e => {
               extend();
               if (process.env.DEBUG) {
-                debug('Event Recieved', e);
+                debug('Event Received', e);
+              }
+              if (e.type === 'runComplete' && e.error) {
+                this.results.setTotalError(editor, e.error);
               }
               this.results.onEvent(e, line);
               const progressTotals = this.results.getTotals();

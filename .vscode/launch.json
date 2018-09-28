@@ -9,7 +9,7 @@
     "runtimeExecutable": "${execPath}",
     "args": [
       "--extensionDevelopmentPath=${workspaceRoot}",
-      "${workspaceRoot}/../todo-app/"
+      "${workspaceRoot}/../../rf-api/"
     ],
     "env": {
       "DEBUG": 1,

@@ -39,6 +39,7 @@ export class TestExecution {
       const env: { [key: string]: any } = {
         ...process.env,
         EXECUTION: true,
+        EXECUTION_REUSABLE: true
       };
 
       if (Env.frameworkDev) {

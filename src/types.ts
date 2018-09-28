@@ -63,6 +63,7 @@ export interface Assertion {
   error?: Error;
   message?: string;
   line: number;
+  lineEnd?: number;
 }
 
 export type TestEvent =

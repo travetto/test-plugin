@@ -76,12 +76,12 @@ export class Decorations {
         body = Stacktrace.simplifyStack(ExecUtil.deserializeError(asrt.error));
 
       }
-      return { suffix, title, markdown: new vscode.MarkdownString(`${title} \n\n${body} `) };
+      return { suffix, title, markdown: new vscode.MarkdownString(`**${title}** \n\n${body}`) };
     }
   }
 
-  static line(n: number): vscode.DecorationOptions {
-    return { range: new vscode.Range(n - 1, 0, n - 1, 100000000000) };
+  static line(n: number, end: number = 0): vscode.DecorationOptions {
+    return { range: new vscode.Range(n - 1, 0, (end || n) - 1, 100000000000) };
   }
 
   static buildAssert(state: string) {
@@ -102,8 +102,8 @@ export class Decorations {
     });
   }
 
-  static buildAssertion(assertion: { error?: Error, line: number, message?: string }): vscode.DecorationOptions {
-    let out = this.line(assertion.line);
+  static buildAssertion(assertion: { error?: Error, line: number, lineEnd?: number, message?: string }): vscode.DecorationOptions {
+    let out = this.line(assertion.line, assertion.lineEnd);
     if (assertion.error) {
       const { suffix, title, markdown } = this.buildHover(assertion);
 
