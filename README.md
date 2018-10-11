@@ -1,19 +1,17 @@
-# travetto-test-plugin 
+Test-Plugin
+===
 
-This plugin integrates with the travetto framework's testing module, to provide real-time feedback of tests in the editor.
+The [`plugin`](https://marketplace.visualstudio.com/items?itemName=arcsine.travetto-test-plugin) directly integrates with the test module to provide real-time feedback on unit tests within `vscode`.  This is the preferred method of execution during development.
 
-## Features
+<img src="https://travetto.github.io/assets/landing/testing.png">
 
-* Real-time feedback in test files
-  - Run all tests on file load
-  - Run individual tests on file save (depending on current line)
-* The ability to debug any test (Ctrl-Shift-T)
-  - Will automatically add/remove a break point at the current line, and run the test in debug
-
+Any test can be debugged on demand by running `command-shift-t` on OSX or `ctrl-shift-t` on win/linux. 
 
 ## Requirements
 
-This plugin only works with the `@travetto/test`, in files with `@Suite()` declarations.
+Tests will run on initial load of any file in the `test/*` directory that contains a `@Test` decorator. 
+
+<div class="release-info">
 
 ## Known Issues
 
@@ -24,3 +22,5 @@ Calling out known issues can help limit users opening duplicate issues against y
 ### 0.0.x
 
 Alpha development of plugin, continuously updating.
+
+</div>
