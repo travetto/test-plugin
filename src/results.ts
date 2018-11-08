@@ -156,6 +156,8 @@ export class ResultsManager {
 
         // Clear diags
       } else if (e.type === 'test') {
+        this.clearTotalError();
+
         const key = `${e.test.className}:${e.test.methodName}`;
         this.reset('test', key);
         this.store('test', key, 'unknown', Decorations.buildTest(e.test), e.test);
@@ -207,7 +209,10 @@ export class ResultsManager {
   }
 
   clearTotalError() {
-    this.reset('test', 'unknown:unknown');
+    if (this.results.test['unknown']) {
+      this.reset('test', 'unknown:unknown');
+      delete this.results.test.unknown;
+    }
   }
 
   setTotalError(editor: vscode.TextEditor, error: Error) {
