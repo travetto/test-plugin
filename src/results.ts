@@ -74,15 +74,14 @@ export class ResultsManager {
           if (as.status !== 'fail') {
             continue;
           }
-          const { title, markdown } = Decorations.buildHover(as.src);
+          const { bodyFirst } = Decorations.buildHover(as.src);
           const rng = as.decoration!.range;
 
           const diagRng = new vscode.Range(
             new vscode.Position(rng.start.line, this._editor.document.lineAt(rng.start.line).firstNonWhitespaceCharacterIndex),
             rng.end
           );
-          const diag = new vscode.Diagnostic(diagRng, title, vscode.DiagnosticSeverity.Error);
-          diag.source = 'Travetto';
+          const diag = new vscode.Diagnostic(diagRng, `${ts.src.className.split('.').pop()}.${ts.src.methodName} - ${bodyFirst}`, vscode.DiagnosticSeverity.Error);
           acc.push(diag);
         }
         return acc;

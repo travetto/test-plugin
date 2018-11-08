@@ -31,6 +31,25 @@ const Style = {
   } as Partial<vscode.DecorationRenderOptions>
 };
 
+const OPERATORS: { [key: string]: string } = {
+  includes: 'should include',
+  test: 'should match',
+  throws: 'should throw',
+  doesNotThrow: 'should not throw',
+  equal: 'should equal',
+  notEqual: 'should not equal',
+  deepEqual: 'should deep equal',
+  notDeepEqual: 'should not deep equal',
+  strictEqual: 'should strictly equal',
+  notStrictEqual: 'should strictly not equal',
+  deepStrictEqual: 'should strictly deep equal',
+  notStrictDeepEqual: 'should strictly not deep equal',
+  greaterThanEqual: 'should be greater than or equal to',
+  greaterThan: 'should be greater than',
+  lessThanEqual: 'should be less than or equal to',
+  lessThan: 'should be less than'
+};
+
 export class Decorations {
 
   static context: vscode.ExtensionContext;
@@ -38,16 +57,19 @@ export class Decorations {
   static buildHover(asrt: Partial<Assertion>) {
     if (asrt.error) {
       let title: string;
+      let body: string;
+      let bodyFirst: string;
       let suffix = asrt.message;
 
-      let body: string;
       if ('errors' in asrt.error) {
         title = asrt.error!.message;
-        suffix = `(${title}) ${((asrt.error as any).errors).map(x => typeof x === 'string' ? x : x.message).join(', ')}`;
+        const messages = ((asrt.error as any).errors).map(x => typeof x === 'string' ? x : x.message);
+        suffix = `(${title}) ${messages.join(', ')}`;
         if (suffix.length > 60) {
           suffix = title;
         }
-        body = `\t${((asrt.error as any).errors).map(x => x.message).join('  \n\t')}  `;
+        body = `\t${messages.join('  \n\t')}  `;
+        bodyFirst = `${title} - ${messages.join(', ')}`;
       } else if (asrt.expected !== undefined && asrt.actual !== undefined) {
         title = asrt.message
           .replace(/^.*should/, 'Should');
@@ -67,16 +89,20 @@ export class Decorations {
           }
         };
 
-        body = `\tExpected: \n\t${getVal(asrt.expected)} \n\tActual: \n\t${getVal(asrt.actual)} \n`;
-
+        if (/equal/i.test(asrt.operator)) {
+          body = `\tExpected: \n\t${getVal(asrt.expected)} \n\tActual: \n\t${getVal(asrt.actual)} \n`;
+        } else {
+          body = `\t${asrt.message}`;
+        }
+        bodyFirst = asrt.message;
       } else {
         title = asrt.error.message;
         suffix = asrt.error.message;
 
         body = Stacktrace.simplifyStack(ExecUtil.deserializeError(asrt.error));
-
+        bodyFirst = body.split('\n')[0];
       }
-      return { suffix, title, markdown: new vscode.MarkdownString(`**${title}** \n\n${body}`) };
+      return { suffix, title, bodyFirst, body, markdown: new vscode.MarkdownString(`**${title}** \n\n${body}`) };
     }
   }
 

@@ -20,7 +20,7 @@
     "url": "https://github.com/travetto/test-plugin.git"
   },
   "engines": {
-    "vscode": "^1.22.0"
+    "vscode": "^1.28.2"
   },
   "categories": [
     "Other"
@@ -37,15 +37,15 @@
     "src/"
   ],
   "devDependencies": {
-    "@types/node": "^9.4.7",
-    "vscode": "^1.1.14"
+    "@types/node": "^10.12.3",
+    "vscode": "^1.1.21"
   },
   "dependencies": {
-    "@types/diff": "^3.5.1",
-    "@types/generic-pool": "^3.1.2",
+    "@types/diff": "^3.5.2",
+    "@types/generic-pool": "^3.1.5",
     "diff": "^3.5.0",
     "generic-pool": "^3.4.2",
-    "typescript": "^2.8.3",
+    "typescript": "^3.0.0",
     "util.promisify": "^1.0.0"
   },
   "activationEvents": [
@@ -71,71 +71,77 @@
       }
     },
     "debuggers": [
-    {
-      "type": "node",
-      "label": "Travetto App Debug",
-      "program": "${workspaceFolder}/node_modules/@travetto/test/bin/travetto-cli-test",
-      "runtime": "node",
-      "languages": [
-        "typescript"
-      ],
-      "configurationAttributes": {
-        "launch": {
-          "required": [
-            "env.TRV_APP_NAME"
-          ],
-          "properties": {
-            "env.TRV_APP_NAME": {
-              "type": "string",
-              "description": "The app to debug."
-            }
-          }
-        }
-      },
-      "initialConfigurations": [
       {
         "type": "node",
-        "request": "launch",
-        "name": "Launch Travetto via Node",
-        "program": "${workspaceFolder}/node_modules/@travetto/base/bin/bootstrap",
-        "cwd": "${workspaceFolder}",
-        "skipFiles": [
-          "<node_internals>/**",
-          "**/@travetto/context/**/*",
-          "**/@travetto/base/**/stacktrace.*",
-          "**/@travetto/compiler/**/proxy.*",
-          "**/node_modules/cls-hooked/**/*",
-          "**/node_modules/trace/**/*",
-          "**/node_modules/stack-chain/**/*"
+        "label": "Travetto App Debug",
+        "program": "${workspaceFolder}/node_modules/@travetto/test/bin/travetto-cli-test",
+        "runtime": "node",
+        "languages": [
+          "typescript"
+        ],
+        "configurationAttributes": {
+          "launch": {
+            "required": [
+              "env.TRV_APP_NAME"
+            ],
+            "properties": {
+              "env.TRV_APP_NAME": {
+                "type": "string",
+                "description": "The app to debug."
+              }
+            }
+          }
+        },
+        "initialConfigurations": [
+          {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch Travetto via Node",
+            "program": "${workspaceFolder}/node_modules/@travetto/base/bin/bootstrap",
+            "cwd": "${workspaceFolder}",
+            "skipFiles": [
+              "<node_internals>/**",
+              "**/@travetto/context/**/*",
+              "**/@travetto/base/**/stacktrace.*",
+              "**/@travetto/compiler/**/proxy.*",
+              "**/node_modules/cls-hooked/**/*",
+              "**/node_modules/trace/**/*",
+              "**/node_modules/stack-chain/**/*"
+            ]
+          }
         ]
-      }]
-    }],
+      }
+    ],
     "commands": [
-    {
-      "command": "extension.triggerDebug",
-      "title": "Debug @Tests",
-      "category": "travetto"
-    }],
+      {
+        "command": "extension.triggerDebug",
+        "title": "Debug @Tests",
+        "category": "travetto"
+      }
+    ],
     "keybindings": [
-    {
-      "command": "extension.triggerDebugKey",
-      "key": "ctrl+shift+t",
-      "mac": "cmd+shift+t",
-      "when": "resourceLangId == typescript && editorTextFocus"
-    }],
+      {
+        "command": "extension.triggerDebugKey",
+        "key": "ctrl+shift+t",
+        "mac": "cmd+shift+t",
+        "when": "resourceLangId == typescript && editorTextFocus"
+      }
+    ],
     "menus": {
       "editor/context": [
-      {
-        "when": "resourceLangId == typescript && editorTextFocus",
-        "command": "extension.triggerDebug",
-        "group": "travetto"
-      }],
+        {
+          "when": "resourceLangId == typescript && editorTextFocus",
+          "command": "extension.triggerDebug",
+          "group": "travetto"
+        }
+      ],
       "commandPalette": [
-      {
-        "when": "resourceLangId == typescript && editorTextFocus",
-        "command": "extension.triggerDebug",
-        "group": "travetto"
-      }]
+        {
+          "when": "resourceLangId == typescript && editorTextFocus",
+          "command": "extension.triggerDebug",
+          "group": "travetto"
+        }
+      ]
     }
   }
 }
