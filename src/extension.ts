@@ -1,5 +1,5 @@
-import * as fs from 'fs';
-import { CWD, requireLocal, toLocalFile, NEW_CLI, NEW_CLI_v0 } from './util';
+import * as path from 'path';
+import { CWD, requireLocal, NEW_CLI, NEW_CLI_v0 } from './util';
 process.chdir(CWD);
 
 require('util.promisify').shim();
@@ -16,7 +16,6 @@ import * as vscode from 'vscode';
 import * as diff from 'diff';
 
 import { TestRunner } from './runner';
-import { TestExecution } from './execution';
 import { Decorations } from './decoration';
 
 const { Env } = requireLocal('@travetto/base/src/env');
@@ -165,7 +164,7 @@ async function debug(addBreakpoint: boolean = false) {
         ...(NEW_CLI ?
           (NEW_CLI_v0 ? ['test', '-m', 'single', '-f', 'tap'] : []) :
           ['-m', 'single', '-f', 'tap', '--',]),
-        `${editor.document.fileName}`,
+        `${editor.document.fileName.replace(`${CWD}${path.sep}`, '')}`,
         `${line}`
       ].filter(x => x != ''),
       console: 'internalConsole',
