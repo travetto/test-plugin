@@ -8,6 +8,8 @@ import {
   SuiteState
 } from './types';
 
+const diagColl = vscode.languages.createDiagnosticCollection('Travetto');
+
 export class ResultsManager {
 
   private results: AllState = {
@@ -18,6 +20,8 @@ export class ResultsManager {
   private failedAssertions: { [key: number]: Assertion };
 
   private _editor: vscode.TextEditor;
+
+  private diagnostics: vscode.Diagnostic[] = [];
 
   setEditor(e: vscode.TextEditor, refresh: boolean = false) {
     this._editor = e as any;
@@ -49,8 +53,8 @@ export class ResultsManager {
     }
     for (const test of Object.values(this.results.test)) {
       if (test.decoration) {
-        const key = `${test.src.className}:${test.src.methodName}`;
         this._editor.setDecorations(test.styles[test.status], [test.decoration]);
+
         const out = { success: [], fail: [], unknown: [] };
         for (const asrt of test.assertions) {
           out[asrt.status].push(asrt.decoration);
@@ -60,6 +64,30 @@ export class ResultsManager {
         }
       }
     }
+  }
+
+  refreshDiagnostics() {
+    this.diagnostics = Object.values(this.results.test)
+      .filter(x => x.status === 'fail')
+      .reduce((acc, ts) => {
+        for (const as of ts.assertions) {
+          if (as.status !== 'fail') {
+            continue;
+          }
+          const { title, markdown } = Decorations.buildHover(as.src);
+          const rng = as.decoration!.range;
+
+          const diagRng = new vscode.Range(
+            new vscode.Position(rng.start.line, this._editor.document.lineAt(rng.start.line).firstNonWhitespaceCharacterIndex),
+            rng.end
+          );
+          const diag = new vscode.Diagnostic(diagRng, title, vscode.DiagnosticSeverity.Error);
+          diag.source = 'Travetto';
+          acc.push(diag);
+        }
+        return acc;
+      }, []);
+    diagColl.set(this._editor.document.uri, this.diagnostics);
   }
 
   store(level: string, key: string, status: string, decoration: vscode.DecorationOptions, src?: any) {
@@ -160,7 +188,9 @@ export class ResultsManager {
 
         const key = `${e.test.className}:${e.test.methodName}`;
         this.reset('test', key);
-        this.store('test', key, 'unknown', Decorations.buildTest(e.test), e.test);
+        const dec = Decorations.buildTest(e.test);
+        this.store('test', key, 'unknown', dec, e.test);
+
 
         // IF running a single test
         if (line) {
@@ -187,6 +217,8 @@ export class ResultsManager {
     const dec = Decorations.buildTest(test);
     const status = test.status === 'skip' ? 'unknown' : test.status;
     this.store('test', `${test.className}:${test.methodName}`, status, dec, test);
+
+    this.refreshDiagnostics();
 
     // Update Suite if doing a single line
     if (line &&
