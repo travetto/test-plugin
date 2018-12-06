@@ -1,7 +1,5 @@
-import * as vscode from 'vscode';
-import * as fs from 'fs';
 import { ChildProcess, spawn } from 'child_process';
-import { log, CWD, channel, debug, requireLocal, toLocalFile, NEW_CLI, } from './util';
+import { log, CWD, channel, debug, requireLocal, NEW_CLI, } from './util';
 
 const { Env } = requireLocal('@travetto/base/src/env');
 

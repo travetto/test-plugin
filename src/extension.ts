@@ -126,6 +126,7 @@ async function debug(addBreakpoint: boolean = false) {
 
     const env: { [key: string]: any } = {
       DEBUG: '',
+      ENV: 'test',
       DEBUGGER: true
     };
 

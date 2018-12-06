@@ -1,20 +1,15 @@
 import * as vscode from 'vscode';
-import { Pool, Factory, createPool, Options } from 'generic-pool';
+import { Pool, createPool } from 'generic-pool';
 import { ResultsManager } from './results';
 import { TestExecution } from './execution';
 import { log, debug, getCurrentClassMethod, requireLocal } from './util';
-import * as ts from 'typescript';
 import { execSync } from 'child_process';
 
 export class TestRunner {
-  private ready: boolean = false;
-  private queue: [vscode.TextEditor, number][] = [];
-  private running: Promise<void>;
   private status: vscode.StatusBarItem;
 
   private prev: vscode.TextEditor;
   private pool: Pool<TestExecution>;
-  private active = false;
   private dockerNS = `test-${process.pid}`;
   public results: ResultsManager;
 
@@ -166,7 +161,6 @@ export class TestRunner {
     }
     await this.pool.drain();
     this.pool.clear();
-    this.active = false;
   }
 
   async setEditor(editor: vscode.TextEditor, refresh = false) {
