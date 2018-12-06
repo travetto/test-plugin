@@ -2,7 +2,6 @@
 {
   "version": "0.2.0",
   "configurations": [
-
     {
       "name": "Launch Extension",
       "type": "extensionHost",
@@ -10,7 +9,7 @@
       "runtimeExecutable": "${execPath}",
       "args": [
         "--extensionDevelopmentPath=${workspaceRoot}",
-        "${workspaceRoot}/../../travetto/module/di"
+        "${workspaceRoot}/../../travetto/module/model-elasticsearch"
       ],
       "env": {
         "DEBUG": "1",

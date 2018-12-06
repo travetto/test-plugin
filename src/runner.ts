@@ -3,6 +3,8 @@ import { Pool, createPool } from 'generic-pool';
 import { ResultsManager } from './results';
 import { TestExecution } from './execution';
 import { log, debug, getCurrentClassMethod, requireLocal } from './util';
+
+import * as ts from 'typescript';
 import { execSync } from 'child_process';
 
 export class TestRunner {
