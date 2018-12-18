@@ -1,4 +1,3 @@
-import * as vscode from 'vscode';
 import { ChildProcess, spawn } from 'child_process';
 import { log, CWD, channel, debug, requireLocal, NEW_CLI, } from './util';
 

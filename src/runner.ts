@@ -4,7 +4,6 @@ import { ResultsManager } from './results';
 import { TestExecution } from './execution';
 import { log, debug, getCurrentClassMethod, requireLocal } from './util';
 
-import * as ts from 'typescript';
 import { execSync } from 'child_process';
 
 export class TestRunner {
@@ -105,6 +104,10 @@ export class TestRunner {
         line = 0;
       }
 
+      if (this.results.hasTotalError()) {
+        line = 0;
+      }
+
       const { method, suite } = getCurrentClassMethod(editor, line);
 
       if (!suite) {
@@ -131,6 +134,7 @@ export class TestRunner {
                 debug('Event Received', e);
               }
               if (e.type === 'runComplete' && e.error) {
+                this.results.resetAll();
                 this.results.setTotalError(editor, e.error);
               }
               this.results.onEvent(e, line);

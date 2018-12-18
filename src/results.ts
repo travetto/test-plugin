@@ -71,7 +71,7 @@ export class ResultsManager {
       .filter(x => x.status === 'fail')
       .reduce((acc, ts) => {
         for (const as of ts.assertions) {
-          if (as.status !== 'fail') {
+          if (as.status !== 'fail' || as.src.className === 'unknown') {
             continue;
           }
           const { bodyFirst } = Decorations.buildHover(as.src);
@@ -139,16 +139,15 @@ export class ResultsManager {
 
     if (existing) {
       Object.values(existing.styles).forEach(x => x.dispose());
+      if (level === 'test') {
+        Object.values((existing as TestState).assertStyles).forEach(x => x.dispose());
+      }
     }
 
     if (level === 'test') {
       const testBase = (base as TestState);
       testBase.assertions = [];
       testBase.assertStyles = this.genStyles('assertion');
-
-      if (existing) {
-        Object.values((existing as TestState).assertStyles).forEach(x => x.dispose());
-      }
       this.results[level][key] = testBase;
     } else if (level === 'suite') {
       const suiteBase = (base as SuiteState);
@@ -173,7 +172,6 @@ export class ResultsManager {
   onEvent(e: TestEvent, line?: number) {
     if (e.phase === 'before') {
       if (e.type === 'suite') {
-        this.clearTotalError();
         this.reset('suite', e.suite.className);
         this.store('suite', e.suite.className, 'unknown', Decorations.buildSuite(e.suite), e.suite);
 
@@ -183,8 +181,6 @@ export class ResultsManager {
 
         // Clear diags
       } else if (e.type === 'test') {
-        this.clearTotalError();
-
         const key = `${e.test.className}:${e.test.methodName}`;
         this.reset('test', key);
         const dec = Decorations.buildTest(e.test);
@@ -239,11 +235,8 @@ export class ResultsManager {
     this.store('assertion', key, status, dec, assertion);
   }
 
-  clearTotalError() {
-    if (this.results.test['unknown']) {
-      this.reset('test', 'unknown:unknown');
-      delete this.results.test.unknown;
-    }
+  hasTotalError() {
+    return !!this.results.test['unknown:unknown'];
   }
 
   setTotalError(editor: vscode.TextEditor, error: Error) {
