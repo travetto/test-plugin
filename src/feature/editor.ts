@@ -43,10 +43,12 @@ function onUpdate(editor?: vscode.TextEditor | vscode.TextDocument, line?: numbe
       line = editor.selection.start.line;
     }
 
-    runner.getResults(editor).setEditor(editor);
+    const doc = editor.document;
 
-    if (!lines.length && prevText.has(editor.document)) {
-      const changes = diff.structuredPatch('a', 'b', prevText.get(editor.document), newText, 'a', 'b', { context: 0 });
+    runner.getResults(doc).addEditor(editor);
+
+    if (!lines.length && prevText.has(doc)) {
+      const changes = diff.structuredPatch('a', 'b', prevText.get(doc), newText, 'a', 'b', { context: 0 });
       const newLines = changes.hunks.map(x => x.newStart || x.oldStart);
       if (newLines.length < 5) {
         lines.push(...newLines);
@@ -55,12 +57,14 @@ function onUpdate(editor?: vscode.TextEditor | vscode.TextDocument, line?: numbe
       lines.push(line || 1);
     }
 
-    if (!lines.length && runner.getResults(editor).getTotals().total === 0) {
+    if (!lines.length && runner.getResults(doc).getTotals().total === 0) {
       lines.push(1);
     }
 
-    runner.run(editor, lines).catch(e => console.error(e));
-    prevText.set(editor.document, newText);
+    if (lines.length) {
+      runner.run(doc, lines[0]).catch(e => console.error(e));
+    }
+    prevText.set(doc, newText);
   }
 }
 
@@ -70,7 +74,12 @@ export function activate(context: vscode.ExtensionContext) {
   try {
     vscode.workspace.onDidOpenTextDocument(x => onUpdate(x, 0), null, context.subscriptions);
     vscode.workspace.onDidSaveTextDocument(x => onUpdate(x), null, context.subscriptions);
-    vscode.workspace.onDidCloseTextDocument(x => runner.close(x), null, context.subscriptions);
+    vscode.workspace.onDidCloseTextDocument(x => {
+      const gone = vscode.workspace.textDocuments.find(d => d.fileName === x.fileName);
+      if (gone) {
+        runner.close(gone);
+      }
+    }, null, context.subscriptions);
     vscode.window.onDidChangeActiveTextEditor(x => onUpdate(x), null, context.subscriptions);
 
     // vscode.window.onDidChangeVisibleTextEditors(eds => eds.forEach(x => onUpdate(x, 0)), null, context.subscriptions);

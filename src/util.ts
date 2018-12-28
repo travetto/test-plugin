@@ -25,8 +25,8 @@ export function debug(message: string, ...args: any[]) {
   }
 }
 
-export function getCurrentClassMethod(editor: vscode.TextEditor, line: number) {
-  const sourceFile = ts.createSourceFile('text', editor.document.getText(), ts.ScriptTarget.ES2018);
+export function getCurrentClassMethod(document: vscode.TextDocument, line: number) {
+  const sourceFile = ts.createSourceFile('text', document.getText(), ts.ScriptTarget.ES2018);
 
   function getElementByDecoration<T extends { kind: ts.SyntaxKind }>(
     children: { [key: number]: ts.Node, length: number },

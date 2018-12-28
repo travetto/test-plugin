@@ -49,39 +49,41 @@ export class TestRunner {
     }
   }
 
-  getResults(editor: vscode.TextEditor) {
-    if (!this._results.has(editor.document.fileName)) {
-      const rm = new ResultsManager(editor.document);
-      this._results.set(editor.document.fileName, rm);
+  getResults(document: vscode.TextDocument) {
+    if (!this._results.has(document.fileName)) {
+      const rm = new ResultsManager(document);
+      this._results.set(document.fileName, rm);
     }
-    return this._results.get(editor.document.fileName);
+    return this._results.get(document.fileName);
   }
 
-  async _runNext(editor: vscode.TextEditor, line: number) {
-    log('Running', editor.document.fileName, line);
+  async run(document: vscode.TextDocument, line: number) {
+    const res = this.getResults(document);
+    if (res.active) {
+      return;
+    }
 
-    const exec = await this.pool.acquire();
+    let exec: TestExecution;
+    res.active = true;
+    log('Running', document.fileName, line);
 
     try {
-      await this._runJob(exec, editor, line)
+      exec = await this.pool.acquire();
+      await this._runJob(exec, document, line)
     } catch (e) {
       debug('Errored', e);
     } finally {
-      exec.release();
-      if (this.pool.isBorrowedResource(exec)) {
-        await this.pool.release(exec);
+      res.active = false;
+      if (exec) {
+        exec.release();
+        if (this.pool.isBorrowedResource(exec)) {
+          await this.pool.release(exec);
+        }
       }
     }
   }
 
-  async run(editor: vscode.TextEditor, lines: number[]) {
-    for (const line of lines) {
-      this._runNext(editor, line);
-      log('Queuing', editor.document.fileName, line);
-    }
-  }
-
-  async _runJob(exec: TestExecution, editor: vscode.TextEditor, line: number) {
+  async _runJob(exec: TestExecution, document: vscode.TextDocument, line: number) {
     let timeout: NodeJS.Timer;
     const extend = (again: boolean = true) => {
       if (timeout) {
@@ -98,14 +100,14 @@ export class TestRunner {
 
       let title = 'All Suites/Tests';
 
-      if (this.getResults(editor).hasTotalError()) {
+      if (this.getResults(document).hasTotalError()) {
         line = 0;
       }
 
-      const { method, suite } = getCurrentClassMethod(editor, line);
+      const { method, suite } = getCurrentClassMethod(document, line);
 
       if (!suite) {
-        this.getResults(editor).resetAll();
+        this.getResults(document).resetAll();
       }
 
       if (method) {
@@ -114,7 +116,7 @@ export class TestRunner {
         title = `@Suite ${suite.name!.text}`;
       }
 
-      title = `Running ${editor.document.fileName.split(/[\\/]/g).pop()}: ${title}`;
+      title = `Running ${document.fileName.split(/[\\/]/g).pop()}: ${title}`;
 
       await this.window.withProgress({ cancellable: !method, title, location: method ? vscode.ProgressLocation.Window : vscode.ProgressLocation.Notification },
         async (progress, cancel) => {
@@ -124,17 +126,17 @@ export class TestRunner {
 
           try {
             extend();
-            await exec.run(editor.document.fileName, line, e => {
+            await exec.run(document.fileName, line, e => {
               extend();
               if (process.env.DEBUG) {
                 debug('Event Received', e);
               }
               if (e.type === 'runComplete' && e.error) {
-                this.getResults(editor).resetAll();
-                this.getResults(editor).setTotalError(editor, e.error);
+                this.getResults(document).resetAll();
+                this.getResults(document).setTotalError(e.error);
               }
-              this.getResults(editor).onEvent(e, line);
-              const progressTotals = this.getResults(editor).getTotals();
+              this.getResults(document).onEvent(e, line);
+              const progressTotals = this.getResults(document).getTotals();
               if (!method) {
                 progress.report({ message: `Tests: Success ${progressTotals.success}, Failed ${progressTotals.failed}` });
               }
@@ -149,7 +151,7 @@ export class TestRunner {
 
     extend(false);
 
-    const totals = this.getResults(editor).getTotals();
+    const totals = this.getResults(document).getTotals();
     this.setStatus(`Success ${totals.success}, Failed ${totals.failed}`, totals.failed ? '#f33' : '#8f8');
   }
 
@@ -167,6 +169,7 @@ export class TestRunner {
 
   async close(doc: vscode.TextDocument) {
     if (this._results.has(doc.fileName)) {
+      this._results.get(doc.fileName).removeEditors();
       this._results.get(doc.fileName).resetAll();
       this._results.delete(doc.fileName);
     }

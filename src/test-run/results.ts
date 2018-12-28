@@ -21,13 +21,26 @@ export class ResultsManager {
 
   private diagnostics: vscode.Diagnostic[] = [];
 
-  private _editor: vscode.TextEditor;
+  private _editors: Set<vscode.TextEditor> = new Set();
 
   constructor(private _document: vscode.TextDocument) { }
 
-  setEditor(e: vscode.TextEditor) {
-    this._editor = e;
+  active = false;
+
+  addEditor(e: vscode.TextEditor) {
+    const elements = Array.from(this._editors).filter(x => !(x as any)._disposed);
+    this._editors = new Set([...elements, e]);
     this.refresh();
+  }
+
+  removeEditors() {
+    this._editors.clear();
+  }
+
+  setStyle(type: vscode.TextEditorDecorationType, decs: vscode.DecorationOptions[]) {
+    for (const ed of this._editors) {
+      ed.setDecorations(type, decs);
+    }
   }
 
   resetAll() {
@@ -46,19 +59,19 @@ export class ResultsManager {
   refresh() {
     for (const suite of Object.values(this.results.suite)) {
       if (suite.decoration) {
-        this._editor.setDecorations(suite.styles[suite.status], [suite.decoration]);
+        this.setStyle(suite.styles[suite.status], [suite.decoration]);
       }
     }
     for (const test of Object.values(this.results.test)) {
       if (test.decoration) {
-        this._editor.setDecorations(test.styles[test.status], [test.decoration]);
+        this.setStyle(test.styles[test.status], [test.decoration]);
 
-        const out = { success: [], fail: [], unknown: [] };
+        const out: { [key: string]: vscode.DecorationOptions[] } = { success: [], fail: [], unknown: [] };
         for (const asrt of test.assertions) {
           out[asrt.status].push(asrt.decoration);
         }
         for (const k of Object.keys(out)) {
-          this._editor.setDecorations(test.assertStyles[k], out[k]);
+          this.setStyle(test.assertStyles[k], out[k]);
         }
       }
     }
@@ -76,7 +89,7 @@ export class ResultsManager {
           const rng = as.decoration!.range;
 
           const diagRng = new vscode.Range(
-            new vscode.Position(rng.start.line, this._editor.document.lineAt(rng.start.line).firstNonWhitespaceCharacterIndex),
+            new vscode.Position(rng.start.line, this._document.lineAt(rng.start.line).firstNonWhitespaceCharacterIndex),
             rng.end
           );
           const diag = new vscode.Diagnostic(diagRng, `${ts.src.className.split('.').pop()}.${ts.src.methodName} - ${bodyFirst}`, vscode.DiagnosticSeverity.Error);
@@ -84,7 +97,7 @@ export class ResultsManager {
         }
         return acc;
       }, []);
-    diagColl.set(this._editor.document.uri, this.diagnostics);
+    diagColl.set(this._document.uri, this.diagnostics);
   }
 
   store(level: string, key: string, status: string, decoration: vscode.DecorationOptions, src?: any) {
@@ -92,7 +105,7 @@ export class ResultsManager {
 
     if (level === 'assertion') {
       const el = this.results.test[key];
-      const groups = { success: [], fail: [], unknown: [] };
+      const groups: { [key: string]: vscode.DecorationOptions[] } = { success: [], fail: [], unknown: [] };
 
       el.assertions.push({ status, decoration, src });
 
@@ -101,7 +114,7 @@ export class ResultsManager {
       }
 
       for (const s of ['success', 'fail', 'unknown']) {
-        this._editor.setDecorations(el.assertStyles[s], groups[s]);
+        this.setStyle(el.assertStyles[s], groups[s]);
       }
 
     } else if (level === 'suite') {
@@ -111,7 +124,7 @@ export class ResultsManager {
       el.decoration = decoration;
 
       Object.keys(el.styles).forEach(x => {
-        this._editor.setDecorations(el.styles[x], x === status ? [decoration] : []);
+        this.setStyle(el.styles[x], x === status ? [decoration] : []);
       });
 
     } else {
@@ -119,7 +132,7 @@ export class ResultsManager {
       el.src = src;
       el.status = status;
       el.decoration = decoration;
-      this._editor.setDecorations(el.styles[status], [decoration]);
+      this.setStyle(el.styles[status], [decoration]);
     }
   }
 
@@ -158,7 +171,7 @@ export class ResultsManager {
     let suiteLine = 0;
 
     while (!suiteLine && line > 1) {
-      const text = this._editor.document.lineAt(--line);
+      const text = this._document.lineAt(--line);
       if (text.text.includes('@Suite')) {
         suiteLine = line;
       }
@@ -237,14 +250,14 @@ export class ResultsManager {
     return !!this.results.test['unknown:unknown'];
   }
 
-  setTotalError(editor: vscode.TextEditor, error: Error) {
+  setTotalError(error: Error) {
     const assertion: Assertion = {
       status: 'fail',
       className: 'unknown',
       methodName: 'unknown',
       error,
       line: 1,
-      lineEnd: editor.document.lineCount + 1
+      lineEnd: this._document.lineCount + 1
     };
 
     const t: TestResult = {
@@ -252,9 +265,9 @@ export class ResultsManager {
       assertions: [assertion],
       className: 'unknown',
       methodName: 'unknown',
-      file: editor.document.fileName,
+      file: this._document.fileName,
       error,
-      lines: { start: 1, end: editor.document.lineCount + 1 }
+      lines: { start: 1, end: this._document.lineCount + 1 }
     }
     this.onEvent({ type: 'test', phase: 'before', test: t });
     this.onEvent({ type: 'assertion', phase: 'after', assertion });
