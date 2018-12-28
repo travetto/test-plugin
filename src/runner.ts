@@ -57,17 +57,16 @@ export class TestRunner {
 
       const exec = await this.pool.acquire();
 
-      this._runJob(exec, editor, line)
-        .then(
-          () => {
-            exec.release();
-            this.pool.release(exec);
-          },
-          e => {
-            exec.release();
-            this.pool.release(exec);
-            debug('Errored', e);
-          });
+      try {
+        await this._runJob(exec, editor, line)
+      } catch (e) {
+        debug('Errored', e);
+      } finally {
+        exec.release();
+        if (this.pool.isBorrowedResource(exec)) {
+          await this.pool.release(exec);
+        }
+      }
     }
   }
 
@@ -123,7 +122,7 @@ export class TestRunner {
       await this.window.withProgress({ cancellable: !method, title, location: method ? vscode.ProgressLocation.Window : vscode.ProgressLocation.Notification },
         async (progress, cancel) => {
           if (cancel) {
-            cancel.onCancellationRequested(exec.kill.bind(exec));
+            cancel.onCancellationRequested(() => exec.kill());
           }
 
           try {
