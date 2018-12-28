@@ -21,15 +21,13 @@ export class ResultsManager {
 
   private diagnostics: vscode.Diagnostic[] = [];
 
-  constructor(private _editor: vscode.TextEditor) { }
+  private _editor: vscode.TextEditor;
 
+  constructor(private _document: vscode.TextDocument) { }
 
-  restart(refresh: boolean = false) {
-    if (refresh) {
-      this.refresh();
-    } else {
-      this.resetAll();
-    }
+  setEditor(e: vscode.TextEditor) {
+    this._editor = e;
+    this.refresh();
   }
 
   resetAll() {

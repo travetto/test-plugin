@@ -11,7 +11,7 @@ export class TestRunner {
 
   private pool: Pool<TestExecution>;
   private dockerNS = `test-${process.pid}`;
-  private _results = new Map<vscode.TextDocument, ResultsManager>();
+  private _results = new Map<string, ResultsManager>();
 
   constructor(private window: typeof vscode.window) {
     process.env.DOCKER_NS = this.dockerNS;
@@ -50,10 +50,11 @@ export class TestRunner {
   }
 
   getResults(editor: vscode.TextEditor) {
-    if (!this._results.has(editor.document)) {
-      this._results.set(editor.document, new ResultsManager(editor));
+    if (!this._results.has(editor.document.fileName)) {
+      const rm = new ResultsManager(editor.document);
+      this._results.set(editor.document.fileName, rm);
     }
-    return this._results.get(editor.document)
+    return this._results.get(editor.document.fileName);
   }
 
   async _runNext(editor: vscode.TextEditor, line: number) {
@@ -81,10 +82,6 @@ export class TestRunner {
   }
 
   async _runJob(exec: TestExecution, editor: vscode.TextEditor, line: number) {
-    if (editor !== this.window.activeTextEditor) {
-      return;
-    }
-
     let timeout: NodeJS.Timer;
     const extend = (again: boolean = true) => {
       if (timeout) {
@@ -99,8 +96,7 @@ export class TestRunner {
 
     try {
 
-      let title = 'Running all suites/tests';
-      line = 0;
+      let title = 'All Suites/Tests';
 
       if (this.getResults(editor).hasTotalError()) {
         line = 0;
@@ -113,10 +109,12 @@ export class TestRunner {
       }
 
       if (method) {
-        title = `Running @Test ${suite.name!.text}.${method.name['text']}`;
+        title = `@Test ${suite.name!.text}.${method.name['text']}`;
       } else if (suite) {
-        title = `Running @Suite ${suite.name!.text}`;
+        title = `@Suite ${suite.name!.text}`;
       }
+
+      title = `Running ${editor.document.fileName.split(/[\\/]/g).pop()}: ${title}`;
 
       await this.window.withProgress({ cancellable: !method, title, location: method ? vscode.ProgressLocation.Window : vscode.ProgressLocation.Notification },
         async (progress, cancel) => {
@@ -167,20 +165,10 @@ export class TestRunner {
     this.pool.clear();
   }
 
-  async restart(editor: vscode.TextEditor, refresh = false) {
-    this.getResults(editor).restart(refresh);
-  }
-
-  async runIfNew(ed: vscode.TextEditor) {
-    if (!this._results.has(ed.document)) {
-      this.run(ed, [0]);
-    }
-  }
-
   async close(doc: vscode.TextDocument) {
-    if (this._results.has(doc)) {
-      this._results.get(doc).restart();
-      this._results.delete(doc);
+    if (this._results.has(doc.fileName)) {
+      this._results.get(doc.fileName).resetAll();
+      this._results.delete(doc.fileName);
     }
   }
 }
