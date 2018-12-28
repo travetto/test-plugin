@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as util from 'util';
-import { requireLocal } from './util';
-import { Assertion, TestResult } from './types';
+import { requireLocal } from '../util';
+import { Assertion, TestResult } from '../types';
 const { Stacktrace } = requireLocal('@travetto/base');
 const { ExecUtil } = requireLocal('@travetto/exec');
 const rgba = (r = 0, g = 0, b = 0, a = 1) => `rgba(${r},${g},${b},${a})`;
@@ -29,25 +29,6 @@ const Style = {
     light: { after: { color: 'darkgrey' } },
     dark: { after: { color: 'grey' } }
   } as Partial<vscode.DecorationRenderOptions>
-};
-
-const OPERATORS: { [key: string]: string } = {
-  includes: 'should include',
-  test: 'should match',
-  throws: 'should throw',
-  doesNotThrow: 'should not throw',
-  equal: 'should equal',
-  notEqual: 'should not equal',
-  deepEqual: 'should deep equal',
-  notDeepEqual: 'should not deep equal',
-  strictEqual: 'should strictly equal',
-  notStrictEqual: 'should strictly not equal',
-  deepStrictEqual: 'should strictly deep equal',
-  notStrictDeepEqual: 'should strictly not deep equal',
-  greaterThanEqual: 'should be greater than or equal to',
-  greaterThan: 'should be greater than',
-  lessThanEqual: 'should be less than or equal to',
-  lessThan: 'should be less than'
 };
 
 export class Decorations {

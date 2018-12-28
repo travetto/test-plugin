@@ -2,20 +2,18 @@ import * as vscode from 'vscode';
 import { Pool, createPool } from 'generic-pool';
 import { ResultsManager } from './results';
 import { TestExecution } from './execution';
-import { log, debug, getCurrentClassMethod, requireLocal } from './util';
+import { log, debug, getCurrentClassMethod, requireLocal } from '../util';
 
 import { execSync } from 'child_process';
 
 export class TestRunner {
   private status: vscode.StatusBarItem;
 
-  private prev: vscode.TextEditor;
   private pool: Pool<TestExecution>;
   private dockerNS = `test-${process.pid}`;
-  public results: ResultsManager;
+  private _results = new Map<vscode.TextDocument, ResultsManager>();
 
   constructor(private window: typeof vscode.window) {
-    this.results = new ResultsManager();
     process.env.DOCKER_NS = this.dockerNS;
 
     this.pool = createPool<TestExecution>({
@@ -51,21 +49,26 @@ export class TestRunner {
     }
   }
 
+  getResults(editor: vscode.TextEditor) {
+    if (!this._results.has(editor.document)) {
+      this._results.set(editor.document, new ResultsManager(editor));
+    }
+    return this._results.get(editor.document)
+  }
+
   async _runNext(editor: vscode.TextEditor, line: number) {
-    if (editor === this.window.activeTextEditor) {
-      log('Running', editor.document.fileName, line);
+    log('Running', editor.document.fileName, line);
 
-      const exec = await this.pool.acquire();
+    const exec = await this.pool.acquire();
 
-      try {
-        await this._runJob(exec, editor, line)
-      } catch (e) {
-        debug('Errored', e);
-      } finally {
-        exec.release();
-        if (this.pool.isBorrowedResource(exec)) {
-          await this.pool.release(exec);
-        }
+    try {
+      await this._runJob(exec, editor, line)
+    } catch (e) {
+      debug('Errored', e);
+    } finally {
+      exec.release();
+      if (this.pool.isBorrowedResource(exec)) {
+        await this.pool.release(exec);
       }
     }
   }
@@ -97,20 +100,16 @@ export class TestRunner {
     try {
 
       let title = 'Running all suites/tests';
+      line = 0;
 
-      if (editor.document !== (this.prev && this.prev.document)) {
-        this.results.setEditor(this.prev = editor);
-        line = 0;
-      }
-
-      if (this.results.hasTotalError()) {
+      if (this.getResults(editor).hasTotalError()) {
         line = 0;
       }
 
       const { method, suite } = getCurrentClassMethod(editor, line);
 
       if (!suite) {
-        this.results.resetAll();
+        this.getResults(editor).resetAll();
       }
 
       if (method) {
@@ -133,11 +132,11 @@ export class TestRunner {
                 debug('Event Received', e);
               }
               if (e.type === 'runComplete' && e.error) {
-                this.results.resetAll();
-                this.results.setTotalError(editor, e.error);
+                this.getResults(editor).resetAll();
+                this.getResults(editor).setTotalError(editor, e.error);
               }
-              this.results.onEvent(e, line);
-              const progressTotals = this.results.getTotals();
+              this.getResults(editor).onEvent(e, line);
+              const progressTotals = this.getResults(editor).getTotals();
               if (!method) {
                 progress.report({ message: `Tests: Success ${progressTotals.success}, Failed ${progressTotals.failed}` });
               }
@@ -152,7 +151,7 @@ export class TestRunner {
 
     extend(false);
 
-    const totals = this.results.getTotals();
+    const totals = this.getResults(editor).getTotals();
     this.setStatus(`Success ${totals.success}, Failed ${totals.failed}`, totals.failed ? '#f33' : '#8f8');
   }
 
@@ -168,7 +167,20 @@ export class TestRunner {
     this.pool.clear();
   }
 
-  async setEditor(editor: vscode.TextEditor, refresh = false) {
-    this.results.setEditor(editor, refresh);
+  async restart(editor: vscode.TextEditor, refresh = false) {
+    this.getResults(editor).restart(refresh);
+  }
+
+  async runIfNew(ed: vscode.TextEditor) {
+    if (!this._results.has(ed.document)) {
+      this.run(ed, [0]);
+    }
+  }
+
+  async close(doc: vscode.TextDocument) {
+    if (this._results.has(doc)) {
+      this._results.get(doc).restart();
+      this._results.delete(doc);
+    }
   }
 }

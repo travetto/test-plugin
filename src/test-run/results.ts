@@ -1,12 +1,12 @@
 import * as vscode from 'vscode';
 
-import { Decorations } from './decoration';
-import { log } from './util';
+import { Decorations } from '../feature/decoration';
+import { log } from '../util';
 import {
   AllState, TestConfig, TestState, ResultState,
   TestEvent, SuiteResult, TestResult, Assertion,
   SuiteState
-} from './types';
+} from '../types';
 
 const diagColl = vscode.languages.createDiagnosticCollection('Travetto');
 
@@ -19,12 +19,12 @@ export class ResultsManager {
 
   private failedAssertions: { [key: number]: Assertion };
 
-  private _editor: vscode.TextEditor;
-
   private diagnostics: vscode.Diagnostic[] = [];
 
-  setEditor(e: vscode.TextEditor, refresh: boolean = false) {
-    this._editor = e as any;
+  constructor(private _editor: vscode.TextEditor) { }
+
+
+  restart(refresh: boolean = false) {
     if (refresh) {
       this.refresh();
     } else {

@@ -1,5 +1,5 @@
 import { ChildProcess, spawn } from 'child_process';
-import { log, CWD, channel, debug, requireLocal, NEW_CLI, } from './util';
+import { log, CWD, channel, debug, requireLocal, NEW_CLI, } from '../util';
 
 const { Env } = requireLocal('@travetto/base/src/env');
 
