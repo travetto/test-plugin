@@ -45,7 +45,7 @@ async function selectApp(): Promise<Application> {
   }
 }
 
-async function debugApplication() {
+async function runApplication() {
 
   const app = await selectApp();
 
@@ -92,4 +92,4 @@ async function debugApplication() {
   });
 }
 
-vscode.commands.registerCommand('travetto.di.run', async config => debugApplication());
+vscode.commands.registerCommand('travetto.di.run', async config => runApplication());

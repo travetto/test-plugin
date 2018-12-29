@@ -74,12 +74,12 @@
       },
       {
         "command": "travetto.test.test:all",
-        "title": "Debug Tests",
+        "title": "Run Tests",
         "category": "Travetto"
       },
       {
         "command": "travetto.di.run",
-        "title": "Debug Application",
+        "title": "Run Application",
         "category": "Travetto"
       }
     ],
