@@ -58,7 +58,7 @@ export async function launchTests(addBreakpoint: boolean = false) {
         '**/node_modules/trace/**/*',
         '**/node_modules/stack-chain/**/*'
       ],
-      args: ['-m', 'single', '-f', 'tap', '--',
+      args: [
         `${editor.document.fileName.replace(`${CWD}${path.sep}`, '')}`,
         `${line}`
       ].filter(x => x != ''),
