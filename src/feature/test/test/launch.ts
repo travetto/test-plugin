@@ -1,11 +1,12 @@
 import * as path from 'path';
 import * as vscode from 'vscode';
 
-import { CWD, NEW_CLI, NEW_CLI_v0, requireLocal } from '../util';
+import { CWD, requireLocal } from '../../../util';
 
 const { Env } = requireLocal('@travetto/base/src/env');
 
-async function debug(addBreakpoint: boolean = false) {
+export async function launchTests(addBreakpoint: boolean = false) {
+
   const editor = vscode.window.activeTextEditor;
 
   if (editor.document && /@Test\(/.test(editor.document.getText() || '')) {
@@ -42,11 +43,7 @@ async function debug(addBreakpoint: boolean = false) {
       cwd: CWD,
       name: 'Debug Travetto',
       // tslint:disable-next-line:no-invalid-template-strings
-      program: NEW_CLI ?
-        (NEW_CLI_v0 ?
-          '${workspaceFolder}/node_modules/@travetto/cli/bin/travetto' :
-          '${workspaceFolder}/node_modules/@travetto/test/bin/travetto-cli-test') :
-        '${workspaceFolder}/node_modules/@travetto/test/bin/travetto-test',
+      program: '${workspaceFolder}/node_modules/@travetto/test/bin/travetto-cli-test',
       stopOnEntry: false,
       sourceMaps: true,
       runtimeArgs: [
@@ -61,10 +58,7 @@ async function debug(addBreakpoint: boolean = false) {
         '**/node_modules/trace/**/*',
         '**/node_modules/stack-chain/**/*'
       ],
-      args: [
-        ...(NEW_CLI ?
-          (NEW_CLI_v0 ? ['test', '-m', 'single', '-f', 'tap'] : []) :
-          ['-m', 'single', '-f', 'tap', '--',]),
+      args: ['-m', 'single', '-f', 'tap', '--',
         `${editor.document.fileName.replace(`${CWD}${path.sep}`, '')}`,
         `${line}`
       ].filter(x => x != ''),
@@ -73,6 +67,3 @@ async function debug(addBreakpoint: boolean = false) {
     });
   }
 }
-
-vscode.commands.registerCommand('extension.triggerDebug', async config => debug());
-vscode.commands.registerCommand('extension.triggerDebugKey', async config => debug(true));

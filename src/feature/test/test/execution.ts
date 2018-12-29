@@ -1,5 +1,5 @@
 import { ChildProcess, spawn } from 'child_process';
-import { log, CWD, channel, debug, requireLocal, NEW_CLI, } from '../util';
+import { log, CWD, channel, debug, requireLocal, } from '../../../util';
 
 const { Env } = requireLocal('@travetto/base/src/env');
 
@@ -15,9 +15,7 @@ const EXIT = Symbol('EXIT');
 
 const TEST_BIN = 'node_modules/@travetto/test/bin'
 
-const TEST_SERVER_EXEC = NEW_CLI ?
-  `${TEST_BIN}/travetto-test-server` :
-  `${TEST_BIN}/travetto-test`;
+const TEST_SERVER_EXEC = `${TEST_BIN}/travetto-test-server`;
 
 export class TestExecution {
   private proc: ChildProcess;

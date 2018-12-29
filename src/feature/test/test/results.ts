@@ -1,12 +1,12 @@
 import * as vscode from 'vscode';
 
-import { Decorations } from '../feature/decoration';
-import { log } from '../util';
+import { Decorations } from './decoration';
+import { log } from '../../../util';
 import {
   AllState, TestConfig, TestState, ResultState,
   TestEvent, SuiteResult, TestResult, Assertion,
   SuiteState
-} from '../types';
+} from './types';
 
 const diagColl = vscode.languages.createDiagnosticCollection('Travetto');
 

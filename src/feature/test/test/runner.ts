@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { Pool, createPool } from 'generic-pool';
 import { ResultsManager } from './results';
 import { TestExecution } from './execution';
-import { log, debug, getCurrentClassMethod, requireLocal } from '../util';
+import { log, debug, getCurrentClassMethod, requireLocal } from '../../../util';
 
 import { execSync } from 'child_process';
 

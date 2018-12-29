@@ -9,7 +9,7 @@
       "runtimeExecutable": "${execPath}",
       "args": [
         "--extensionDevelopmentPath=${workspaceRoot}",
-        "${workspaceRoot}/../../Books/rest"
+        "${workspaceRoot}/../../travetto/module/rest-express"
       ],
       "env": {
         "DEBUG": "1",

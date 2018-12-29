@@ -1,16 +1,14 @@
 import * as vscode from 'vscode';
 import * as diff from 'diff';
 
-import { TestRunner } from '../test-run/runner';
-import { Decorations } from './decoration';
+import { TestRunner } from './runner';
 
-// Register typescript import
-const runner = new TestRunner(vscode.window);
-const prevText = new Map<vscode.TextDocument, string>();
-
+export const runner = new TestRunner(vscode.window);
 process.on('exit', () => runner.shutdown());
 process.on('SIGINT', () => runner.shutdown());
 process.on('SIGTERM', () => runner.shutdown());
+
+const prevText = new Map<vscode.TextDocument, string>();
 
 function isEditor(o: any): o is vscode.TextEditor {
   return 'document' in o;
@@ -24,7 +22,7 @@ function getEditor(doc: vscode.TextDocument) {
   }
 }
 
-function onUpdate(editor?: vscode.TextEditor | vscode.TextDocument, line?: number) {
+export function onDocumentUpdate(editor?: vscode.TextEditor | vscode.TextDocument, line?: number) {
   if (!editor) {
     return;
   }
@@ -68,30 +66,13 @@ function onUpdate(editor?: vscode.TextEditor | vscode.TextDocument, line?: numbe
   }
 }
 
-export function activate(context: vscode.ExtensionContext) {
-  Decorations.context = context;
-
-  try {
-    vscode.workspace.onDidOpenTextDocument(x => onUpdate(x, 0), null, context.subscriptions);
-    vscode.workspace.onDidSaveTextDocument(x => onUpdate(x), null, context.subscriptions);
-    vscode.workspace.onDidCloseTextDocument(x => {
-      const gone = vscode.workspace.textDocuments.find(d => d.fileName === x.fileName);
-      if (gone) {
-        runner.close(gone);
-      }
-    }, null, context.subscriptions);
-    vscode.window.onDidChangeActiveTextEditor(x => onUpdate(x), null, context.subscriptions);
-
-    // vscode.window.onDidChangeVisibleTextEditors(eds => eds.forEach(x => onUpdate(x, 0)), null, context.subscriptions);
-    setTimeout(() => vscode.window.visibleTextEditors.forEach(x => onUpdate(x, 0)), 1000);
-
-    console.log('Congratulations, extension "travetto-test-plugin" is now active!', `${__dirname}/success.png`);
-  } catch (e) {
-    console.error('WOAH', e);
+export function onDocumentClose(doc: vscode.TextDocument) {
+  const gone = vscode.workspace.textDocuments.find(d => d.fileName === doc.fileName);
+  if (gone) {
+    runner.close(gone);
   }
 }
 
-export async function deactivate() {
-  await runner.shutdown();
+export function destroy() {
+  runner.shutdown();
 }
-

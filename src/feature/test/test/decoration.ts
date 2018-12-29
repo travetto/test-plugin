@@ -1,9 +1,11 @@
 import * as vscode from 'vscode';
 import * as util from 'util';
-import { requireLocal } from '../util';
-import { Assertion, TestResult } from '../types';
+import { requireLocal } from '../../../util';
+import { Assertion, TestResult } from './types';
+
 const { Stacktrace } = requireLocal('@travetto/base');
 const { ExecUtil } = requireLocal('@travetto/exec');
+
 const rgba = (r = 0, g = 0, b = 0, a = 1) => `rgba(${r},${g},${b},${a})`;
 
 const ITALIC = 'font-style: italic;';

@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
 import * as util from 'util';
-import * as fs from 'fs';
 import * as ts from 'typescript';
 import * as path from 'path';
 
@@ -8,10 +7,6 @@ export const CWD = `${vscode.workspace.workspaceFolders[0].uri.path}`.replace(/[
 
 export const toLocalFile = (p: string) => `${CWD.replace(/[\\]/g, '/')}/node_modules/${p}`;
 export const requireLocal = (p: string) => require(toLocalFile(p));
-
-export const NEW_CLI = fs.existsSync(toLocalFile('@travetto/test/bin/travetto-cli-test.js'));
-export const NEW_CLI_v0 = fs.existsSync(toLocalFile('@travetto/cli/bin/travetto.js'));
-
 
 export const channel = vscode.window.createOutputChannel('@travetto/test');
 
@@ -65,4 +60,25 @@ export function getCurrentClassMethod(document: vscode.TextDocument, line: numbe
   }
 
   return out;
+}
+
+export function fork(cmd: string, args: string[] = []) {
+  return new Promise<string>((resolve, reject) => {
+    let text = [];
+    let err = [];
+    const proc = require('child_process').fork(cmd, args || [], {
+      env: process.env,
+      cwd: CWD,
+      stdio: ['pipe', 'pipe', 'pipe', 'ipc']
+    });
+    proc.stdout.on('data', v => text.push(v));
+    proc.stderr.on('data', v => err.push(v));
+    proc.on('exit', v => {
+      if (v === 0) {
+        resolve(Buffer.concat(text).toString());
+      } else {
+        reject(Buffer.concat(err).toString());
+      }
+    });
+  });
 }
