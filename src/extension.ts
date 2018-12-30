@@ -1,11 +1,11 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
-import { CWD, requireLocal, toLocalFile } from './util';
-process.chdir(CWD);
+import { Util } from './util';
+process.chdir(Util.CWD);
 
 require('util.promisify').shim();
-requireLocal('@travetto/base/bin/bootstrap');
+Util.requireLocal('@travetto/base/bin/bootstrap');
 
 if (!console.debug) { console.debug = () => { }; }
 
@@ -17,7 +17,7 @@ function readFolder(...paths: string[]) {
     .map(x => x.replace(/[.](j|t)s$/, ''))
 }
 
-const modules = fs.readdirSync(toLocalFile('@travetto')); // All active @travetto module names
+const modules = fs.readdirSync(Util.toLocalFile('@travetto')); // All active @travetto module names
 const moduleFeatureNames = readFolder('feature'); // All matching @travetto plugin features
 const moduleState = modules.reduce((acc, k) => { // All active @travetto modules in node_modules
   acc[k] = true;

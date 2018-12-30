@@ -1,12 +1,12 @@
 import { ChildProcess, spawn } from 'child_process';
-import { log, CWD, channel, debug, requireLocal, } from '../../../util';
+import { Util } from '../../../util';
 
-const { Env } = requireLocal('@travetto/base/src/env');
+const { Env } = Util.requireLocal('@travetto/base/src/env');
 
 function logit(str: NodeJS.ReadableStream) {
   str.on('data', (b: Buffer) => {
     // console.log(b.toString());
-    channel.append(b.toString());
+    Util.channel.append(b.toString());
   });
   return str;
 }
@@ -43,7 +43,7 @@ export class TestExecution {
       }
 
       this.proc = spawn('node', [TEST_SERVER_EXEC], {
-        cwd: CWD,
+        cwd: Util.CWD,
         shell: false,
         env,
         stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
@@ -65,12 +65,12 @@ export class TestExecution {
       });
 
       await this.listenOnce('ready');
-      debug('Ready, lets init');
+      Util.debug('Ready, lets init');
       this.proc.send({ type: 'init' });
       await this.listenOnce('initComplete');
-      debug('Init Complete');
+      Util.debug('Init Complete');
     } catch (e) {
-      debug(`Error: ${e.message}`, e);
+      Util.debug(`Error: ${e.message}`, e);
     }
   }
 
@@ -87,14 +87,14 @@ export class TestExecution {
     this.proc.on('message', handler);
 
     try {
-      log('Running', file);
+      Util.log('Running', file);
       this.proc.send({ type: 'run', file, class: line });
 
       await Promise.race([this.waitForKill, this.listenOnce('runComplete')]);
-      log('Run Complete', file);
+      Util.log('Run Complete', file);
     } catch (e) {
       if (e !== EXIT) {
-        log(e.message, e);
+        Util.log(e.message, e);
       }
     }
 

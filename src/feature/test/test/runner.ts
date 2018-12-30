@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { Pool, createPool } from 'generic-pool';
 import { ResultsManager } from './results';
 import { TestExecution } from './execution';
-import { log, debug, getCurrentClassMethod, requireLocal } from '../../../util';
+import { Util } from '../../../util';
 
 import { execSync } from 'child_process';
 
@@ -19,7 +19,7 @@ export class TestRunner {
     this.pool = createPool<TestExecution>({
       async create() {
         if (!this.active) {
-          const { PhaseManager } = requireLocal('@travetto/base/src/phase');
+          const { PhaseManager } = Util.requireLocal('@travetto/base/src/phase');
           await new PhaseManager('test').load().run();
           this.active = true;
         }
@@ -65,13 +65,13 @@ export class TestRunner {
 
     let exec: TestExecution;
     res.active = true;
-    log('Running', document.fileName, line);
+    Util.log('Running', document.fileName, line);
 
     try {
       exec = await this.pool.acquire();
       await this._runJob(exec, document, line)
     } catch (e) {
-      debug('Errored', e);
+      Util.debug('Errored', e);
     } finally {
       res.active = false;
       if (exec) {
@@ -104,7 +104,7 @@ export class TestRunner {
         line = 0;
       }
 
-      const { method, suite } = getCurrentClassMethod(document, line);
+      const { method, suite } = Util.getCurrentClassMethod(document, line);
 
       if (!suite) {
         this.getResults(document).resetAll();
@@ -129,7 +129,7 @@ export class TestRunner {
             await exec.run(document.fileName, line, e => {
               extend();
               if (process.env.DEBUG) {
-                debug('Event Received', e);
+                Util.debug('Event Received', e);
               }
               if (e.type === 'runComplete' && e.error) {
                 this.getResults(document).resetAll();
@@ -142,11 +142,11 @@ export class TestRunner {
               }
             });
           } catch (e) {
-            debug(e.message, e);
+            Util.debug(e.message, e);
           }
         });
     } catch (e) {
-      debug(e.message, e);
+      Util.debug(e.message, e);
     }
 
     extend(false);

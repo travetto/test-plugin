@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 
 import { Decorations } from './decoration';
-import { log } from '../../../util';
+import { Util } from '../../../util';
 import {
   AllState, TestConfig, TestState, ResultState,
   TestEvent, SuiteResult, TestResult, Assertion,
@@ -101,7 +101,7 @@ export class ResultsManager {
   }
 
   store(level: string, key: string, status: string, decoration: vscode.DecorationOptions, src?: any) {
-    log(level, key, status, true);
+    Util.log(level, key, status, true);
 
     if (level === 'assertion') {
       const el = this.results.test[key];

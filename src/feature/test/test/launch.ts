@@ -1,9 +1,9 @@
 import * as path from 'path';
 import * as vscode from 'vscode';
 
-import { CWD, requireLocal } from '../../../util';
+import { Util } from '../../../util';
 
-const { Env } = requireLocal('@travetto/base/src/env');
+const { Env } = Util.requireLocal('@travetto/base/src/env');
 
 export async function launchTests(addBreakpoint: boolean = false) {
 
@@ -35,35 +35,14 @@ export async function launchTests(addBreakpoint: boolean = false) {
       env.NODE_PRESERVE_SYMLINKS = 1;
     }
 
-    await vscode.debug.startDebugging(vscode.workspace.workspaceFolders[0], {
-      type: 'node',
-      request: 'launch',
-      protocol: 'inspector',
-      env,
-      cwd: CWD,
+    return Util.debugSession({
       name: 'Debug Travetto',
-      // tslint:disable-next-line:no-invalid-template-strings
       program: '${workspaceFolder}/node_modules/@travetto/test/bin/travetto-cli-test',
-      stopOnEntry: false,
-      sourceMaps: true,
-      runtimeArgs: [
-        '--nolazy'
-      ],
-      skipFiles: [
-        '<node_internals>/**',
-        '**/@travetto/context/**/*',
-        '**/@travetto/base/**/stacktrace.*',
-        '**/@travetto/compiler/**/proxy.*',
-        '**/node_modules/cls-hooked/**/*',
-        '**/node_modules/trace/**/*',
-        '**/node_modules/stack-chain/**/*'
-      ],
       args: [
-        `${editor.document.fileName.replace(`${CWD}${path.sep}`, '')}`,
+        `${editor.document.fileName.replace(`${Util.CWD}${path.sep}`, '')}`,
         `${line}`
       ].filter(x => x != ''),
-      console: 'internalConsole',
-      internalConsoleOptions: 'openOnSessionStart'
+      env
     });
   }
 }

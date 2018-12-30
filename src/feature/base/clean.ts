@@ -1,11 +1,11 @@
 import * as vscode from 'vscode';
 
-import { toLocalFile, fork } from '../../util';
+import { Util } from '../../util';
 
-const op = toLocalFile('@travetto/base/bin/travetto-cli-clean.js');
+const op = Util.toLocalFile('@travetto/base/bin/travetto-cli-clean.js');
 
 async function clean() {
-  await fork(op);
+  await Util.fork(op);
   vscode.window.showInformationMessage('Successfully cleaned the travetto cache');
 }
 
