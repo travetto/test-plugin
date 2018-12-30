@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 
 import { Util } from '../../../util';
 import { AppSelector } from './select';
-import { ArgumentSelector } from './argument';
+import { ParameterSelector } from './parameter';
 
 const { Env } = Util.requireLocal('@travetto/base/src/env');
 
@@ -13,15 +13,15 @@ async function getChoice() {
     return;
   }
 
-  if (!choice.key && choice.arguments) {
-    const args = await ArgumentSelector.select(choice);
+  if (!choice.key && choice.params) {
+    const inputs = await ParameterSelector.select(choice);
 
-    if (args === undefined) {
+    if (inputs === undefined) {
       return;
     }
 
-    choice.args = args;
-    const key = `${choice.id}#${choice.name}:${(choice.args || []).join(',')}`;
+    choice.inputs = inputs;
+    const key = `${choice.id}#${choice.name}:${choice.inputs.join(',')}`;
     AppSelector.storage.set(key, { ...choice, time: Date.now(), key });
   }
 
@@ -41,7 +41,7 @@ async function runApplication() {
     await Util.debugSession({
       name: `Debug Travetto Application: ${choice.name}`,
       program: '${workspaceFolder}/node_modules/@travetto/di/bin/travetto-cli-run.js',
-      args: [choice.name, ...choice.args],
+      args: [choice.name, ...choice.inputs],
       env: {
         NODE_PRESERVE_SYMLINKS: Env.frameworkDev ? 1 : 0,
         ENV: choice.filename.includes('e2e') ? 'e2e' : '',

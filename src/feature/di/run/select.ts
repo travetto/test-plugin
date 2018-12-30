@@ -32,10 +32,10 @@ export class AppSelector {
     return detail.filter(x => !!x).join(' ').trim();
   }
 
-  static getAppArgs(choice: AppChoice) {
-    let out = (choice.arguments || [])
+  static getAppParams(choice: AppChoice) {
+    let out = choice.params
       .map((x, i) => {
-        let val = (choice.args || [])[i] || x.def;
+        let val = choice.inputs[i] || x.def;
         if (x.type === 'file' && val) {
           val = val.replace(vscode.workspace.workspaceFolders[0].uri.fsPath, '.')
         }
@@ -47,13 +47,13 @@ export class AppSelector {
 
   static buildQuickPickItem(choice: AppChoice): PickItem {
     try {
-      const args = this.getAppArgs(choice);
+      const params = this.getAppParams(choice);
       const detail = this.getAppDetail(choice);
 
       return {
         label: choice.key ? `[R] ${choice.name}` : `${choice.name}`,
         detail: detail,
-        description: args,
+        description: params,
         target: choice
       };
     } catch (e) {
@@ -80,6 +80,11 @@ export class AppSelector {
       .slice(0, 3);
 
     const items = top.concat(appList)
+      .map(x => {
+        x.inputs = x.inputs || [];
+        x.params = x.params || [];
+        return x;
+      })
       .map(x => this.buildQuickPickItem(x)).filter(x => !!x)
 
     const app = await vscode.window.showQuickPick(items, {

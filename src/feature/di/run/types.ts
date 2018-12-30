@@ -1,6 +1,7 @@
-export interface ApplicationArgument {
+export interface ApplicationParam {
   name: string;
   type?: string;
+  subtype?: string;
   def?: string;
   meta?: any;
 }
@@ -8,11 +9,11 @@ export interface ApplicationArgument {
 export interface Application {
   name: string;
   filename: string;
-  arguments?: ApplicationArgument[];
+  params?: ApplicationParam[];
   id: string;
   description?: string;
   watchable?: boolean;
   env: string;
 }
 
-export type AppChoice = Application & { args?: string[], time?: number, key?: string };
+export type AppChoice = Application & { inputs?: string[], time?: number, key?: string };
