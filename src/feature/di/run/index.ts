@@ -41,7 +41,7 @@ async function runApplication() {
     await Util.debugSession({
       name: `Debug Travetto Application: ${choice.name}`,
       program: '${workspaceFolder}/node_modules/@travetto/di/bin/travetto-cli-run.js',
-      args: [choice.name, ...choice.inputs],
+      args: [choice.name, ...choice.inputs].map(x => `${x}`),
       env: {
         NODE_PRESERVE_SYMLINKS: Env.frameworkDev ? 1 : 0,
         ENV: choice.filename.includes('e2e') ? 'e2e' : '',
