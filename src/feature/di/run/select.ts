@@ -35,7 +35,10 @@ export class AppSelector {
   static getAppArgs(choice: AppChoice) {
     let out = (choice.arguments || [])
       .map((x, i) => {
-        const val = (choice.args || [])[i] || x.def;
+        let val = (choice.args || [])[i] || x.def;
+        if (x.type === 'file' && val) {
+          val = val.replace(vscode.workspace.workspaceFolders[0].uri.fsPath, '.')
+        }
         return val ? `${x.name}=${val}` : x.name;
       })
       .join(', ');

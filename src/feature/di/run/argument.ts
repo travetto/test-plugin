@@ -66,6 +66,7 @@ export class ArgumentSelector {
       }
       case 'file': {
         const res = await vscode.window.showOpenDialog({
+          defaultUri: vscode.workspace.workspaceFolders[0].uri,
           openLabel: `Find file for ${conf.arg.name}`,
           canSelectFiles: true,
           canSelectMany: false
