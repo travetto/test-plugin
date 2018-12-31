@@ -6,6 +6,10 @@ const op = Util.toLocalFile('@travetto/base/bin/travetto-cli-clean.js');
 
 async function clean() {
   await Util.fork(op);
+
+  const { AppCache } = Util.requireLocal('@travetto/base/src/cache');
+  AppCache.cache = {};
+
   vscode.window.showInformationMessage('Successfully cleaned the travetto cache');
 }
 

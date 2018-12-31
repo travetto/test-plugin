@@ -10,7 +10,7 @@ interface ParamConfig {
   param: ApplicationParam;
   total: number;
   step: number;
-  prev?: string;
+  input?: string;
 }
 
 export class ParameterSelector {
@@ -19,7 +19,7 @@ export class ParameterSelector {
     qp.ignoreFocusOut = true;
     qp.step = config.step;
     qp.totalSteps = config.total;
-    qp.value = config.prev || config.param.def;
+    qp.value = config.input || config.param.def;
     qp.placeholder = qp.title;
     qp.title = `Enter value for ${config.param.name}`;
 
@@ -52,22 +52,19 @@ export class ParameterSelector {
 
     return {
       input: qp,
-      run: () => subRun().then(x => {
-        if (x === undefined) {
-          return qp.selectedItems[0].label;
-        }
-      })
+      run: () => subRun().then(x =>
+        x === undefined ? qp.selectedItems[0].label : x)
     }
   }
 
   static async getFile(conf: ParamConfig, root?: string) {
     const res = await vscode.window.showOpenDialog({
       defaultUri: root ? vscode.Uri.file(root) : vscode.workspace.workspaceFolders[0].uri,
-      openLabel: `Find file for ${conf.param.name}`,
+      openLabel: `Select ${conf.param.name}`,
       canSelectFiles: true,
       canSelectMany: false
     });
-    return res[0].fsPath;
+    return res === undefined ? res : res[0].fsPath;
   }
 
   static async selectParameter(conf: ParamConfig) {
@@ -91,12 +88,12 @@ export class ParameterSelector {
     const selected = [];
 
     for (let i = 0; i < all.length; i++) {
-      const arg = all[i];
+      const param = all[i];
       const res = await this.selectParameter({
-        param: arg,
+        param,
         total: all.length,
         step: i + 1,
-        prev: choice.inputs[i]
+        input: choice.inputs[i]
       });
 
       if (res === undefined) {

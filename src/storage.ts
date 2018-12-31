@@ -5,10 +5,7 @@ import * as os from 'os';
 import * as vscode from 'vscode';
 import { Util } from './util';
 
-const readProm = util.promisify(fs.readFile);
 const writeProm = util.promisify(fs.writeFile);
-const existProm = util.promisify(fs.exists);
-const mkdirProm = util.promisify(fs.mkdir);
 
 const cacheDir = [
   os.tmpdir(),
@@ -42,7 +39,7 @@ export class ActionStorage<T> {
         fs.mkdirSync(this.root);
       }
 
-      this.storage = require(this.resolved);
+      this.storage = JSON.parse(fs.readFileSync(this.resolved).toString());
     } catch {
       await this.persist();
     }
