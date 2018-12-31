@@ -30,8 +30,9 @@ async function getChoice(title: string) {
 }
 
 function getLaunchConfig(choice: AppChoice) {
+  const args = choice.inputs.map(x => x.replace(Util.CWD, '.')).join(', ');
   return Util.generateLaunchConfig({
-    name: `[Travetto] ${choice.name}: ${choice.inputs.map(x => x.replace(Util.CWD, '.')).join(', ')}`,
+    name: `[Travetto] ${choice.name}${args ? `: ${args}` : ''}`,
     program: '${workspaceFolder}/node_modules/@travetto/di/bin/travetto-cli-run.js',
     args: [choice.name, ...choice.inputs].map(x => `${x}`),
     env: {
