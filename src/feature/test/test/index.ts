@@ -20,7 +20,8 @@ export function activate(context: vscode.ExtensionContext) {
 }
 export function deactivate() {
   destroy();
-};
+}
 
 vscode.commands.registerCommand('travetto.test.test:all', async config => launchTests());
 vscode.commands.registerCommand('travetto.test.test:line', async config => launchTests(true));
+vscode.commands.registerCommand('travetto.test.test:rerun', async config => onDocumentUpdate(vscode.window.activeTextEditor, 0));

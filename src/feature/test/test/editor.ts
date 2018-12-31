@@ -45,7 +45,7 @@ export function onDocumentUpdate(editor?: vscode.TextEditor | vscode.TextDocumen
 
     runner.getResults(doc).addEditor(editor);
 
-    if (!lines.length && prevText.has(doc)) {
+    if (line === undefined && prevText.has(doc)) {
       const changes = diff.structuredPatch('a', 'b', prevText.get(doc), newText, 'a', 'b', { context: 0 });
       const newLines = changes.hunks.map(x => x.newStart || x.oldStart);
       if (newLines.length < 5) {

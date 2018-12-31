@@ -2,7 +2,7 @@
   "name": "travetto-plugin",
   "displayName": "Travetto Plugin",
   "description": "VS Code plugin for interacting with the Travetto framework ",
-  "version": "0.5.7",
+  "version": "0.5.8",
   "homepage": "https://travetto.io",
   "keywords": [
     "vscode",
@@ -63,6 +63,9 @@
       "properties": {
         "travetto.modules": {
           "type": "object"
+        },
+        "travetto.debug": {
+          "type": "boolean"
         }
       }
     },
@@ -73,13 +76,23 @@
         "category": "Travetto"
       },
       {
+        "command": "travetto.test.test:rerun",
+        "title": "Re-Run Tests",
+        "category": "Travetto"
+      },
+      {
         "command": "travetto.test.test:all",
-        "title": "Run Tests",
+        "title": "Debug Tests",
         "category": "Travetto"
       },
       {
         "command": "travetto.di.run",
         "title": "Run Application",
+        "category": "Travetto"
+      },
+      {
+        "command": "travetto.di.run:export",
+        "title": "Export Application Launch",
         "category": "Travetto"
       }
     ],
@@ -91,10 +104,18 @@
         },
         {
           "command": "travetto.test.test:all",
-          "when": "config.travetto.modules.test"
+          "when": "config.travetto.modules.test && !inDebugMode && editorLangId == typescript && editorIsOpen"
+        },
+        {
+          "command": "travetto.test.test:rerun",
+          "when": "config.travetto.modules.test && !inDebugMode && editorLangId == typescript && editorIsOpen"
         },
         {
           "command": "travetto.di.run",
+          "when": "config.travetto.modules.di"
+        },
+        {
+          "command": "travetto.di.run:export",
           "when": "config.travetto.modules.di"
         }
       ]
@@ -104,7 +125,13 @@
         "command": "travetto.test.test:line",
         "key": "ctrl+shift+t",
         "mac": "cmd+shift+t",
-        "when": "resourceLangId == typescript && editorTextFocus"
+        "when": "config.travetto.modules.test && !inDebugMode && editorLangId == typescript && editorTextFocus"
+      },
+      {
+        "command": "travetto.test.test:rerun",
+        "key": "ctrl+shift+r",
+        "mac": "cmd+shift+r",
+        "when": "config.travetto.modules.test && !inDebugMode && editorLangId == typescript && editorFocus"
       }
     ]
   }

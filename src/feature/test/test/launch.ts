@@ -35,7 +35,7 @@ export async function launchTests(addBreakpoint: boolean = false) {
       env.NODE_PRESERVE_SYMLINKS = 1;
     }
 
-    return Util.debugSession({
+    return await vscode.debug.startDebugging(vscode.workspace.workspaceFolders[0], Util.generateLaunchConfig({
       name: 'Debug Travetto',
       program: '${workspaceFolder}/node_modules/@travetto/test/bin/travetto-cli-test',
       args: [
@@ -43,6 +43,6 @@ export async function launchTests(addBreakpoint: boolean = false) {
         `${line}`
       ].filter(x => x != ''),
       env
-    });
+    }));
   }
 }

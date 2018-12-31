@@ -43,6 +43,20 @@ const configSetter = Promise.all([vscode.workspace.getConfiguration()
     console.log(err);
   });
 
+function setLogging() {
+  if (vscode.workspace.getConfiguration().get('travetto.debug')) {
+    process.env.DEBUG = 'true';
+  }
+}
+
+vscode.workspace.onDidChangeConfiguration(e => {
+  if (e.affectsConfiguration('travetto.debug')) {
+    setLogging();
+  }
+})
+
+setLogging();
+
 export async function activate(context: vscode.ExtensionContext) {
   moduleFeatures.forEach(mod => mod.activate && mod.activate(context));
 }

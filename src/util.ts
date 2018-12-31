@@ -16,7 +16,7 @@ export class Util {
   }
 
   static debug(message: string, ...args: any[]) {
-    if (process.env.DEBUG) {
+    if (/^(yes|1|on|true)$/i.test(process.env.DEBUG || '')) {
       Util.channel.appendLine(`${message} ${args.map(x => util.inspect(x)).join(' ')}`);
     }
   }
@@ -84,12 +84,12 @@ export class Util {
     });
   }
 
-  static debugSession(config: { name: string, program: string } & Partial<vscode.DebugConfiguration>) {
-    return vscode.debug.startDebugging(vscode.workspace.workspaceFolders[0], {
+  static generateLaunchConfig(config: { name: string, program: string } & Partial<vscode.DebugConfiguration>) {
+    return {
       type: 'node',
       request: 'launch',
       protocol: 'inspector',
-      cwd: Util.CWD,
+      cwd: '${workspaceFolder}',
       stopOnEntry: false,
       sourceMaps: true,
       runtimeArgs: [
@@ -107,7 +107,7 @@ export class Util {
       console: 'internalConsole',
       internalConsoleOptions: 'openOnSessionStart',
       ...config
-    });
+    };
   }
 
   static hash(t: string) {

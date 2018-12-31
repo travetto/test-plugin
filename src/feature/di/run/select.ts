@@ -65,10 +65,32 @@ export class AppSelector {
     }
   }
 
-  static async select() {
+  static showQuickPick(title: string, items: PickItem[]) {
+    const qp = vscode.window.createQuickPick<PickItem>();
+    qp.ignoreFocusOut = true;
+    qp.placeholder = 'Select ...';
+    qp.title = title;
+    qp.items = items;
+
+    return {
+      input: qp,
+      run: () => {
+        qp.show();
+        return new Promise<AppChoice>((resolve, reject) => {
+          qp.onDidAccept(() => resolve(qp.activeItems[0] && qp.activeItems[0].target));
+        }).then(x => {
+          qp.hide();
+          qp.dispose();
+          return x;
+        });
+      }
+    }
+  }
+
+  static async getValidRecent(count: number): Promise<AppChoice[]> {
     const appList = await this.getAppList();
 
-    const top: AppChoice[] = this.storage.getRecent(10)
+    return this.storage.getRecent(10)
       .map(x => (x.key = x.key || x.name) && x)
       .filter(x => {
         const res = appList.find(a => a.id === x.id && a.name === x.name);
@@ -77,7 +99,12 @@ export class AppSelector {
         }
         return res;
       })
-      .slice(0, 3);
+      .slice(0, count);
+  }
+
+  static async select(title: string) {
+    const appList = await this.getAppList();
+    const top = await this.getValidRecent(3);
 
     const items = top.concat(appList)
       .map(x => {
@@ -87,10 +114,6 @@ export class AppSelector {
       })
       .map(x => this.buildQuickPickItem(x)).filter(x => !!x)
 
-    const app = await vscode.window.showQuickPick(items, {
-      placeHolder: 'Run application...'
-    });
-
-    return app && app.target;
+    return this.showQuickPick(title, items).run();
   }
 }
