@@ -76,3 +76,7 @@ export function onDocumentClose(doc: vscode.TextDocument) {
 export function destroy() {
   runner.shutdown();
 }
+
+export function reinitPool() {
+  return runner.reinitPool();
+}

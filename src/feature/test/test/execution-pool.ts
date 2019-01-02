@@ -8,6 +8,10 @@ export class TestExecutionPool {
   private active = false;
 
   constructor() {
+    this.init();
+  }
+
+  init() {
     // tslint:disable-next-line:no-this-assignment
     const self = this;
     this.pool = createPool<TestExecution>({

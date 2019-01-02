@@ -1,6 +1,4 @@
 import { ChildProcess, spawn } from 'child_process';
-import * as path from 'path';
-import * as os from 'os';
 
 import { TestEvent } from './types';
 import { Workspace } from '../../../core/workspace';
@@ -40,12 +38,9 @@ export class TestExecution {
 
   async _init() {
     try {
-      const cacheDir = path.join(os.tmpdir(), `vsc_${Math.trunc(Math.random() * 100000)}_${Workspace.path.replace(/[\\\/:]/g, '_')}`);
-
       const env: { [key: string]: any } = {
         ...process.env,
         EXECUTION: true,
-        TS_CACHE_DIR: cacheDir,
         EXECUTION_REUSABLE: true
       };
 

@@ -138,6 +138,11 @@ export class TestRunner {
     await this._pool.shutdown();
   }
 
+  async reinitPool() {
+    await this._pool.shutdown();
+    await this._pool.init();
+  }
+
   async close(doc: vscode.TextDocument) {
     if (this._results.has(doc.fileName)) {
       this._results.get(doc.fileName)!.removeEditors();

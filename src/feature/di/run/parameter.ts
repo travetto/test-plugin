@@ -49,7 +49,7 @@ export class ParameterSelector {
       qp.activeItems = qp.items.filter(x => x.label === qp.value);
     }
 
-    delete qp.value;
+    qp.value = undefined as any;
 
     return {
       input: qp,

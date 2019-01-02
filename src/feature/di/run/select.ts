@@ -29,7 +29,8 @@ export class AppSelector {
     }
     const env = app.filename.includes('e2e') && 'e2e' || 'dev';
     detail.push(`{${env}}`);
-    return detail.filter(x => !!x).join(' ').trim();
+    const out = detail.filter(x => !!x).join(' ').trim();
+    return out ? `${'\u00A0'.repeat(4)}${out}` : out;
   }
 
   static getAppParams(choice: AppChoice) {
@@ -51,7 +52,7 @@ export class AppSelector {
       const detail = this.getAppDetail(choice);
 
       return {
-        label: choice.key ? `[R] ${choice.name}` : `${choice.name}`,
+        label: `${choice.key ? '$(zap)' : '$(gear)'} ${choice.name}`,
         detail,
         description: params,
         target: choice
