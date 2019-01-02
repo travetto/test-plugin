@@ -1,13 +1,17 @@
 import * as path from 'path';
 import * as vscode from 'vscode';
 
-import { Util } from '../../../util';
+import { Workspace } from '../../../core/workspace';
 
-const { Env } = Util.requireLocal('@travetto/base/src/env');
+const { Env } = Workspace.requireLibrary('@travetto/base/src/env');
 
 export async function launchTests(addBreakpoint: boolean = false) {
 
   const editor = vscode.window.activeTextEditor;
+
+  if (!editor) {
+    throw new Error('No editor for tests');
+  }
 
   if (editor.document && /@Test\(/.test(editor.document.getText() || '')) {
     const line = editor.selection.start.line + 1;
@@ -35,13 +39,14 @@ export async function launchTests(addBreakpoint: boolean = false) {
       env.NODE_PRESERVE_SYMLINKS = 1;
     }
 
-    return await vscode.debug.startDebugging(vscode.workspace.workspaceFolders[0], Util.generateLaunchConfig({
+    return await vscode.debug.startDebugging(Workspace.folder, Workspace.generateLaunchConfig({
       name: 'Debug Travetto',
+      // tslint:disable-next-line:no-invalid-template-strings
       program: '${workspaceFolder}/node_modules/@travetto/test/bin/travetto-cli-test',
       args: [
-        `${editor.document.fileName.replace(`${Util.CWD}${path.sep}`, '')}`,
+        `${editor.document.fileName.replace(`${Workspace.path}${path.sep}`, '')}`,
         `${line}`
-      ].filter(x => x != ''),
+      ].filter(x => x !== ''),
       env
     }));
   }

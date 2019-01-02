@@ -1,31 +1,16 @@
 import * as fs from 'fs';
 import * as util from 'util';
 import * as path from 'path';
-import * as os from 'os';
-import * as vscode from 'vscode';
-import { Util } from './util';
+
+import { Workspace } from './workspace';
 
 const writeProm = util.promisify(fs.writeFile);
-
-const cacheDir = [
-  os.tmpdir(),
-  'travetto-plugin',
-  `${Util.hash(vscode.workspace.workspaceFolders[0].uri.fsPath)}`
-].reduce((acc, v) => {
-  let out = path.resolve(acc, v);
-  if (!fs.existsSync(out)) {
-    fs.mkdirSync(out);
-  }
-  return out;
-}, '');
-
-console.log('storage', cacheDir);
 
 export class ActionStorage<T> {
 
   private storage: { [key: string]: { data: T, time: number } } = {};
 
-  constructor(public scope: string, public root: string = cacheDir) {
+  constructor(public scope: string, public root: string = Workspace.cacheDir) {
     this.init();
   }
 

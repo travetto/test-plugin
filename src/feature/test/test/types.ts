@@ -4,7 +4,7 @@ export type SMap<v> = { [key: string]: v };
 
 export type Decs<T> = SMap<SMap<T>>;
 
-export interface ResultStsyles {
+export interface ResultStyles {
   [key: string]: vscode.TextEditorDecorationType;
 }
 
@@ -14,7 +14,7 @@ export interface Result {
 }
 
 export interface ResultState<T> extends Partial<Result> {
-  styles: ResultStsyles;
+  styles: ResultStyles;
   src: T;
 }
 
@@ -22,7 +22,7 @@ export interface SuiteState extends ResultState<SuiteConfig | SuiteResult> {
 }
 
 export interface TestState extends ResultState<TestConfig | TestResult> {
-  assertStyles: ResultStsyles;
+  assertStyles: ResultStyles;
   assertions: (Result & { src: Assertion })[];
 }
 
@@ -61,7 +61,7 @@ export interface Assertion {
   methodName: string;
   status: 'skip' | 'fail' | 'success';
   error?: Error;
-  message?: string;
+  message: string;
   line: number;
   lineEnd?: number;
 }
@@ -72,3 +72,11 @@ export type TestEvent =
   { phase: 'before', type: 'test', test: TestConfig } |
   { phase: 'after', type: 'test', test: TestResult } |
   { phase: 'after', type: 'assertion', assertion: Assertion };
+
+export interface ErrorHoverAssertion {
+  message: string;
+  expected?: any;
+  actual?: any;
+  operator?: string;
+  error: Error & { [key: string]: any };
+}

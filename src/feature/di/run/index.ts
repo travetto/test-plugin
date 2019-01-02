@@ -1,11 +1,11 @@
 import * as vscode from 'vscode';
 
-import { Util } from '../../../util';
 import { AppSelector } from './select';
 import { ParameterSelector } from './parameter';
 import { AppChoice } from './types';
+import { Workspace } from '../../../core/workspace';
 
-const { Env } = Util.requireLocal('@travetto/base/src/env');
+const { Env } = Workspace.requireLibrary('@travetto/base/src/env');
 
 async function getChoice(title: string) {
   const choice = await AppSelector.select(title);
@@ -30,9 +30,10 @@ async function getChoice(title: string) {
 }
 
 function getLaunchConfig(choice: AppChoice) {
-  const args = choice.inputs.map(x => x.replace(Util.CWD, '.')).join(', ');
-  return Util.generateLaunchConfig({
+  const args = choice.inputs.map(x => `${x}`.replace(Workspace.path, '.')).join(', ');
+  return Workspace.generateLaunchConfig({
     name: `[Travetto] ${choice.name}${args ? `: ${args}` : ''}`,
+    // tslint:disable-next-line:no-invalid-template-strings
     program: '${workspaceFolder}/node_modules/@travetto/di/bin/travetto-cli-run.js',
     args: [choice.name, ...choice.inputs].map(x => `${x}`),
     env: {
@@ -59,7 +60,7 @@ async function exportLaunchConfig() {
     configurations.push(config);
     await launchConfig.update('configurations', configurations, false);
 
-    vscode.window.showInformationMessage('Added new configuration to launch.json!')
+    vscode.window.showInformationMessage('Added new configuration to launch.json!');
   } catch (e) {
     vscode.window.showErrorMessage(e.message);
   }
@@ -73,7 +74,7 @@ async function runApplication() {
       return;
     }
 
-    await vscode.debug.startDebugging(vscode.workspace.workspaceFolders[0], getLaunchConfig(choice));
+    await vscode.debug.startDebugging(Workspace.folder, getLaunchConfig(choice));
   } catch (e) {
     vscode.window.showErrorMessage(e.message);
   }

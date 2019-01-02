@@ -1,10 +1,10 @@
 import * as vscode from 'vscode';
 import * as util from 'util';
-import { Util } from '../../../util';
-import { Assertion, TestResult } from './types';
+import { TestResult, ErrorHoverAssertion } from './types';
+import { Workspace } from '../../../core/workspace';
 
-const { Stacktrace } = Util.requireLocal('@travetto/base');
-const { ExecUtil } = Util.requireLocal('@travetto/exec');
+const { Stacktrace } = Workspace.requireLibrary('@travetto/base');
+const { ExecUtil } = Workspace.requireLibrary('@travetto/exec');
 
 const rgba = (r = 0, g = 0, b = 0, a = 1) => `rgba(${r},${g},${b},${a})`;
 
@@ -35,65 +35,63 @@ const Style = {
 
 export class Decorations {
 
-  static context: vscode.ExtensionContext;
+  static buildErrorHover(asrt: ErrorHoverAssertion) {
+    let title: string;
+    let body: string;
+    let bodyFirst: string;
+    let suffix = asrt.message;
 
-  static buildHover(asrt: Partial<Assertion>) {
-    if (asrt.error) {
-      let title: string;
-      let body: string;
-      let bodyFirst: string;
-      let suffix = asrt.message;
+    if ('errors' in asrt.error) {
+      title = asrt.error.message;
+      const messages = ((asrt.error as any).errors as (Error | string)[])
+        .map(x => typeof x === 'string' ? x : x.message);
 
-      if ('errors' in asrt.error) {
-        title = asrt.error!.message;
-        const messages = ((asrt.error as any).errors).map(x => typeof x === 'string' ? x : x.message);
-        suffix = `(${title}) ${messages.join(', ')}`;
-        if (suffix.length > 60) {
-          suffix = title;
-        }
-        body = `\t${messages.join('  \n\t')}  `;
-        bodyFirst = `${title} - ${messages.join(', ')}`;
-      } else if (asrt.expected !== undefined && asrt.actual !== undefined) {
-        title = asrt.message
-          .replace(/^.*should/, 'Should');
-
-        const extra = title.split(/^Should(?:\s+[a-z]+)+/)[1];
-        title = title.replace(extra, '');
-
-        if (suffix.length > 50) {
-          suffix = title;
-        }
-
-        const getVal = str => {
-          try {
-            return util.inspect(JSON.parse(str), false, 10).replace(/\n/g, '  \n\t');
-          } catch (e) {
-            return str;
-          }
-        };
-
-        if (/equal/i.test(asrt.operator)) {
-          body = `\tExpected: \n\t${getVal(asrt.expected)} \n\tActual: \n\t${getVal(asrt.actual)} \n`;
-        } else {
-          body = `\t${asrt.message}`;
-        }
-        bodyFirst = asrt.message;
-      } else {
-        title = asrt.error.message;
-        suffix = asrt.error.message;
-
-        body = Stacktrace.simplifyStack(ExecUtil.deserializeError(asrt.error));
-        bodyFirst = body.split('\n')[0];
+      suffix = `(${title}) ${messages.join(', ')}`;
+      if (suffix.length > 60) {
+        suffix = title;
       }
-      return { suffix, title, bodyFirst, body, markdown: new vscode.MarkdownString(`**${title}** \n\n${body}`) };
+      body = `\t${messages.join('  \n\t')}  `;
+      bodyFirst = `${title} - ${messages.join(', ')}`;
+    } else if (asrt.expected !== undefined && asrt.actual !== undefined) {
+      title = asrt.message
+        .replace(/^.*should/, 'Should');
+
+      const extra = title.split(/^Should(?:\s+[a-z]+)+/)[1];
+      title = title.replace(extra, '');
+
+      if (suffix.length > 50) {
+        suffix = title;
+      }
+
+      const getVal = (str: string) => {
+        try {
+          return util.inspect(JSON.parse(str), false, 10).replace(/\n/g, '  \n\t');
+        } catch (e) {
+          return str;
+        }
+      };
+
+      if (/equal/i.test(asrt.operator!)) {
+        body = `\tExpected: \n\t${getVal(asrt.expected)} \n\tActual: \n\t${getVal(asrt.actual)} \n`;
+      } else {
+        body = `\t${asrt.message}`;
+      }
+      bodyFirst = asrt.message;
+    } else {
+      title = asrt.error.message;
+      suffix = asrt.error.message;
+
+      body = Stacktrace.simplifyStack(ExecUtil.deserializeError(asrt.error));
+      bodyFirst = body.split('\n')[0];
     }
+    return { suffix, title, bodyFirst, body, markdown: new vscode.MarkdownString(`**${title}** \n\n${body}`) };
   }
 
   static line(n: number, end: number = 0): vscode.DecorationOptions {
     return { range: new vscode.Range(n - 1, 0, (end || n) - 1, 100000000000) };
   }
 
-  static buildAssert(state: string) {
+  static buildAssert(state: keyof (typeof Style.COLORS)) {
     const color = Style.COLORS[state];
     return vscode.window.createTextEditorDecorationType({
       ...Style.ASSERT,
@@ -103,7 +101,7 @@ export class Decorations {
   }
 
   static buildImage(state: string, size = Style.FULL_IMAGE) {
-    const img = Decorations.context.asAbsolutePath(`images/${state}.png`);
+    const img = Workspace.getAbsoluteResource(`images/${state}.png`);
     return vscode.window.createTextEditorDecorationType({
       ...Style.IMAGE,
       gutterIconPath: img,
@@ -111,10 +109,10 @@ export class Decorations {
     });
   }
 
-  static buildAssertion(assertion: { error?: Error, line: number, lineEnd?: number, message?: string }): vscode.DecorationOptions {
+  static buildAssertion(assertion: { error?: Error, line: number, lineEnd?: number, message: string }): vscode.DecorationOptions {
     let out = this.line(assertion.line, assertion.lineEnd);
     if (assertion.error) {
-      const { suffix, title, markdown } = this.buildHover(assertion);
+      const { suffix, title, markdown } = this.buildErrorHover(assertion as ErrorHoverAssertion);
 
       out = {
         ...out,
@@ -135,9 +133,15 @@ export class Decorations {
   }
 
   static buildTest(test: { lines: { start: number } }) {
+    let err: ErrorHoverAssertion | undefined;
     if ('error' in test) {
       const tt = test as TestResult;
-      const hover = this.buildHover((tt.assertions).find(x => x.status === 'fail') || { error: tt.error, message: tt.error.message });
+      err = ((tt.assertions || []).find(x => x.status === 'fail') as ErrorHoverAssertion) ||
+        (tt.error && { error: tt.error, message: tt.error.message });
+    }
+    if (err) {
+      const hover = this.buildErrorHover(err);
+      const tt = test as TestResult;
       return {
         ...this.line(tt.lines.start),
         hoverMessage: hover.markdown
@@ -147,7 +151,7 @@ export class Decorations {
     }
   }
 
-  static buildStyle(entity: string, state: string) {
+  static buildStyle(entity: string, state: keyof typeof Style.COLORS) {
     return (entity === 'assertion') ?
       this.buildAssert(state) :
       this.buildImage(state, entity === 'test' ? Style.SMALL_IMAGE : Style.FULL_IMAGE);

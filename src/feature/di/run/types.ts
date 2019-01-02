@@ -10,11 +10,15 @@ export interface ApplicationParam {
 export interface Application {
   name: string;
   filename: string;
-  params?: ApplicationParam[];
+  params: ApplicationParam[];
   id: string;
   description?: string;
   watchable?: boolean;
   env: string;
 }
 
-export type AppChoice = Application & { inputs?: string[], time?: number, key?: string };
+export type AppChoice = Application & {
+  inputs: string[],
+  time?: number,
+  key?: string
+};

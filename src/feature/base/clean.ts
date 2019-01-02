@@ -1,13 +1,13 @@
 import * as vscode from 'vscode';
 
-import { Util } from '../../util';
+import { Workspace } from '../../core/workspace';
 
-const op = Util.toLocalFile('@travetto/base/bin/travetto-cli-clean.js');
+const op = Workspace.resolveLibrary('@travetto/base/bin/travetto-cli-clean.js');
 
 async function clean() {
-  await Util.fork(op);
+  await Workspace.fork(op);
 
-  const { AppCache } = Util.requireLocal('@travetto/base/src/cache');
+  const { AppCache } = Workspace.requireLibrary('@travetto/base/src/cache');
   AppCache.cache = {};
 
   vscode.window.showInformationMessage('Successfully cleaned the travetto cache');

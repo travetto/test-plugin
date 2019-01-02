@@ -1,11 +1,12 @@
 import * as vscode from 'vscode';
 import { ApplicationParam, AppChoice } from './types';
+import { Workspace } from '../../../core/workspace';
 
 type FullInput = vscode.QuickInput & {
-  placeholder: string;
-  value: string,
-  onDidAccept(cb: () => void): void
-}
+  placeholder?: string;
+  value?: string;
+  onDidAccept(cb: () => void): void;
+};
 interface ParamConfig {
   param: ApplicationParam;
   total: number;
@@ -35,7 +36,7 @@ export class ParameterSelector {
           return x;
         });
       }
-    }
+    };
   }
 
   static buildQuickPickList(conf: ParamConfig, choices: string[]) {
@@ -48,18 +49,18 @@ export class ParameterSelector {
       qp.activeItems = qp.items.filter(x => x.label === qp.value);
     }
 
-    qp.value = undefined;
+    delete qp.value;
 
     return {
       input: qp,
       run: () => subRun().then(x =>
         x === undefined ? qp.selectedItems[0].label : x)
-    }
+    };
   }
 
   static async getFile(conf: ParamConfig, root?: string) {
     const res = await vscode.window.showOpenDialog({
-      defaultUri: root ? vscode.Uri.file(root) : vscode.workspace.workspaceFolders[0].uri,
+      defaultUri: root ? vscode.Uri.file(root) : Workspace.folder.uri,
       openLabel: `Select ${conf.param.title || conf.param.name}`,
       canSelectFiles: true,
       canSelectMany: false
@@ -70,12 +71,12 @@ export class ParameterSelector {
   static async selectParameter(conf: ParamConfig) {
     switch (conf.param.type) {
       case 'number': return this.buildInput(vscode.window.createInputBox, conf).run();
-      case 'boolean': return this.buildQuickPickList(conf, ['yes', 'no']).run().then(x => x === 'yes');
+      case 'boolean': return this.buildQuickPickList(conf, ['yes', 'no']).run().then(x => `${x === 'yes'}`);
 
       case 'string':
       default: {
         switch (conf.param.subtype) {
-          case 'choice': return this.buildQuickPickList(conf, conf.param.meta.choices).run()
+          case 'choice': return this.buildQuickPickList(conf, conf.param.meta.choices).run();
           case 'file': return this.getFile(conf);
           default: return this.buildInput(vscode.window.createInputBox, conf).run();
         }

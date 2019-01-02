@@ -1,12 +1,13 @@
 import * as vscode from 'vscode';
 
 import { Decorations } from './decoration';
-import { Util } from '../../../util';
 import {
   AllState, TestConfig, TestState, ResultState,
   TestEvent, SuiteResult, TestResult, Assertion,
-  SuiteState
+  SuiteState,
+  ErrorHoverAssertion
 } from './types';
+import { Logger } from '../../../core/log';
 
 const diagColl = vscode.languages.createDiagnosticCollection('Travetto');
 
@@ -23,9 +24,9 @@ export class ResultsManager {
 
   private _editors: Set<vscode.TextEditor> = new Set();
 
-  constructor(private _document: vscode.TextDocument) { }
+  public active = false;
 
-  active = false;
+  constructor(private _document: vscode.TextDocument) { }
 
   addEditor(e: vscode.TextEditor) {
     const elements = Array.from(this._editors).filter(x => !(x as any)._disposed);
@@ -44,7 +45,7 @@ export class ResultsManager {
   }
 
   resetAll() {
-    for (const l of ['suite', 'test']) {
+    for (const l of ['suite', 'test'] as (keyof AllState)[]) {
       Object.values(this.results[l] as { [key: string]: ResultState<any> }).forEach(e => {
         Object.values(e.styles).forEach(x => x.dispose());
         if (l === 'test') {
@@ -58,12 +59,12 @@ export class ResultsManager {
 
   refresh() {
     for (const suite of Object.values(this.results.suite)) {
-      if (suite.decoration) {
+      if (suite.decoration && suite.status) {
         this.setStyle(suite.styles[suite.status], [suite.decoration]);
       }
     }
     for (const test of Object.values(this.results.test)) {
-      if (test.decoration) {
+      if (test.decoration && test.status) {
         this.setStyle(test.styles[test.status], [test.decoration]);
 
         const out: { [key: string]: vscode.DecorationOptions[] } = { success: [], fail: [], unknown: [] };
@@ -85,7 +86,7 @@ export class ResultsManager {
           if (as.status !== 'fail' || as.src.className === 'unknown') {
             continue;
           }
-          const { bodyFirst } = Decorations.buildHover(as.src);
+          const { bodyFirst } = Decorations.buildErrorHover(as.src as ErrorHoverAssertion);
           const rng = as.decoration!.range;
 
           const diagRng = new vscode.Range(
@@ -96,13 +97,11 @@ export class ResultsManager {
           acc.push(diag);
         }
         return acc;
-      }, []);
+      }, [] as vscode.Diagnostic[]);
     diagColl.set(this._document.uri, this.diagnostics);
   }
 
   store(level: string, key: string, status: string, decoration: vscode.DecorationOptions, src?: any) {
-    Util.log(level, key, status, true);
-
     if (level === 'assertion') {
       const el = this.results.test[key];
       const groups: { [key: string]: vscode.DecorationOptions[] } = { success: [], fail: [], unknown: [] };
@@ -146,7 +145,11 @@ export class ResultsManager {
 
   reset(level: 'test' | 'suite', key: string) {
     const existing = this.results[level][key];
-    const base: ResultState<any> = { styles: this.genStyles(level), src: (existing && existing.src) };
+    const base: ResultState<any> = {
+      status: 'unknown',
+      styles: this.genStyles(level),
+      src: (existing && existing.src)
+    };
 
     if (existing) {
       Object.values(existing.styles).forEach(x => x.dispose());
@@ -196,7 +199,6 @@ export class ResultsManager {
         this.reset('test', key);
         const dec = Decorations.buildTest(e.test);
         this.store('test', key, 'unknown', dec, e.test);
-
 
         // IF running a single test
         if (line) {
@@ -257,6 +259,7 @@ export class ResultsManager {
       methodName: 'unknown',
       error,
       line: 1,
+      message: 'Total Error',
       lineEnd: this._document.lineCount + 1
     };
 
@@ -268,7 +271,7 @@ export class ResultsManager {
       file: this._document.fileName,
       error,
       lines: { start: 1, end: this._document.lineCount + 1 }
-    }
+    };
     this.onEvent({ type: 'test', phase: 'before', test: t });
     this.onEvent({ type: 'assertion', phase: 'after', assertion });
     this.onEvent({ type: 'test', phase: 'after', test: t });

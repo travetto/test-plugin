@@ -1,12 +1,11 @@
 import * as vscode from 'vscode';
-import { Decorations } from './decoration';
 import { destroy, onDocumentClose, onDocumentUpdate } from './editor';
 import { launchTests } from './launch';
+import { Workspace } from '../../../core/workspace';
 
-export function activate(context: vscode.ExtensionContext) {
-  Decorations.context = context;
-
+export function activate() {
   try {
+    const context = Workspace.context;
     vscode.workspace.onDidOpenTextDocument(x => onDocumentUpdate(x, 0), null, context.subscriptions);
     vscode.workspace.onDidSaveTextDocument(x => onDocumentUpdate(x), null, context.subscriptions);
     vscode.workspace.onDidCloseTextDocument(x => onDocumentClose(x), null, context.subscriptions);
