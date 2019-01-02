@@ -21,7 +21,7 @@ export class ParameterSelector {
     qp.totalSteps = config.total;
     qp.value = config.input || config.param.def;
     qp.placeholder = qp.title;
-    qp.title = `Enter value for ${config.param.name}`;
+    qp.title = `Enter value for ${config.param.title || config.param.name}`;
 
     return {
       input: qp,
@@ -40,7 +40,7 @@ export class ParameterSelector {
 
   static buildQuickPickList(conf: ParamConfig, choices: string[]) {
     const { input: qp, run: subRun } = this.buildInput(vscode.window.createQuickPick, conf);
-    qp.title = `Select ${conf.param.name}`;
+    qp.title = `Select ${conf.param.title || conf.param.name}`;
     qp.items = choices.map(x => ({ label: x }));
     qp.canSelectMany = false;
 
@@ -60,7 +60,7 @@ export class ParameterSelector {
   static async getFile(conf: ParamConfig, root?: string) {
     const res = await vscode.window.showOpenDialog({
       defaultUri: root ? vscode.Uri.file(root) : vscode.workspace.workspaceFolders[0].uri,
-      openLabel: `Select ${conf.param.name}`,
+      openLabel: `Select ${conf.param.title || conf.param.name}`,
       canSelectFiles: true,
       canSelectMany: false
     });

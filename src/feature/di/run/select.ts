@@ -36,10 +36,10 @@ export class AppSelector {
     let out = choice.params
       .map((x, i) => {
         let val = choice.inputs[i] || x.def;
-        if (x.type === 'file' && val) {
+        if (x.subtype === 'file' && val) {
           val = val.replace(vscode.workspace.workspaceFolders[0].uri.fsPath, '.')
         }
-        return val ? `${x.name}=${val}` : x.name;
+        return `${x.title || x.name}${val !== undefined ? `=${val}` : ''}`;
       })
       .join(', ');
     return out;

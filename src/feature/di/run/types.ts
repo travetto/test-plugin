@@ -1,5 +1,6 @@
 export interface ApplicationParam {
   name: string;
+  title?: string;
   type?: string;
   subtype?: string;
   def?: string;
