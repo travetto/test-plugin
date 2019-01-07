@@ -67,7 +67,7 @@ Currently the supported commands are:
 # Requirements
 
 * You should have the [`Travetto framework`](https://travetto.io) installed, version 0.5.0 and higher. 
-* Tests require the ['test'](https://github.com/travetto/travetto/tree/master/module/test) module to be installed.
+* Tests require the [`test`](https://github.com/travetto/travetto/tree/master/module/test) module to be installed.
 * Application running requires the [`di`](https://github.com/travetto/travetto/tree/master/module/di) module to be installed.
 
 # Known Issues
