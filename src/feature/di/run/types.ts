@@ -12,6 +12,7 @@ export interface Application {
   filename: string;
   params: ApplicationParam[];
   id: string;
+  appRoot: string;
   description?: string;
   watchable?: boolean;
   env: string;

@@ -38,8 +38,6 @@ function getLaunchConfig(choice: AppChoice) {
     args: [choice.name, ...choice.inputs].map(x => `${x}`),
     env: {
       NODE_PRESERVE_SYMLINKS: `${Env.frameworkDev ? 1 : 0}`,
-      ENV: choice.filename.includes('e2e') ? 'e2e' : '',
-      WATCH: `${choice.watchable}`,
       FORCE_COLOR: 'true'
     }
   });

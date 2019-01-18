@@ -12,13 +12,7 @@ export class AppSelector {
   static async getAppList() {
     const { getCachedAppList } = Workspace.requireLibrary('@travetto/di/bin/travetto-find-apps');
 
-    const apps = (await (getCachedAppList() as Promise<AppChoice[]>))
-      .sort((a, b) => {
-        const ae2e = a.filename.includes('e2e');
-        const be2e = b.filename.includes('e2e');
-        return ae2e === be2e ? a.name.localeCompare(b.name) : (ae2e ? 1 : -1);
-      });
-    return apps;
+    return getCachedAppList() as Promise<AppChoice[]>;
   }
 
   static getAppDetail(app: AppChoice) {
@@ -27,8 +21,6 @@ export class AppSelector {
     if (app.watchable) {
       detail.push('{watch}');
     }
-    const env = app.filename.includes('e2e') && 'e2e' || 'dev';
-    detail.push(`{${env}}`);
     const out = detail.filter(x => !!x).join(' ').trim();
     return out ? `${'\u00A0'.repeat(4)}${out}` : out;
   }
@@ -52,7 +44,7 @@ export class AppSelector {
       const detail = this.getAppDetail(choice);
 
       return {
-        label: `${choice.key ? '$(zap)' : '$(gear)'} ${choice.name}`,
+        label: `${choice.key ? '$(zap)' : '$(gear)'} ${choice.appRoot ? `${choice.appRoot}/` : ''}${choice.name}`,
         detail,
         description: params,
         target: choice
