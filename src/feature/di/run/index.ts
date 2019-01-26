@@ -37,7 +37,11 @@ function getLaunchConfig(choice: AppChoice) {
     program: '${workspaceFolder}/node_modules/@travetto/di/bin/travetto-cli-run.js',
     args: [choice.name, ...choice.inputs].map(x => `${x}`),
     env: {
-      NODE_PRESERVE_SYMLINKS: `${Env.frameworkDev ? 1 : 0}`,
+      ...(Env.frameworkDev ? {
+        // tslint:disable-next-line:no-invalid-template-strings
+        __dirname: '${workspaceFolder}/node_modules/@travetto/di/bin',
+        NODE_PRESERVE_SYMLINKS: '1'
+      } : {}),
       FORCE_COLOR: 'true'
     }
   });
