@@ -1,8 +1,10 @@
 import * as vscode from 'vscode';
+
+import * as path from 'path';
 import { ResultsManager } from './results';
 import { TestExecution } from './execution';
 
-import { execSync } from 'child_process';
+import { execSync, spawnSync } from 'child_process';
 import { TestExecutionPool } from './execution-pool';
 import { TestUtil } from './util';
 import { Promises } from '../../../core/promise';
@@ -21,7 +23,7 @@ export class TestRunner {
       title = `@Suite ${suite.name!.text}`;
     }
 
-    title = `Running ${document.fileName.split(/[\\/]/g).pop()} ${title}`.trim();
+    title = `Running ${path.basename(document.fileName)} ${title}`.trim();
 
     return { title, method, suite };
   }
@@ -31,11 +33,15 @@ export class TestRunner {
   private dockerNS = `test-${process.pid}`;
   private _results = new Map<string, ResultsManager>();
   private _pool = new TestExecutionPool();
+  private _hasDocker = false;
 
   constructor(private window: typeof vscode.window) {
     process.env.DOCKER_NS = this.dockerNS;
 
     this.status = window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+    try {
+      this._hasDocker = spawnSync('docker -v', { shell: true }).status === 0;
+    } catch { }
   }
 
   setStatus(message: string, color?: string) {
@@ -129,11 +135,13 @@ export class TestRunner {
 
   async shutdown() {
     Logger.debug('Test', 'Shutting down');
-    const lines = execSync('docker ps -a').toString().split('\n');
-    const ids = lines.filter(x => x.includes(this.dockerNS)).map(x => x.split(' ')[0]);
+    if (this._hasDocker) {
+      const lines = execSync('docker ps -a').toString().split('\n');
+      const ids = lines.filter(x => x.includes(this.dockerNS)).map(x => x.split(' ')[0]);
 
-    if (ids.length) {
-      execSync(`docker rm -f ${ids.join(' ')}`);
+      if (ids.length) {
+        execSync(`docker rm -f ${ids.join(' ')}`);
+      }
     }
     await this._pool.shutdown();
   }

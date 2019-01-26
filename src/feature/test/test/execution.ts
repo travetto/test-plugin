@@ -123,7 +123,7 @@ export class TestExecution {
   kill() {
     if (this.proc) {
       this.proc.removeAllListeners();
-      this.proc.kill('SIGKILL');
+      this.proc.kill(process.platform === 'win32' ? undefined : 'SIGKILL');
       delete this.proc;
     }
   }

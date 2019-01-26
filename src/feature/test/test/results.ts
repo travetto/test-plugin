@@ -7,7 +7,6 @@ import {
   SuiteState,
   ErrorHoverAssertion
 } from './types';
-import { Logger } from '../../../core/log';
 
 const diagColl = vscode.languages.createDiagnosticCollection('Travetto');
 
