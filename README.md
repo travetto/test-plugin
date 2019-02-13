@@ -42,7 +42,9 @@ The plugin exposes this functionality as a command, to allow you to debug these 
 
 ![Run Workflow](images/run-workflow.gif)
 
-Launching relies upon the command `Travetto: Run Application`.  This will show you a list of the available entry points in the application, with the parameters they support.  Selecting an application will take you through the parameter flow to select inputs, and once all parameters are selected, your application will launch.  After running an application once, if you go back to launch a new application, you will see an entry that is prefixed with `⚡`. This prefix indicate that the parameters have already been selected, and this is a recent run that you can invoke immediately without prompting for inputs.
+Launching relies upon the command `Travetto: Run New Application`.  This will show you a list of the available entry points in the application, with the parameters they support.  Selecting an application will take you through the parameter flow to select inputs, and once all parameters are selected, your application will launch.  
+
+After running and selecting a configuration for an application, you can now access those configurations via `Travetto: Run Recent Application`.  This allows you to execute a recent run that you can invoke immediately without prompting for inputs. If you find yourself running the same application multiple times, you can also invoke `Travetto: Run Most Recent Application` to bypass application selection overall.
 
 ### Exporting and Customizing
 
@@ -52,7 +54,9 @@ If at any point in time, you wish to modify the launch configuration of any appl
 
 #### Commands
 
-`Travetto: Run Application` to launch an application
+`Travetto: Run New Application` to launch a new application config
+`Travetto: Run Recent Application` to launch a previously configured application
+`Travetto: Run Most Recent Application` to launch the most recently run configured application
 `Travetto: Export Application Launch` to export an application config
 
 ## Misc Utilities
