@@ -7,8 +7,8 @@ import { Workspace } from '../../../core/workspace';
 
 const { Env } = Workspace.requireLibrary('@travetto/base/src/env');
 
-async function getChoice(title: string) {
-  const choice = await AppSelector.select(title);
+async function getChoice(title: string, choices: AppChoice[] | AppChoice) {
+  const choice = Array.isArray(choices) ? (await AppSelector.select(title, choices)) : choices;
 
   if (!choice) {
     return;
@@ -49,7 +49,7 @@ function getLaunchConfig(choice: AppChoice) {
 
 async function exportLaunchConfig() {
   try {
-    const choice = await getChoice('Export Application Launch');
+    const choice = await getChoice('Export Application Launch', await AppSelector.getValidRecent(10));
 
     if (!choice) {
       return;
@@ -68,9 +68,9 @@ async function exportLaunchConfig() {
   }
 }
 
-async function runApplication() {
+async function runApplication(title: string, apps: AppChoice[] | AppChoice) {
   try {
-    const choice = await getChoice('Run Application');
+    const choice = await getChoice(title, apps);
 
     if (!choice) {
       return;
@@ -82,5 +82,10 @@ async function runApplication() {
   }
 }
 
-vscode.commands.registerCommand('travetto.di.run', async config => runApplication());
+vscode.commands.registerCommand('travetto.di.run:new', async config =>
+  runApplication('Run New Application', await AppSelector.getAppList()));
+vscode.commands.registerCommand('travetto.di.run:recent', async config =>
+  runApplication('Run Recent Application', await AppSelector.getValidRecent(10)));
+vscode.commands.registerCommand('travetto.di.run:mostRecent', async config =>
+  runApplication('Run Most Recent Application', (await AppSelector.getValidRecent(1))[0]));
 vscode.commands.registerCommand('travetto.di.run:export', async config => exportLaunchConfig());

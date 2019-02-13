@@ -3,7 +3,8 @@ export interface ApplicationParam {
   title?: string;
   type?: string;
   subtype?: string;
-  def?: string;
+  def?: string | boolean | number;
+  optional?: boolean;
   meta?: any;
 }
 

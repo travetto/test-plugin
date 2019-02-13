@@ -20,7 +20,7 @@ export class ParameterSelector {
     qp.ignoreFocusOut = true;
     qp.step = config.step;
     qp.totalSteps = config.total;
-    qp.value = config.input || config.param.def;
+    qp.value = config.input || (config.param.def !== undefined ? `${config.param.def}` : undefined);
     qp.placeholder = qp.title;
     qp.title = `Enter value for ${config.param.title || config.param.name}`;
 
@@ -45,7 +45,11 @@ export class ParameterSelector {
     qp.items = choices.map(x => ({ label: x }));
     qp.canSelectMany = false;
 
-    if (qp.value) {
+    if (qp.value !== undefined && conf.param.type === 'boolean') {
+      qp.value = `${qp.value}` === 'true' ? 'yes' : 'no';
+    }
+
+    if (qp.value !== undefined) {
       qp.activeItems = qp.items.filter(x => x.label === qp.value);
     }
 
@@ -98,7 +102,11 @@ export class ParameterSelector {
       });
 
       if (res === undefined) {
-        return undefined;
+        if (param.optional) {
+          selected.push('');
+        } else {
+          return undefined;
+        }
       } else {
         selected.push(res);
       }

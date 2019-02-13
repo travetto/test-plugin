@@ -70,69 +70,84 @@
       }
     },
     "commands": [
+    {
+      "command": "travetto.base.clean",
+      "title": "Clean",
+      "category": "Travetto"
+    },
+    {
+      "command": "travetto.test.test:rerun",
+      "title": "Re-Run Tests",
+      "category": "Travetto"
+    },
+    {
+      "command": "travetto.test.test:all",
+      "title": "Debug Tests",
+      "category": "Travetto"
+    },
+    {
+      "command": "travetto.di.run:new",
+      "title": "Run New Application",
+      "category": "Travetto"
+    },
+    {
+      "command": "travetto.di.run:recent",
+      "title": "Run Recent Application",
+      "category": "Travetto"
+    },
+    {
+      "command": "travetto.di.run:mostRecent",
+      "title": "Run Most Recent Application",
+      "category": "Travetto"
+    },
+    {
+      "command": "travetto.di.run:export",
+      "title": "Export Application Launch",
+      "category": "Travetto"
+    }],
+    "menus": {
+      "commandPalette": [
       {
         "command": "travetto.base.clean",
-        "title": "Clean",
-        "category": "Travetto"
-      },
-      {
-        "command": "travetto.test.test:rerun",
-        "title": "Re-Run Tests",
-        "category": "Travetto"
+        "when": "config.travetto.modules.base"
       },
       {
         "command": "travetto.test.test:all",
-        "title": "Debug Tests",
-        "category": "Travetto"
-      },
-      {
-        "command": "travetto.di.run",
-        "title": "Run Application",
-        "category": "Travetto"
-      },
-      {
-        "command": "travetto.di.run:export",
-        "title": "Export Application Launch",
-        "category": "Travetto"
-      }
-    ],
-    "menus": {
-      "commandPalette": [
-        {
-          "command": "travetto.base.clean",
-          "when": "config.travetto.modules.base"
-        },
-        {
-          "command": "travetto.test.test:all",
-          "when": "config.travetto.modules.test && !inDebugMode && editorLangId == typescript && editorIsOpen"
-        },
-        {
-          "command": "travetto.test.test:rerun",
-          "when": "config.travetto.modules.test && !inDebugMode && editorLangId == typescript && editorIsOpen"
-        },
-        {
-          "command": "travetto.di.run",
-          "when": "config.travetto.modules.di"
-        },
-        {
-          "command": "travetto.di.run:export",
-          "when": "config.travetto.modules.di"
-        }
-      ]
-    },
-    "keybindings": [
-      {
-        "command": "travetto.test.test:line",
-        "key": "ctrl+shift+t",
-        "mac": "cmd+shift+t",
-        "when": "config.travetto.modules.test && !inDebugMode && editorLangId == typescript && editorTextFocus"
+        "when": "config.travetto.modules.test && !inDebugMode && editorLangId == typescript && editorIsOpen"
       },
       {
         "command": "travetto.test.test:rerun",
-        "key": "ctrl+shift+r",
-        "mac": "cmd+shift+r",
-        "when": "config.travetto.modules.test && !inDebugMode && editorLangId == typescript && editorFocus"
-      }
-    ]
+        "when": "config.travetto.modules.test && !inDebugMode && editorLangId == typescript && editorIsOpen"
+      },
+      {
+        "command": "travetto.di.run:new",
+        "when": "config.travetto.modules.di"
+      },
+      {
+        "command": "travetto.di.run:recent",
+        "when": "config.travetto.modules.di"
+      },
+      {
+        "command": "travetto.di.run:mostRecent",
+        "when": "config.travetto.modules.di"
+      },
+      {
+        "command": "travetto.di.run:export",
+        "when": "config.travetto.modules.di"
+      }]
+    },
+    "keybindings": [
+    {
+      "command": "travetto.test.test:line",
+      "key": "ctrl+shift+t",
+      "mac": "cmd+shift+t",
+      "when": "config.travetto.modules.test && !inDebugMode && editorLangId == typescript && editorTextFocus"
+    },
+    {
+      "command": "travetto.test.test:rerun",
+      "key": "ctrl+shift+r",
+      "mac": "cmd+shift+r",
+      "when": "config.travetto.modules.test && !inDebugMode && editorLangId == typescript && editorFocus"
+    }]
   }
 }

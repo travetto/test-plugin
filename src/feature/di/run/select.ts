@@ -28,7 +28,7 @@ export class AppSelector {
   static getAppParams(choice: AppChoice) {
     const out = choice.params
       .map((x, i) => {
-        let val = choice.inputs[i] || x.def;
+        let val = choice.inputs[i] !== undefined ? choice.inputs[i] : (x.meta && x.meta.choices ? x.meta.choices.join(',') : x.def);
         if (x.subtype === 'file' && val) {
           val = val.replace(Workspace.path, '.');
         }
@@ -41,10 +41,10 @@ export class AppSelector {
   static buildQuickPickItem(choice: AppChoice): PickItem | undefined {
     try {
       const params = this.getAppParams(choice);
-      const detail = this.getAppDetail(choice);
+      const detail = choice.key ? undefined : this.getAppDetail(choice);
 
       return {
-        label: `${choice.key ? '$(zap)' : '$(gear)'} ${choice.appRoot ? `${choice.appRoot}/` : ''}${choice.name}`,
+        label: `${choice.key ? '' : '$(gear) '}${choice.appRoot ? `${choice.appRoot}/` : ''}${choice.name}`,
         detail,
         description: params,
         target: choice
@@ -98,11 +98,8 @@ export class AppSelector {
       .slice(0, count);
   }
 
-  static async select(title: string) {
-    const appList = await this.getAppList();
-    const top = await this.getValidRecent(3);
-
-    const items = top.concat(appList)
+  static async select(title: string, choices: AppChoice[]) {
+    const items = choices
       .map(x => {
         x.inputs = x.inputs || [];
         x.params = x.params || [];
