@@ -3,8 +3,6 @@ import * as vscode from 'vscode';
 
 import { Workspace } from '../../../core/workspace';
 
-const { Env } = Workspace.requireLibrary('@travetto/base/src/env');
-
 export async function launchTests(addBreakpoint: boolean = false) {
 
   const editor = vscode.window.activeTextEditor;
@@ -35,7 +33,7 @@ export async function launchTests(addBreakpoint: boolean = false) {
       DEBUGGER: true
     };
 
-    if (Env.frameworkDev) {
+    if (process.env.TRV_FRAMEWORK_DEV) {
       env.NODE_PRESERVE_SYMLINKS = 1;
     }
 

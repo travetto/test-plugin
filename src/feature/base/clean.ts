@@ -10,9 +10,6 @@ async function clean() {
 
   await reinitPool();
 
-  const { AppCache } = Workspace.requireLibrary('@travetto/base/src/cache');
-  AppCache.cache = {};
-
   vscode.window.showInformationMessage('Successfully cleaned the travetto cache');
 }
 

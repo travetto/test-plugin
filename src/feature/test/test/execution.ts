@@ -4,8 +4,6 @@ import { TestEvent } from './types';
 import { Workspace } from '../../../core/workspace';
 import { Logger } from '../../../core/log';
 
-const { Env } = Workspace.requireLibrary('@travetto/base/src/env');
-
 const EXIT = Symbol('EXIT');
 
 const TEST_BIN = 'node_modules/@travetto/test/bin';
@@ -44,7 +42,7 @@ export class TestExecution {
         EXECUTION_REUSABLE: true
       };
 
-      if (Env.frameworkDev) {
+      if (process.env.TRV_FRAMEWORK_DEV) {
         env.NODE_PRESERVE_SYMLINKS = 1;
       }
 

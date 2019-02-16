@@ -5,8 +5,6 @@ import { ParameterSelector } from './parameter';
 import { AppChoice } from './types';
 import { Workspace } from '../../../core/workspace';
 
-const { Env } = Workspace.requireLibrary('@travetto/base/src/env');
-
 async function getChoice(title: string, choices: AppChoice[] | AppChoice) {
   const choice = Array.isArray(choices) ? (await AppSelector.select(title, choices)) : choices;
 
@@ -37,7 +35,7 @@ function getLaunchConfig(choice: AppChoice) {
     program: '${workspaceFolder}/node_modules/@travetto/di/bin/travetto-cli-run.js',
     args: [choice.name, ...choice.inputs].map(x => `${x}`),
     env: {
-      ...(Env.frameworkDev ? {
+      ...(process.env.TRV_FRAMEWORK_DEV === 'win32' ? {
         // tslint:disable-next-line:no-invalid-template-strings
         __dirname: '${workspaceFolder}/node_modules/@travetto/di/bin',
         NODE_PRESERVE_SYMLINKS: '1'

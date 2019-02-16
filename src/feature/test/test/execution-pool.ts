@@ -17,7 +17,7 @@ export class TestExecutionPool {
     this.pool = createPool<TestExecution>({
       async create() {
         if (!self.active) {
-          const { PhaseManager } = Workspace.requireLibrary('@travetto/base/src/phase');
+          const { PhaseManager } = Workspace.requireLibrary('@travetto/base');
           await new PhaseManager('test').load().run();
           self.active = true;
         }
