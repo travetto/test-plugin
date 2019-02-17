@@ -28,19 +28,22 @@ async function getChoice(title: string, choices: AppChoice[] | AppChoice) {
 
 function getLaunchConfig(choice: AppChoice) {
   const args = choice.inputs.map(x => `${x}`.replace(Workspace.path, '.')).join(', ');
+  const env = {
+    TRV_DI_BASE: `${Workspace.path}/node_modules/@travetto/di`,
+    FORCE_COLOR: true,
+  };
+
+  if (process.env.TRV_FRAMEWORK_DEV) {
+    Object.assign(env, {
+      NODE_PRESERVE_SYMLINKS: '1'
+    });
+  }
+
   return Workspace.generateLaunchConfig({
     name: `[Travetto] ${choice.name}${args ? `: ${args}` : ''}`,
-    // tslint:disable-next-line:no-invalid-template-strings
-    program: '${workspaceFolder}/node_modules/@travetto/di/bin/travetto-cli-run.js',
+    program: `${Workspace.path}/node_modules/@travetto/di/bin/travetto-cli-run.js`,
     args: [choice.name, ...choice.inputs].map(x => `${x}`),
-    env: {
-      ...(process.env.TRV_FRAMEWORK_DEV ? {
-        // tslint:disable-next-line:no-invalid-template-strings
-        __dirname: '${workspaceFolder}/node_modules/@travetto/di/bin',
-        NODE_PRESERVE_SYMLINKS: '1'
-      } : {}),
-      FORCE_COLOR: 'true'
-    }
+    env
   });
 }
 

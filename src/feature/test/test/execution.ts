@@ -39,11 +39,14 @@ export class TestExecution {
       const env: { [key: string]: any } = {
         ...process.env,
         EXECUTION: true,
-        EXECUTION_REUSABLE: true
+        EXECUTION_REUSABLE: true,
+        TRV_TEST_BASE: `${Workspace.path}/node_modules/@travetto/test`
       };
 
       if (process.env.TRV_FRAMEWORK_DEV) {
-        env.NODE_PRESERVE_SYMLINKS = 1;
+        Object.assign(env, {
+          NODE_PRESERVE_SYMLINKS: 1,
+        });
       }
 
       this.proc = spawn('node', [TEST_SERVER_EXEC], {

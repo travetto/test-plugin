@@ -30,11 +30,14 @@ export async function launchTests(addBreakpoint: boolean = false) {
     const env: { [key: string]: any } = {
       DEBUG: '',
       ENV: 'test',
-      DEBUGGER: true
+      DEBUGGER: true,
+      TRV_TEST_BASE: `${Workspace.path}/node_modules/@travetto/test`
     };
 
     if (process.env.TRV_FRAMEWORK_DEV) {
-      env.NODE_PRESERVE_SYMLINKS = 1;
+      Object.assign(env, {
+        NODE_PRESERVE_SYMLINKS: 1
+      });
     }
 
     return await vscode.debug.startDebugging(Workspace.folder, Workspace.generateLaunchConfig({
