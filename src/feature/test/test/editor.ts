@@ -33,7 +33,7 @@ export function onDocumentUpdate(editor?: vscode.TextEditor | vscode.TextDocumen
     return;
   }
 
-  if (editor.document && /@Test\(/.test(editor.document.getText() || '')) {
+  if (editor.document && /@([A-Za-z]+)*Test\(/.test(editor.document.getText() || '')) {
     const newText = editor.document.getText();
     const lines = [];
 
