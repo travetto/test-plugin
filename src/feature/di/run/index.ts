@@ -1,7 +1,6 @@
 import * as vscode from 'vscode';
 
 import { AppSelector } from './select';
-import { ParameterSelector } from './parameter';
 import { AppChoice } from './types';
 import { Workspace } from '../../../core/workspace';
 
@@ -13,7 +12,7 @@ async function getChoice(title: string, choices: AppChoice[] | AppChoice) {
   }
 
   if (!choice.key && choice.params) {
-    const inputs = await ParameterSelector.select(choice);
+    const inputs = await AppSelector.selectParameters(choice);
 
     if (inputs === undefined) {
       return;

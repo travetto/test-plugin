@@ -3,6 +3,7 @@ import { AppChoice } from './types';
 
 import { ActionStorage } from '../../../core/storage';
 import { Workspace } from '../../../core/workspace';
+import { ParameterSelector } from '../../../core/parameter';
 
 type PickItem = vscode.QuickPickItem & { target: AppChoice };
 
@@ -58,28 +59,6 @@ export class AppSelector {
     }
   }
 
-  static showQuickPick(title: string, items: PickItem[]) {
-    const qp = vscode.window.createQuickPick<PickItem>();
-    qp.ignoreFocusOut = true;
-    qp.placeholder = 'Select ...';
-    qp.title = title;
-    qp.items = items;
-
-    return {
-      input: qp,
-      run: () => {
-        qp.show();
-        return new Promise<AppChoice>((resolve, reject) => {
-          qp.onDidAccept(() => resolve(qp.activeItems[0] && qp.activeItems[0].target));
-        }).then(x => {
-          qp.hide();
-          qp.dispose();
-          return x;
-        });
-      }
-    };
-  }
-
   static async getValidRecent(count: number): Promise<AppChoice[]> {
     const appList = await this.getAppList();
 
@@ -108,6 +87,38 @@ export class AppSelector {
       .map(x => this.buildQuickPickItem(x))
       .filter(x => !!x) as PickItem[];
 
-    return this.showQuickPick(title, items).run();
+    const res = await ParameterSelector.showQuickPick(title, items).run();
+    return res && res.target;
+  }
+
+  static async selectParameters(choice: AppChoice): Promise<string[] | undefined> {
+    const all = choice.params;
+    const selected = [];
+
+    for (let i = 0; i < all.length; i++) {
+      const param = all[i];
+      const res = await ParameterSelector.selectParameter({
+        param,
+        total: all.length,
+        step: i + 1,
+        input: choice.inputs[i]
+      });
+
+      if (res === undefined) {
+        if (param.optional) {
+          selected.push('');
+        } else {
+          return undefined;
+        }
+      } else {
+        selected.push(res);
+      }
+    }
+
+    if (selected.length < all.length) {
+      throw new Error(`Missing arguments for ${choice.name}`);
+    }
+
+    return selected;
   }
 }

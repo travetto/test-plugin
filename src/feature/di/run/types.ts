@@ -1,17 +1,9 @@
-export interface ApplicationParam {
-  name: string;
-  title?: string;
-  type?: string;
-  subtype?: string;
-  def?: string | boolean | number;
-  optional?: boolean;
-  meta?: any;
-}
+import { ParamConfig } from '../../../core/types';
 
 export interface Application {
   name: string;
   filename: string;
-  params: ApplicationParam[];
+  params: ParamConfig[];
   id: string;
   appRoot: string;
   description?: string;
