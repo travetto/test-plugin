@@ -14,6 +14,19 @@ export class Workspace {
     return this.folder.uri.fsPath;
   }
 
+  static get frameworkDev() {
+    return this.path.indexOf('/travetto/module/');
+  }
+
+  static getDefaultEnv(extra = {}) {
+    return this.frameworkDev ? {
+      FORCE_COLOR: true,
+      TRV_FRAMEWORK_DEV: 1,
+      NODE_PRESERVE_SYMLINKS: 1,
+      ...extra
+    } : extra;
+  }
+
   static init(context: vscode.ExtensionContext) {
     Workspace.context = context;
     Workspace.folder = vscode.workspace.workspaceFolders![0];

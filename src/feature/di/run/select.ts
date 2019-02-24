@@ -11,9 +11,9 @@ export class AppSelector {
   static storage = new ActionStorage<AppChoice>('di.run');
 
   static async getAppList() {
-    const { getCachedAppList } = Workspace.requireLibrary('@travetto/di/bin/travetto-find-apps');
+    const { getAppList } = Workspace.requireLibrary('@travetto/di/bin/lib');
 
-    return getCachedAppList() as Promise<AppChoice[]>;
+    return getAppList(false) as Promise<AppChoice[]>;
   }
 
   static getAppDetail(app: AppChoice) {

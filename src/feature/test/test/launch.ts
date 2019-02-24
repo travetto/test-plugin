@@ -29,23 +29,16 @@ export async function launchTests(addBreakpoint: boolean = false) {
     }
 
     const env: { [key: string]: any } = {
-      DEBUG: '',
-      ENV: 'test',
-      DEBUGGER: true,
-      TRV_CLI: 0,
-      TRV_TEST_BASE: TestUtil.TRV_TEST_BASE
+      ...Workspace.getDefaultEnv({
+        DEBUG: '1',
+        TRV_TEST_BASE: TestUtil.TRV_TEST_BASE
+      })
     };
-
-    if (process.env.TRV_FRAMEWORK_DEV) {
-      Object.assign(env, {
-        NODE_PRESERVE_SYMLINKS: 1
-      });
-    }
 
     return await vscode.debug.startDebugging(Workspace.folder, Workspace.generateLaunchConfig({
       name: 'Debug Travetto',
       // tslint:disable-next-line:no-invalid-template-strings
-      program: `${TestUtil.TEST_BIN}/travetto-cli-test`,
+      program: `${TestUtil.TRV_TEST_BASE}/bin/travetto-plugin-test`,
       args: [
         `${editor.document.fileName.replace(`${Workspace.path}${path.sep}`, '')}`,
         `${line}`

@@ -33,21 +33,17 @@ export class TestExecution {
 
   async _init() {
     try {
-      const env: { [key: string]: any } = {
+      const env = {
         ...process.env,
-        EXECUTION: true,
-        EXECUTION_REUSABLE: true,
-        TRV_CACHE_DIR: 'PID',
-        TRV_TEST_BASE: TestUtil.TRV_TEST_BASE
+        ...Workspace.getDefaultEnv({
+          EXECUTION: true,
+          EXECUTION_REUSABLE: true,
+          TRV_CACHE_DIR: 'PID',
+          TRV_TEST_BASE: TestUtil.TRV_TEST_BASE,
+        })
       };
 
-      if (process.env.TRV_FRAMEWORK_DEV) {
-        Object.assign(env, {
-          NODE_PRESERVE_SYMLINKS: 1,
-        });
-      }
-
-      this.proc = spawn('node', [TestUtil.TEST_WORKER_EXEC], {
+      this.proc = spawn('node', [`${TestUtil.TRV_TEST_BASE}/bin/test-worker`], {
         cwd: Workspace.path,
         shell: false,
         env,
