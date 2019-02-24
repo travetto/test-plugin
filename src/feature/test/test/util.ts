@@ -1,12 +1,7 @@
 import * as ts from 'typescript';
 import * as vscode from 'vscode';
-import { Workspace } from '../../../core/workspace';
 
 export class TestUtil {
-  static TRV_TEST_BASE = `${Workspace.path}/node_modules/@travetto/test`;
-  static TEST_BIN = `${TestUtil.TRV_TEST_BASE}/bin`;
-  static TEST_WORKER_EXEC = `${TestUtil.TEST_BIN}/travetto-test-worker`;
-
   static getCurrentClassMethod(document: vscode.TextDocument, line: number) {
     const sourceFile = ts.createSourceFile('text', document.getText(), ts.ScriptTarget.ES2018);
 

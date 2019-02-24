@@ -3,7 +3,6 @@ import { ChildProcess, spawn } from 'child_process';
 import { TestEvent } from './types';
 import { Workspace } from '../../../core/workspace';
 import { Logger } from '../../../core/log';
-import { TestUtil } from './util';
 
 const EXIT = Symbol('EXIT');
 
@@ -33,21 +32,16 @@ export class TestExecution {
 
   async _init() {
     try {
-      const env: { [key: string]: any } = {
+      const env = {
         ...process.env,
-        EXECUTION: true,
-        EXECUTION_REUSABLE: true,
-        TRV_CACHE_DIR: 'PID',
-        TRV_TEST_BASE: TestUtil.TRV_TEST_BASE
+        ...Workspace.getDefaultEnv({
+          EXECUTION: true,
+          EXECUTION_REUSABLE: true,
+          TRV_CACHE_DIR: 'PID',
+        })
       };
 
-      if (process.env.TRV_FRAMEWORK_DEV) {
-        Object.assign(env, {
-          NODE_PRESERVE_SYMLINKS: 1,
-        });
-      }
-
-      this.proc = spawn('node', [TestUtil.TEST_WORKER_EXEC], {
+      this.proc = spawn('node', [`${Workspace.path}/node_modules/@travetto/test/bin/test-worker`], {
         cwd: Workspace.path,
         shell: false,
         env,
