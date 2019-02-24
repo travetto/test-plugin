@@ -3,12 +3,9 @@ import { ChildProcess, spawn } from 'child_process';
 import { TestEvent } from './types';
 import { Workspace } from '../../../core/workspace';
 import { Logger } from '../../../core/log';
+import { TestUtil } from './util';
 
 const EXIT = Symbol('EXIT');
-
-const TEST_BIN = 'node_modules/@travetto/test/bin';
-
-const TEST_SERVER_EXEC = `${TEST_BIN}/travetto-test-server`;
 
 export class TestExecution {
 
@@ -40,7 +37,8 @@ export class TestExecution {
         ...process.env,
         EXECUTION: true,
         EXECUTION_REUSABLE: true,
-        TRV_TEST_BASE: `${Workspace.path}/node_modules/@travetto/test`
+        TRV_CACHE_DIR: 'PID',
+        TRV_TEST_BASE: TestUtil.TRV_TEST_BASE
       };
 
       if (process.env.TRV_FRAMEWORK_DEV) {
@@ -49,7 +47,7 @@ export class TestExecution {
         });
       }
 
-      this.proc = spawn('node', [TEST_SERVER_EXEC], {
+      this.proc = spawn('node', [TestUtil.TEST_WORKER_EXEC], {
         cwd: Workspace.path,
         shell: false,
         env,

@@ -52,6 +52,7 @@ export class Workspace {
   // tslint:enable:member-ordering
 
   static generateLaunchConfig(config: { name: string, program: string } & Partial<vscode.DebugConfiguration>) {
+    config.program = config.program.replace(Workspace.path, `\${workspaceFolder}`);
     return {
       type: 'node',
       request: 'launch',
@@ -82,7 +83,7 @@ export class Workspace {
     return new Promise<string>((resolve, reject) => {
       const text: Buffer[] = [];
       const err: Buffer[] = [];
-      const proc = require('child_process').fork(cmd, args || [], {
+      const proc = require('child_process').spawn(process.argv0, [cmd, ...(args || [])], {
         env: process.env,
         cwd: Workspace.path,
         stdio: ['pipe', 'pipe', 'pipe', 'ipc']

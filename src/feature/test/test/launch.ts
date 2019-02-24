@@ -2,6 +2,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 
 import { Workspace } from '../../../core/workspace';
+import { TestUtil } from './util';
 
 export async function launchTests(addBreakpoint: boolean = false) {
 
@@ -31,7 +32,8 @@ export async function launchTests(addBreakpoint: boolean = false) {
       DEBUG: '',
       ENV: 'test',
       DEBUGGER: true,
-      TRV_TEST_BASE: `${Workspace.path}/node_modules/@travetto/test`
+      TRV_CLI: 0,
+      TRV_TEST_BASE: TestUtil.TRV_TEST_BASE
     };
 
     if (process.env.TRV_FRAMEWORK_DEV) {
@@ -43,7 +45,7 @@ export async function launchTests(addBreakpoint: boolean = false) {
     return await vscode.debug.startDebugging(Workspace.folder, Workspace.generateLaunchConfig({
       name: 'Debug Travetto',
       // tslint:disable-next-line:no-invalid-template-strings
-      program: '${workspaceFolder}/node_modules/@travetto/test/bin/travetto-cli-test',
+      program: `${TestUtil.TEST_BIN}/travetto-cli-test`,
       args: [
         `${editor.document.fileName.replace(`${Workspace.path}${path.sep}`, '')}`,
         `${line}`

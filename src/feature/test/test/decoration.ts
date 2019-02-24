@@ -4,7 +4,7 @@ import { TestResult, ErrorHoverAssertion } from './types';
 import { Workspace } from '../../../core/workspace';
 
 const { Stacktrace } = Workspace.requireLibrary('@travetto/base');
-const { ExecUtil } = Workspace.requireLibrary('@travetto/exec');
+const { CommUtil } = Workspace.requireLibrary('@travetto/worker');
 
 const rgba = (r = 0, g = 0, b = 0, a = 1) => `rgba(${r},${g},${b},${a})`;
 
@@ -81,7 +81,7 @@ export class Decorations {
       title = asrt.error.message;
       suffix = asrt.error.message;
 
-      body = Stacktrace.simplifyStack(ExecUtil.deserializeError(asrt.error));
+      body = Stacktrace.simplifyStack(CommUtil.deserializeError(asrt.error));
       bodyFirst = body.split('\n')[0];
     }
     return { suffix, title, bodyFirst, body, markdown: new vscode.MarkdownString(`**${title}** \n\n${body}`) };
