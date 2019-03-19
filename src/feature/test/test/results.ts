@@ -242,6 +242,10 @@ export class ResultsManager {
     const key = `${assertion.className}:${assertion.methodName}`;
     const dec = Decorations.buildAssertion(assertion);
     if (status === 'fail') {
+      if (assertion.methodName === 'require') {
+        this.setTotalError(assertion.error!);
+        return;
+      }
       this.failedAssertions[Decorations.line(assertion.line).range.start.line] = assertion;
     }
     this.store('assertion', key, status, dec, assertion);
