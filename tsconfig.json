@@ -9,8 +9,7 @@
       "es2015",
       "es2018"
     ],
-    "sourceMap": true,
-    "rootDir": "src/"
+    "sourceMap": true
   },
   "exclude": [
     "node_modules",

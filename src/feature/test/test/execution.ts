@@ -49,8 +49,8 @@ export class TestExecution {
       });
 
       if (Logger.debugMode) {
-        this.proc.stdout.on('data', (b: Buffer) => Logger.debug(`Test[${this.proc.pid}] ${b.toString()}`));
-        this.proc.stderr.on('data', (b: Buffer) => Logger.error(`Test[${this.proc.pid}] ${b.toString()}`));
+        this.proc.stdout!.on('data', (b: Buffer) => Logger.debug(`Test[${this.proc.pid}] ${b.toString()}`));
+        this.proc.stderr!.on('data', (b: Buffer) => Logger.error(`Test[${this.proc.pid}] ${b.toString()}`));
       }
 
       this.waitForKill = TestExecution.buildKillPromise(this.proc)

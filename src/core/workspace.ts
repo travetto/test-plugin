@@ -3,7 +3,14 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as util from 'util';
+
+// @ts-ignore
+import * as Module from 'module';
+
 import { Util } from './util';
+
+// @ts-ignore
+const ogLoad = Module._load;
 
 export class Workspace {
   static context: vscode.ExtensionContext;
@@ -15,7 +22,7 @@ export class Workspace {
   }
 
   static get frameworkDev() {
-    return this.path.indexOf('/travetto/module/');
+    return /travetto.*\/module\//.test(this.path);
   }
 
   static getDefaultEnv(extra = {}) {
@@ -46,10 +53,15 @@ export class Workspace {
 
   static initTravetto() {
     process.chdir(Workspace.path);
-
     // Allow for workspace requires of ts files
     require('util.promisify').shim();
-    Workspace.requireLibrary('@travetto/base/bin/bootstrap');
+    Workspace.requireLibrary('@travetto/boot/bin/init');
+  }
+
+  static reinitTravetto() {
+    // @ts-ignore
+    global.trvInit && global.trvInit.deinit();
+    this.initTravetto();
   }
 
   static getAbsoluteResource(rel: string) {

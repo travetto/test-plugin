@@ -21,24 +21,24 @@ export class ResultsManager {
 
   private diagnostics: vscode.Diagnostic[] = [];
 
-  private _editors: Set<vscode.TextEditor> = new Set();
+  private editors: Set<vscode.TextEditor> = new Set();
 
   public active = false;
 
-  constructor(private _document: vscode.TextDocument) { }
+  constructor(private document: vscode.TextDocument) { }
 
   addEditor(e: vscode.TextEditor) {
-    const elements = Array.from(this._editors).filter(x => !(x as any)._disposed);
-    this._editors = new Set([...elements, e]);
+    const elements = Array.from(this.editors).filter(x => !(x as any)._disposed);
+    this.editors = new Set([...elements, e]);
     this.refresh();
   }
 
   removeEditors() {
-    this._editors.clear();
+    this.editors.clear();
   }
 
   setStyle(type: vscode.TextEditorDecorationType, decs: vscode.DecorationOptions[]) {
-    for (const ed of this._editors) {
+    for (const ed of this.editors) {
       ed.setDecorations(type, decs);
     }
   }
@@ -89,7 +89,7 @@ export class ResultsManager {
           const rng = as.decoration!.range;
 
           const diagRng = new vscode.Range(
-            new vscode.Position(rng.start.line, this._document.lineAt(rng.start.line).firstNonWhitespaceCharacterIndex),
+            new vscode.Position(rng.start.line, this.document.lineAt(rng.start.line).firstNonWhitespaceCharacterIndex),
             rng.end
           );
           const diag = new vscode.Diagnostic(diagRng, `${ts.src.className.split('.').pop()}.${ts.src.methodName} - ${bodyFirst}`, vscode.DiagnosticSeverity.Error);
@@ -97,7 +97,7 @@ export class ResultsManager {
         }
         return acc;
       }, [] as vscode.Diagnostic[]);
-    diagColl.set(this._document.uri, this.diagnostics);
+    diagColl.set(this.document.uri, this.diagnostics);
   }
 
   store(level: string, key: string, status: string, decoration: vscode.DecorationOptions, src?: any) {
@@ -173,7 +173,7 @@ export class ResultsManager {
     let suiteLine = 0;
 
     while (!suiteLine && line > 1) {
-      const text = this._document.lineAt(--line);
+      const text = this.document.lineAt(--line);
       if (text.text.includes('@Suite')) {
         suiteLine = line;
       }
@@ -263,7 +263,7 @@ export class ResultsManager {
       error,
       line: 1,
       message: 'Total Error',
-      lineEnd: this._document.lineCount + 1
+      lineEnd: this.document.lineCount + 1
     };
 
     const t: TestResult = {
@@ -271,9 +271,9 @@ export class ResultsManager {
       assertions: [assertion],
       className: 'unknown',
       methodName: 'unknown',
-      file: this._document.fileName,
+      file: this.document.fileName,
       error,
-      lines: { start: 1, end: this._document.lineCount + 1 }
+      lines: { start: 1, end: this.document.lineCount + 1 }
     };
     this.onEvent({ type: 'test', phase: 'before', test: t });
     this.onEvent({ type: 'assertion', phase: 'after', assertion });

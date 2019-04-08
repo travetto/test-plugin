@@ -15,8 +15,8 @@ interface ModuleFeature {
 
 export class FeatureManager {
 
-  private static _installed: InstallMap;
-  private static _features: ModuleFeature[];
+  private static installed: InstallMap;
+  private static features: ModuleFeature[];
 
   private static async getInstalledLibraries() {
     const modules = await Workspace.readFolder('node_modules', '@travetto'); // All active @travetto module names
@@ -40,14 +40,14 @@ export class FeatureManager {
   }
 
   static async verifyInstalled() {
-    this._installed = await FeatureManager.getInstalledLibraries();
-    return Object.keys(this._installed).length > 0;
+    this.installed = await FeatureManager.getInstalledLibraries();
+    return Object.keys(this.installed).length > 0;
   }
 
   static async init() {
     const featureNames = await FeatureManager.readFolderModules('..', 'feature'); // All matching @travetto plugin features
 
-    const installed = await this._installed;
+    const installed = await this.installed;
 
     const featureList: ModuleFeature[] = []; // All load plugin features
     for (const key of featureNames) {
@@ -60,12 +60,12 @@ export class FeatureManager {
         }
       }
     }
-    this._features = featureList;
+    this.features = featureList;
   }
 
   static async run(x: 'activate' | 'deactivate', ...args: any[]) {
-    if (this._features) {
-      this._features
+    if (this.features) {
+      this.features
         .filter(mod => !!mod[x])
         .forEach(mod => mod[x]!());
     }

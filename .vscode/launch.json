@@ -2,50 +2,51 @@
 {
   "version": "0.2.0",
   "configurations": [
-  {
-    "name": "Launch Extension",
-    "type": "extensionHost",
-    "request": "launch",
-    "runtimeExecutable": "${execPath}",
-    "args": [
-      "--extensionDevelopmentPath=${workspaceRoot}",
-      "${workspaceRoot}/../../travetto/module/model-elasticsearch"
-    ],
-    "env": {
-      "DEBUG": "1",
-      "TRV_FRAMEWORK_DEV": "1",
-      "NODE_PRESERVE_SYMLINKS": "1"
+    {
+      "name": "Launch Extension",
+      "type": "extensionHost",
+      "request": "launch",
+      "runtimeExecutable": "${execPath}",
+      "args": [
+        "--extensionDevelopmentPath=${workspaceRoot}",
+        "${workspaceRoot}/../../travetto/module/rest-express"
+      ],
+      "env": {
+        "DEBUG": "1",
+        "TRV_FRAMEWORK_DEV": "1",
+        "NODE_PRESERVE_SYMLINKS": "1"
+      },
+      "stopOnEntry": false,
+      "sourceMaps": true,
+      "outFiles": [
+        "${workspaceRoot}/out/src/**/*.js"
+      ],
+      "preLaunchTask": "npm",
+      "skipFiles": [
+        "<node_internals>/**",
+        "**/@travetto/context/**/*",
+        "**/@travetto/base/**/stacktrace.*",
+        "**/@travetto/compiler/**/proxy.*",
+        "**/node_modules/cls-hooked/**/*",
+        "**/node_modules/trace/**/*",
+        "**/node_modules/stack-chain/**/*"
+      ]
     },
-    "stopOnEntry": false,
-    "sourceMaps": true,
-    "outFiles": [
-      "${workspaceRoot}/out/src/**/*.js"
-    ],
-    "preLaunchTask": "npm",
-    "skipFiles": [
-      "<node_internals>/**",
-      "**/@travetto/context/**/*",
-      "**/@travetto/base/**/stacktrace.*",
-      "**/@travetto/compiler/**/proxy.*",
-      "**/node_modules/cls-hooked/**/*",
-      "**/node_modules/trace/**/*",
-      "**/node_modules/stack-chain/**/*"
-    ]
-  },
-  {
-    "name": "Launch Tests",
-    "type": "extensionHost",
-    "request": "launch",
-    "runtimeExecutable": "${execPath}",
-    "args": [
-      "--extensionDevelopmentPath=${workspaceRoot}",
-      "--extensionTestsPath=${workspaceRoot}/out/test"
-    ],
-    "stopOnEntry": false,
-    "sourceMaps": true,
-    "outFiles": [
-      "${workspaceRoot}/out/test/**/*.js"
-    ],
-    "preLaunchTask": "npm"
-  }]
+    {
+      "name": "Launch Tests",
+      "type": "extensionHost",
+      "request": "launch",
+      "runtimeExecutable": "${execPath}",
+      "args": [
+        "--extensionDevelopmentPath=${workspaceRoot}",
+        "--extensionTestsPath=${workspaceRoot}/out/test"
+      ],
+      "stopOnEntry": false,
+      "sourceMaps": true,
+      "outFiles": [
+        "${workspaceRoot}/out/test/**/*.js"
+      ],
+      "preLaunchTask": "npm"
+    }
+  ]
 }

@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import * as util from 'util';
 
 export class Logger {
-  private static _debugMode = false;
+  private static debugModeEnabled = false;
   static channel = vscode.window.createOutputChannel('@travetto');
   static set debugMode(val: boolean) {
     if (val) {
@@ -10,11 +10,11 @@ export class Logger {
     } else {
       delete process.env.DEBUG;
     }
-    Logger._debugMode = val;
+    Logger.debugModeEnabled = val;
   }
 
   static get debugMode() {
-    return Logger._debugMode;
+    return Logger.debugModeEnabled;
   }
 
   private static _log(scope: string, message: string, ...args: any[]) {

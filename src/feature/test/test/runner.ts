@@ -31,16 +31,16 @@ export class TestRunner {
   private status: vscode.StatusBarItem;
 
   private dockerNS = `test-${process.pid}`;
-  private _results = new Map<string, ResultsManager>();
-  private _pool = new TestExecutionPool();
-  private _hasDocker = false;
+  private results = new Map<string, ResultsManager>();
+  private pool = new TestExecutionPool();
+  private hasDocker = false;
 
   constructor(private window: typeof vscode.window) {
     process.env.DOCKER_NS = this.dockerNS;
 
     this.status = window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
     try {
-      this._hasDocker = spawnSync('docker -v', { shell: true }).status === 0;
+      this.hasDocker = spawnSync('docker -v', { shell: true }).status === 0;
     } catch { }
   }
 
@@ -55,18 +55,18 @@ export class TestRunner {
   }
 
   getResults(document: vscode.TextDocument) {
-    if (!this._results.has(document.fileName)) {
+    if (!this.results.has(document.fileName)) {
       const rm = new ResultsManager(document);
-      this._results.set(document.fileName, rm);
+      this.results.set(document.fileName, rm);
     }
-    return this._results.get(document.fileName)!;
+    return this.results.get(document.fileName)!;
   }
 
   async run(document: vscode.TextDocument, line: number) {
     const res = this.getResults(document);
 
     try {
-      await this._pool.run(exec => this._run(exec, document, line), res);
+      await this.pool.run(exec => this._run(exec, document, line), res);
     } catch (e) {
       Logger.error('Test', document.fileName, e.message, e);
     }
@@ -135,7 +135,7 @@ export class TestRunner {
 
   async shutdown() {
     Logger.debug('Test', 'Shutting down');
-    if (this._hasDocker) {
+    if (this.hasDocker) {
       const lines = execSync('docker ps -a').toString().split('\n');
       const ids = lines.filter(x => x.includes(this.dockerNS)).map(x => x.split(' ')[0]);
 
@@ -143,19 +143,19 @@ export class TestRunner {
         execSync(`docker rm -f ${ids.join(' ')}`);
       }
     }
-    await this._pool.shutdown();
+    await this.pool.shutdown();
   }
 
   async reinitPool() {
-    await this._pool.shutdown();
-    await this._pool.init();
+    await this.pool.shutdown();
+    await this.pool.init();
   }
 
   async close(doc: vscode.TextDocument) {
-    if (this._results.has(doc.fileName)) {
-      this._results.get(doc.fileName)!.removeEditors();
-      this._results.get(doc.fileName)!.resetAll();
-      this._results.delete(doc.fileName);
+    if (this.results.has(doc.fileName)) {
+      this.results.get(doc.fileName)!.removeEditors();
+      this.results.get(doc.fileName)!.resetAll();
+      this.results.delete(doc.fileName);
     }
   }
 }
