@@ -45,7 +45,7 @@ export class AppSelector {
       const detail = choice.key ? undefined : this.getAppDetail(choice);
 
       return {
-        label: `${choice.key ? '' : '$(gear) '}${choice.appRoot ? `${choice.appRoot}/` : ''}${choice.name}`,
+        label: `${choice.key ? '' : '$(gear) '}${choice.appRoot && choice.appRoot !== '.' ? `${choice.appRoot}/` : ''}${choice.name}`,
         detail,
         description: params,
         target: choice

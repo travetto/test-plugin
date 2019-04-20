@@ -2,7 +2,7 @@
   "name": "travetto-plugin",
   "displayName": "Travetto Plugin",
   "description": "VS Code plugin for interacting with the Travetto framework ",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "homepage": "https://travetto.io",
   "keywords": [
     "vscode",
@@ -46,7 +46,7 @@
     "@types/generic-pool": "^3.1.9",
     "diff": "^4.0.1",
     "generic-pool": "^3.7.1",
-    "typescript": "^3.4.2",
+    "typescript": "^3.4.4",
     "util.promisify": "^1.0.0"
   },
   "activationEvents": [
