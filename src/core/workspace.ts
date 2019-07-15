@@ -92,11 +92,7 @@ export class Workspace {
       skipFiles: [
         '<node_internals>/**',
         '**/@travetto/context/**/*',
-        '**/@travetto/base/**/stacktrace.*',
         '**/@travetto/compiler/**/proxy.*',
-        '**/node_modules/cls-hooked/**/*',
-        '**/node_modules/trace/**/*',
-        '**/node_modules/stack-chain/**/*'
       ],
       console: 'internalConsole',
       internalConsoleOptions: 'openOnSessionStart',
