@@ -4,13 +4,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as util from 'util';
 
-// @ts-ignore
-import * as Module from 'module';
-
 import { Util } from './util';
-
-// @ts-ignore
-const ogLoad = Module._load;
 
 export class Workspace {
   static context: vscode.ExtensionContext;
@@ -26,12 +20,14 @@ export class Workspace {
   }
 
   static getDefaultEnv(extra = {}) {
-    return this.frameworkDev ? {
+    return {
       FORCE_COLOR: true,
-      TRV_FRAMEWORK_DEV: 1,
-      NODE_PRESERVE_SYMLINKS: 1,
+      ...(this.frameworkDev ? {
+        TRV_FRAMEWORK_DEV: 1,
+        NODE_PRESERVE_SYMLINKS: 1
+      } : {}),
       ...extra
-    } : extra;
+    };
   }
 
   static init(context: vscode.ExtensionContext) {
