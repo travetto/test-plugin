@@ -19,12 +19,12 @@ export class Workspace {
     return /travetto.*\/module\//.test(this.path);
   }
 
-  static getDefaultEnv(extra = {}) {
+  static getDefaultEnv(extra: Record<string, string> = {}) {
     return {
-      FORCE_COLOR: true,
+      FORCE_COLOR: 'true',
       ...(this.frameworkDev ? {
-        TRV_FRAMEWORK_DEV: 1,
-        NODE_PRESERVE_SYMLINKS: 1
+        TRV_FRAMEWORK_DEV: '1',
+        NODE_PRESERVE_SYMLINKS: '1'
       } : {}),
       ...extra
     };

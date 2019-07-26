@@ -35,8 +35,8 @@ export class TestExecution {
       const env = {
         ...process.env,
         ...Workspace.getDefaultEnv({
-          EXECUTION: true,
-          EXECUTION_REUSABLE: true,
+          EXECUTION: 'true',
+          EXECUTION_REUSABLE: 'true',
           TRV_CACHE_DIR: 'PID',
         })
       };

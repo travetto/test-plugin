@@ -8,15 +8,17 @@ import { ParameterSelector } from '../../../core/parameter';
 type PickItem = vscode.QuickPickItem & { target: AppChoice };
 
 export class AppSelector {
-  static storage = new ActionStorage<AppChoice>('di.run');
+  storage = new ActionStorage<AppChoice>('app.run');
 
-  static async getAppList() {
-    const { getAppList } = Workspace.requireLibrary('@travetto/di/bin/lib');
+  constructor(private libPath: string) { }
+
+  async getAppList() {
+    const { getAppList } = Workspace.requireLibrary(this.libPath);
 
     return getAppList(false) as Promise<AppChoice[]>;
   }
 
-  static getAppDetail(app: AppChoice) {
+  getAppDetail(app: AppChoice) {
     const detail = [];
     detail.push(app.description);
     if (app.watchable) {
@@ -26,7 +28,7 @@ export class AppSelector {
     return out ? `${'\u00A0'.repeat(4)}${out}` : out;
   }
 
-  static getAppParams(choice: AppChoice) {
+  getAppParams(choice: AppChoice) {
     const out = choice.params
       .map((x, i) => {
         let val = choice.inputs[i] !== undefined ? choice.inputs[i] : (x.meta && x.meta.choices ? x.meta.choices.join(',') : x.def);
@@ -39,7 +41,7 @@ export class AppSelector {
     return out;
   }
 
-  static buildQuickPickItem(choice: AppChoice): PickItem | undefined {
+  buildQuickPickItem(choice: AppChoice): PickItem | undefined {
     try {
       const params = this.getAppParams(choice);
       const detail = choice.key ? undefined : this.getAppDetail(choice);
@@ -59,7 +61,7 @@ export class AppSelector {
     }
   }
 
-  static async getValidRecent(count: number): Promise<AppChoice[]> {
+  async getValidRecent(count: number): Promise<AppChoice[]> {
     const appList = await this.getAppList();
 
     return this.storage.getRecent(10)
@@ -77,7 +79,7 @@ export class AppSelector {
       .slice(0, count);
   }
 
-  static async select(title: string, choices: AppChoice[]) {
+  async select(title: string, choices: AppChoice[]) {
     const items = choices
       .map(x => {
         x.inputs = x.inputs || [];
@@ -91,7 +93,7 @@ export class AppSelector {
     return res && res.target;
   }
 
-  static async selectParameters(choice: AppChoice): Promise<string[] | undefined> {
+  async selectParameters(choice: AppChoice): Promise<string[] | undefined> {
     const all = choice.params;
     const selected = [];
 

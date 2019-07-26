@@ -104,6 +104,26 @@
         "command": "travetto.di.run:export",
         "title": "Export Application Launch",
         "category": "Travetto"
+      },
+      {
+        "command": "travetto.app.run:new",
+        "title": "Run New App",
+        "category": "Travetto"
+      },
+      {
+        "command": "travetto.app.run:recent",
+        "title": "Run Recent App",
+        "category": "Travetto"
+      },
+      {
+        "command": "travetto.app.run:mostRecent",
+        "title": "Run Most Recent App",
+        "category": "Travetto"
+      },
+      {
+        "command": "travetto.app.run:export",
+        "title": "Export App Launch",
+        "category": "Travetto"
       }
     ],
     "menus": {
@@ -122,19 +142,35 @@
         },
         {
           "command": "travetto.di.run:new",
-          "when": "config.travetto.modules.di"
+          "when": "config.travetto.modules.di && !config.travetto.modules.app"
         },
         {
           "command": "travetto.di.run:recent",
-          "when": "config.travetto.modules.di"
+          "when": "config.travetto.modules.di && !config.travetto.modules.app"
         },
         {
           "command": "travetto.di.run:mostRecent",
-          "when": "config.travetto.modules.di"
+          "when": "config.travetto.modules.di && !config.travetto.modules.app"
         },
         {
           "command": "travetto.di.run:export",
-          "when": "config.travetto.modules.di"
+          "when": "config.travetto.modules.di && !config.travetto.modules.app"
+        },
+        {
+          "command": "travetto.app.run:new",
+          "when": "config.travetto.modules.app"
+        },
+        {
+          "command": "travetto.app.run:recent",
+          "when": "config.travetto.modules.app"
+        },
+        {
+          "command": "travetto.app.run:mostRecent",
+          "when": "config.travetto.modules.app"
+        },
+        {
+          "command": "travetto.app.run:export",
+          "when": "config.travetto.modules.app"
         }
       ]
     },

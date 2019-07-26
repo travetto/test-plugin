@@ -7,6 +7,7 @@ type FullInput = vscode.QuickInput & {
   value?: string;
   onDidAccept(cb: () => void): void;
 };
+
 interface ParamWithMeta {
   param: ParamConfig;
   total: number;
