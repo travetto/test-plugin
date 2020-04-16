@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import * as util from 'util';
-import { TestResult, ErrorHoverAssertion } from './types';
+import { TestResult, ErrorHoverAssertion, StatusUnknown } from './types';
 import { Workspace } from '../../../core/workspace';
 
 const { Stacktrace } = Workspace.requireLibrary('@travetto/base');
@@ -13,8 +13,9 @@ const Style = {
   SMALL_IMAGE: '40%',
   FULL_IMAGE: 'auto',
   COLORS: {
-    fail: rgba(255, 0, 0, 0.5),
-    success: rgba(0, 255, 0, .5),
+    skipped: rgba(255, 255, 255, 0.5),
+    failed: rgba(255, 0, 0, 0.5),
+    passed: rgba(0, 255, 0, .5),
     unknown: rgba(255, 255, 255, .5)
   },
   IMAGE: {
@@ -91,16 +92,16 @@ export class Decorations {
     return { range: new vscode.Range(n - 1, 0, (end || n) - 1, 100000000000) };
   }
 
-  static buildAssert(state: keyof (typeof Style.COLORS)) {
+  static buildAssert(state: StatusUnknown) {
     const color = Style.COLORS[state];
     return vscode.window.createTextEditorDecorationType({
       ...Style.ASSERT,
       borderColor: color,
-      overviewRulerColor: state === 'fail' ? color : '',
+      overviewRulerColor: state === 'failed' ? color : '',
     });
   }
 
-  static buildImage(state: string, size = Style.FULL_IMAGE) {
+  static buildImage(state: StatusUnknown, size = Style.FULL_IMAGE) {
     const img = Workspace.getAbsoluteResource(`images/${state}.png`);
     return vscode.window.createTextEditorDecorationType({
       ...Style.IMAGE,
@@ -136,7 +137,7 @@ export class Decorations {
     let err: ErrorHoverAssertion | undefined;
     if ('error' in test) {
       const tt = test as TestResult;
-      err = ((tt.assertions || []).find(x => x.status === 'fail') as ErrorHoverAssertion) ||
+      err = ((tt.assertions || []).find(x => x.status === 'failed') as ErrorHoverAssertion) ||
         (tt.error && { error: tt.error, message: tt.error.message });
     }
     if (err) {
@@ -151,7 +152,7 @@ export class Decorations {
     }
   }
 
-  static buildStyle(entity: string, state: keyof typeof Style.COLORS) {
+  static buildStyle(entity: string, state: StatusUnknown) {
     return (entity === 'assertion') ?
       this.buildAssert(state) :
       this.buildImage(state, entity === 'test' ? Style.SMALL_IMAGE : Style.FULL_IMAGE);

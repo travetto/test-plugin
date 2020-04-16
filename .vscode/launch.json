@@ -9,11 +9,13 @@
       "runtimeExecutable": "${execPath}",
       "args": [
         "--extensionDevelopmentPath=${workspaceRoot}",
-        "${workspaceRoot}/../../travetto/sample/todo-app"
+        "${workspaceRoot}/../../travetto/module/schema"
       ],
       "env": {
-        "DEBUG": "1",
-        "TRV_FRAMEWORK_DEV": "1",
+        "DEBUG": "0",
+        "TRV_DEV": "1",
+        "LOG_TIME": "1",
+        "LOG_MILLIS": "1",
         "NODE_PRESERVE_SYMLINKS": "1"
       },
       "stopOnEntry": false,
@@ -24,12 +26,7 @@
       "preLaunchTask": "npm",
       "skipFiles": [
         "<node_internals>/**",
-        "**/@travetto/context/**/*",
-        "**/@travetto/base/**/stacktrace.*",
-        "**/@travetto/compiler/**/proxy.*",
-        "**/node_modules/cls-hooked/**/*",
-        "**/node_modules/trace/**/*",
-        "**/node_modules/stack-chain/**/*"
+        "**/@travetto/context/**/*"
       ]
     },
     {

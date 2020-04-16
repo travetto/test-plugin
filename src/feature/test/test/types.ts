@@ -1,6 +1,9 @@
 import * as vscode from 'vscode';
 
-export type SMap<v> = { [key: string]: v };
+export type Status = 'skipped' | 'failed' | 'passed';
+export type StatusUnknown = Status | 'unknown';
+
+export type SMap<v> = Record<string, v>;
 
 export type Decs<T> = SMap<SMap<T>>;
 
@@ -9,7 +12,7 @@ export interface ResultStyles {
 }
 
 export interface Result {
-  status: string;
+  status: StatusUnknown;
   decoration: vscode.DecorationOptions;
 }
 
@@ -33,14 +36,14 @@ export interface AllState {
 
 export interface SuiteConfig {
   file: string;
-  className: string;
+  classId: string;
   lines: { start: number, end: number };
 }
 
 export interface SuiteResult extends SuiteConfig {
-  skip: number;
-  fail: number;
-  success: number;
+  skipped: number;
+  failed: number;
+  passed: number;
 }
 
 export interface TestConfig extends SuiteConfig {
@@ -48,7 +51,7 @@ export interface TestConfig extends SuiteConfig {
 }
 
 export interface TestResult extends TestConfig {
-  status: 'skip' | 'fail' | 'success';
+  status: Status;
   assertions?: Assertion[];
   error?: Error;
 }
@@ -57,9 +60,10 @@ export interface Assertion {
   expected?: any;
   actual?: any;
   operator?: string;
-  className: string;
+  file: string;
+  classId: string;
   methodName: string;
-  status: 'skip' | 'fail' | 'success';
+  status: Status;
   error?: Error;
   message: string;
   line: number;
@@ -72,6 +76,8 @@ export type TestEvent =
   { phase: 'before', type: 'test', test: TestConfig } |
   { phase: 'after', type: 'test', test: TestResult } |
   { phase: 'after', type: 'assertion', assertion: Assertion };
+
+export type Level = TestEvent['type'];
 
 export interface ErrorHoverAssertion {
   message: string;

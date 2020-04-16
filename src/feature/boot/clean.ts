@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 
 import { Workspace } from '../../core/workspace';
-import { reinitPool } from '../test/test/editor';
+import { reinit } from '../test/test/editor';
 
 const op = Workspace.resolveLibrary('@travetto/boot/bin/travetto-plugin-clean.js');
 
@@ -10,7 +10,7 @@ async function clean() {
 
   await Workspace.reinitTravetto();
 
-  await reinitPool();
+  await reinit();
 
   vscode.window.showInformationMessage('Successfully deleted');
 }

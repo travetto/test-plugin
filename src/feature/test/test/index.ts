@@ -1,13 +1,12 @@
 import * as vscode from 'vscode';
-import { destroy, onDocumentClose, onDocumentUpdate } from './editor';
+import { activate as editorActivate, deactivate as editorDeactivate, onDocumentClose, onDocumentUpdate } from './editor';
 import { launchTests } from './launch';
 import { Workspace } from '../../../core/workspace';
 
-export function activate() {
+export async function activate() {
   try {
     const context = Workspace.context;
     vscode.workspace.onDidOpenTextDocument(x => onDocumentUpdate(x, 0), null, context.subscriptions);
-    vscode.workspace.onDidSaveTextDocument(x => onDocumentUpdate(x), null, context.subscriptions);
     vscode.workspace.onDidCloseTextDocument(x => onDocumentClose(x), null, context.subscriptions);
     vscode.window.onDidChangeActiveTextEditor(x => onDocumentUpdate(x), null, context.subscriptions);
 
@@ -16,9 +15,11 @@ export function activate() {
   } catch (e) {
     console.error('WOAH', e);
   }
+
+  await editorActivate();
 }
-export function deactivate() {
-  destroy();
+export async function deactivate() {
+  await editorDeactivate();
 }
 
 vscode.commands.registerCommand('travetto.test.test:all', async config => launchTests());

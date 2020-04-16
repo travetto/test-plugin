@@ -23,7 +23,7 @@ export class Workspace {
     return {
       FORCE_COLOR: 'true',
       ...(this.frameworkDev ? {
-        TRV_FRAMEWORK_DEV: '1',
+        TRV_DEV: '1',
         NODE_PRESERVE_SYMLINKS: '1'
       } : {}),
       ...extra
@@ -50,7 +50,6 @@ export class Workspace {
   static initTravetto() {
     process.chdir(Workspace.path);
     // Allow for workspace requires of ts files
-    require('util.promisify').shim();
     Workspace.requireLibrary('@travetto/boot/bin/init');
   }
 
@@ -87,8 +86,7 @@ export class Workspace {
       ],
       skipFiles: [
         '<node_internals>/**',
-        '**/@travetto/context/**/*',
-        '**/@travetto/compiler/**/proxy.*',
+        '**/@travetto/context/**/*'
       ],
       console: 'internalConsole',
       internalConsoleOptions: 'openOnSessionStart',

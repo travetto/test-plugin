@@ -65,9 +65,10 @@ export class FeatureManager {
 
   static async run(x: 'activate' | 'deactivate', ...args: any[]) {
     if (this.features) {
-      this.features
+      const all = this.features
         .filter(mod => !!mod[x])
-        .forEach(mod => mod[x]!());
+        .map(mod => mod[x]!());
+      await Promise.all(all);
     }
   }
 }

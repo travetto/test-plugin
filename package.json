@@ -21,7 +21,7 @@
     "url": "https://github.com/travetto/vscode-plugin.git"
   },
   "engines": {
-    "vscode": "^1.33.0"
+    "vscode": "^1.44.0"
   },
   "categories": [
     "Other"
@@ -38,16 +38,11 @@
     "src/"
   ],
   "devDependencies": {
-    "@types/node": "^11.13.2",
-    "vscode": "^1.1.33"
+    "@types/node": "^12.0.0",
+    "vscode": "^1.1.36"
   },
   "dependencies": {
-    "@types/diff": "^4.0.2",
-    "@types/generic-pool": "^3.1.9",
-    "diff": "^4.0.1",
-    "generic-pool": "^3.7.1",
-    "typescript": "^3.4.4",
-    "util.promisify": "^1.0.0"
+    "typescript": "^3.4.4"
   },
   "activationEvents": [
     "workspaceContains:node_modules/@travetto"

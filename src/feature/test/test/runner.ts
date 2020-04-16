@@ -1,47 +1,47 @@
 import * as vscode from 'vscode';
-
 import * as path from 'path';
-import { ResultsManager } from './results';
-import { TestExecution } from './execution';
 
-import { execSync, spawnSync } from 'child_process';
-import { TestExecutionPool } from './execution-pool';
-import { TestUtil } from './util';
-import { Promises } from '../../../core/promise';
+import { spawn, ChildProcess } from 'child_process';
+
+import { ResultsManager } from './results';
 import { Logger } from '../../../core/log';
+import { Workspace } from '../../../core/workspace';
+import { TestEvent, StatusUnknown } from './types';
+
+const { FsUtil } = Workspace.requireLibrary('@travetto/boot')
 
 export class TestRunner {
-  static getRunnerConfig(document: vscode.TextDocument, line: number) {
-
-    let title = '';
-
-    const { method, suite } = TestUtil.getCurrentClassMethod(document, line);
-
-    if (method && suite) {
-      title = `@Test ${suite.name!.text}.${(method.name as any).text}`;
-    } else if (suite) {
-      title = `@Suite ${suite.name!.text}`;
-    }
-
-    title = `Running ${path.basename(document.fileName)} ${title}`.trim();
-
-    return { title, method, suite };
-  }
-
   private status: vscode.StatusBarItem;
+  private runner: ChildProcess;
+  private running = true;
 
-  private dockerNS = `test-${process.pid}`;
-  private results = new Map<string, ResultsManager>();
-  private pool = new TestExecutionPool();
-  private hasDocker = false;
+  private results: Map<string, ResultsManager> = new Map();
+  private cacheDir = `${Workspace.path}/.trv_cache_test`;
 
   constructor(private window: typeof vscode.window) {
-    process.env.DOCKER_NS = this.dockerNS;
+    this.status = this.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+    this.status.command = 'workbench.action.showErrorsWarnings';
+    const done = this.destroy.bind(this, false);
+    process.on('exit', done);
+    process.on('SIGINT', done);
+    process.on('SIGTERM', done);
+  }
 
-    this.status = window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
-    try {
-      this.hasDocker = spawnSync('docker -v', { shell: true }).status === 0;
-    } catch { }
+  getTotals() {
+    const totals: Record<StatusUnknown, number> = {
+      skipped: 0,
+      failed: 0,
+      passed: 0,
+      unknown: 0
+    };
+    for (const [file, mgr] of this.results.entries()) {
+      const test = mgr.getTotals();
+      totals.skipped += test.skipped;
+      totals.failed += test.failed;
+      totals.passed += test.passed;
+      totals.unknown += test.unknown;
+    }
+    return totals;
   }
 
   setStatus(message: string, color?: string) {
@@ -54,108 +54,88 @@ export class TestRunner {
     }
   }
 
-  getResults(document: vscode.TextDocument) {
-    if (!this.results.has(document.fileName)) {
-      const rm = new ResultsManager(document);
-      this.results.set(document.fileName, rm);
-    }
-    return this.results.get(document.fileName)!;
-  }
-
-  async run(document: vscode.TextDocument, line: number) {
-    const res = this.getResults(document);
-
-    try {
-      await this.pool.run(exec => this._run(exec, document, line), res);
-    } catch (e) {
-      Logger.error('Test', document.fileName, e.message, e);
-    }
-  }
-
-  async _run(exec: TestExecution, document: vscode.TextDocument, line: number) {
-    const canceller = Promises.fromEvent();
-    const timeout = Promises.extendableTimeout(20000); // Force 20 sec max between comms
-
-    if (this.getResults(document).hasTotalError()) {
-      line = 0;
-    }
-
-    const { title, method, suite } = TestRunner.getRunnerConfig(document, line);
-
-    if (!suite) {
-      this.getResults(document).resetAll();
-    }
-
-    const progressConfig = {
-      cancellable: !method,
-      title,
-      location: method ? vscode.ProgressLocation.Window : vscode.ProgressLocation.Notification
-    };
-
-    try {
-      await this.window.withProgress(progressConfig, async (progress, cancel) => {
-        if (cancel) {
-          cancel.onCancellationRequested(canceller.cancel);
-        }
-
-        timeout.extend();
-
-        const run = this._execRun(exec, document, line, x => {
-          timeout.extend();
-          if (!method) {
-            progress.report(x);
-          }
-        });
-        await Promise.race([timeout.promise, canceller.promise, run]);
-      });
-
-      const totals = this.getResults(document).getTotals();
-      this.setStatus(`Success ${totals.success}, Failed ${totals.failed}`, totals.failed ? '#f33' : '#8f8');
-    } catch (e) {
-      this.setStatus(`Error has occurred: ${e.message}`, '#f33');
-      Logger.error('Test', document.fileName, e.message, e);
-      throw e;
-    }
-  }
-
-  async _execRun(exec: TestExecution, document: vscode.TextDocument, line: number, progress: (input: { message: string }) => void) {
-    return exec.run(document.fileName, line, e => {
-      if (e.type === 'runComplete') {
-        if (e.error) {
-          this.getResults(document).resetAll();
-          this.getResults(document).setTotalError(e.error);
-        }
-      } else {
-        this.getResults(document).onEvent(e, line);
+  getResults(target: vscode.TextDocument | string | TestEvent) {
+    let file: string;
+    if (typeof target === 'string') {
+      file = target;
+    } else if ('fileName' in target) {
+      file = target.fileName;
+    } else {
+      switch (target.type) {
+        case 'test': file = target.test.file; break;
+        case 'suite': file = target.suite.file; break;
+        case 'assertion': file = target.assertion.file; break;
       }
-      const progressTotals = this.getResults(document).getTotals();
-      progress({ message: `Tests: Success ${progressTotals.success}, Failed ${progressTotals.failed}` });
+    }
+
+    if (file) {
+      file = path.resolve(Workspace.path, file);
+
+      if (!this.results.has(file)) {
+        const rm = new ResultsManager(file);
+        this.results.set(file, rm);
+      }
+      return this.results.get(file)!;
+    }
+  }
+
+  onEvent(ev: TestEvent) {
+    this.getResults(ev)?.onEvent(ev);
+    const totals = this.getTotals();
+    this.setStatus(`Passed ${totals.passed}, Failed ${totals.failed}`, totals.failed ? '#f33' : '#8f8');
+  }
+
+  async init() {
+    FsUtil.copyRecursiveSync(`${Workspace.path}/.trv_cache`, this.cacheDir, true);
+
+    this.runner = spawn(process.argv0, [`${Workspace.path}/node_modules/@travetto/test/bin/travetto-watch-test`], {
+      env: {
+        ...process.env,
+        TRV_CACHE: this.cacheDir,
+        TEST_FORMAT: 'exec'
+      },
+      cwd: Workspace.path,
+      stdio: ['pipe', 'pipe', 'pipe', 'ipc']
     });
-  }
 
-  async shutdown() {
-    Logger.debug('Test', 'Shutting down');
-    if (this.hasDocker) {
-      const lines = execSync('docker ps -a').toString().split('\n');
-      const ids = lines.filter(x => x.includes(this.dockerNS)).map(x => x.split(' ')[0]);
+    this.runner.stdout?.pipe(process.stdout);
+    this.runner.stderr?.pipe(process.stderr);
 
-      if (ids.length) {
-        execSync(`docker rm -f ${ids.join(' ')}`);
+    this.runner.on('close', () => {
+      if (this.running) { // If still running, reinit
+        this.reinit();
       }
-    }
-    await this.pool.shutdown();
+    });
+
+    this.runner.addListener('message', this.onEvent.bind(this));
   }
 
-  async reinitPool() {
-    await this.pool.shutdown();
-    await this.pool.init();
+  /**
+   * Stop runner
+   */
+  async destroy(running: boolean) {
+    Logger.debug('Test', 'Shutting down');
+    this.running = running;
+    if (!this.runner.killed) {
+      this.runner.kill();
+    }
+    // Remove all state
+    const entries = [...this.results.entries()];
+    this.results.clear();
+    for (const [k, v] of entries) {
+      v.dispose();
+    }
+  }
+
+  async reinit() {
+    this.destroy(true);
+    FsUtil.unlinkRecursiveSync(this.cacheDir);
+    this.init();
   }
 
   async close(doc: vscode.TextDocument) {
     if (this.results.has(doc.fileName)) {
-      this.results.get(doc.fileName)!.removeEditors();
-      this.results.get(doc.fileName)!.resetAll();
-      this.results.delete(doc.fileName);
+      this.results.get(doc.fileName)!.dispose();
     }
   }
 }
