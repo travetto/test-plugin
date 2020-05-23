@@ -1,15 +1,14 @@
 import * as vscode from 'vscode';
+import { ExecUtil } from '@travetto/boot';
 
-import { Workspace } from '../../core/workspace';
-import { reinit } from '../test/test/editor';
-
-const op = Workspace.resolveLibrary('@travetto/boot/bin/travetto-plugin-clean.js');
+import { Workspace } from '../../../core/workspace';
+import { reinit } from '../../test/test/editor';
 
 async function clean() {
-  const res = await Workspace.fork(op);
+  const op = Workspace.resolveLibrary('@travetto/boot/bin/travetto-plugin-clean.js');
+  await ExecUtil.fork(op);
 
   await Workspace.reinitTravetto();
-
   await reinit();
 
   vscode.window.showInformationMessage('Successfully deleted');

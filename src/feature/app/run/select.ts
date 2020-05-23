@@ -7,17 +7,27 @@ import { ParameterSelector } from '../../../core/parameter';
 
 type PickItem = vscode.QuickPickItem & { target: AppChoice };
 
+/**
+ * Application selector
+ */
 export class AppSelector {
   storage = new ActionStorage<AppChoice>('app.run');
 
   constructor(private libPath: string) { }
 
+  /**
+   * Get list of applications
+   */
   async getAppList() {
     const { getAppList } = Workspace.requireLibrary(this.libPath);
 
     return getAppList(false) as Promise<AppChoice[]>;
   }
 
+  /**
+   * Get application details
+   * @param app 
+   */
   getAppDetail(app: AppChoice) {
     const detail = [];
     detail.push(app.description);
@@ -28,6 +38,10 @@ export class AppSelector {
     return out ? `${'\u00A0'.repeat(4)}${out}` : out;
   }
 
+  /**
+   * Get application parameters
+   * @param choice 
+   */
   getAppParams(choice: AppChoice) {
     const out = choice.params
       .map((x, i) => {
@@ -41,6 +55,10 @@ export class AppSelector {
     return out;
   }
 
+  /**
+   * Build quick pick item
+   * @param choice 
+   */
   buildQuickPickItem(choice: AppChoice): PickItem | undefined {
     try {
       const params = this.getAppParams(choice);
@@ -61,6 +79,10 @@ export class AppSelector {
     }
   }
 
+  /**
+   * Find list of recent choices, that are valid
+   * @param count 
+   */
   async getValidRecent(count: number): Promise<AppChoice[]> {
     const appList = await this.getAppList();
 
@@ -79,6 +101,11 @@ export class AppSelector {
       .slice(0, count);
   }
 
+  /**
+   * Select an app
+   * @param title 
+   * @param choices 
+   */
   async select(title: string, choices: AppChoice[]) {
     const items = choices
       .map(x => {
@@ -93,6 +120,10 @@ export class AppSelector {
     return res && res.target;
   }
 
+  /**
+   * Select application parameters
+   * @param choice 
+   */
   async selectParameters(choice: AppChoice): Promise<string[] | undefined> {
     const all = choice.params;
     const selected = [];

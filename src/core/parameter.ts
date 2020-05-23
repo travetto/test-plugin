@@ -1,22 +1,17 @@
 import * as vscode from 'vscode';
-import { ParamConfig } from './types';
 import { Workspace } from './workspace';
+import { FullInput, ParameterUI, ParamWithMeta } from './types';
 
-type FullInput = vscode.QuickInput & {
-  placeholder?: string;
-  value?: string;
-  onDidAccept(cb: () => void): void;
-};
-
-interface ParamWithMeta {
-  param: ParamConfig;
-  total: number;
-  step: number;
-  input?: string;
-}
-
+/**
+ * Selects a parameter 
+ */
 export class ParameterSelector {
-  static buildInput<T extends FullInput>(provider: () => T, config: ParamWithMeta): { input: T, run: () => Promise<string> } {
+  /**
+   * Create the input handler
+   * @param provider Input Parameter provider
+   * @param config The configuration for the parameter
+   */
+  static buildInput<T extends FullInput>(provider: () => T, config: ParamWithMeta): ParameterUI<T, string> {
     const qp = provider();
     qp.ignoreFocusOut = true;
     qp.step = config.step;
@@ -40,9 +35,15 @@ export class ParameterSelector {
     };
   }
 
-  static buildQuickPickList(conf: ParamWithMeta, choices: string[]) {
-    const { input: qp, run: subRun } = this.buildInput(vscode.window.createQuickPick, conf);
+  /**
+   * Create a quick pick list
+   * @param conf The parameter to pick for
+   * @param choices List of choices
+   */
+  static buildQuickPickList<T extends vscode.QuickPickItem>(conf: ParamWithMeta, choices: string[]): ParameterUI<vscode.QuickPick<T>, string> {
+    const { input: qp, run: subRun } = this.buildInput(vscode.window.createQuickPick, conf) as ParameterUI<vscode.QuickPick<T>>;
     qp.title = `Select ${conf.param.title || conf.param.name}`;
+    // @ts-ignore
     qp.items = choices.map(x => ({ label: x }));
     qp.canSelectMany = false;
 
@@ -63,7 +64,12 @@ export class ParameterSelector {
     };
   }
 
-  static async getFile(conf: ParamWithMeta, root?: string) {
+  /**
+   * Prompt for a file
+   * @param conf The parameter to look for
+   * @param root The root to search in
+   */
+  static async getFile(conf: ParamWithMeta, root?: string): Promise<string | undefined> {
     const res = await vscode.window.showOpenDialog({
       defaultUri: root ? vscode.Uri.file(root) : Workspace.folder.uri,
       openLabel: `Select ${conf.param.title || conf.param.name}`,
@@ -72,7 +78,10 @@ export class ParameterSelector {
     });
     return res === undefined ? res : res[0].fsPath;
   }
-
+  /**
+   * Build input depending on provided configuration
+   * @param conf Parameter configuration
+   */
   static async selectParameter(conf: ParamWithMeta) {
     switch (conf.param.type) {
       case 'number': return this.buildInput(vscode.window.createInputBox, conf).run();
@@ -89,7 +98,12 @@ export class ParameterSelector {
     }
   }
 
-  static showQuickPick<T extends vscode.QuickPickItem>(title: string, items: T[]) {
+  /**
+   * Display the quick pick dialog
+   * @param title 
+   * @param items 
+   */
+  static showQuickPick<T extends vscode.QuickPickItem>(title: string, items: T[]): ParameterUI<vscode.QuickPick<T>, T> {
     const qp = vscode.window.createQuickPick<T>();
     qp.ignoreFocusOut = true;
     qp.placeholder = 'Select ...';

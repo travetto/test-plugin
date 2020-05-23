@@ -6,9 +6,23 @@ import { Workspace } from '../../../core/workspace';
 const { Stacktrace } = Workspace.requireLibrary('@travetto/base');
 const { CommUtil } = Workspace.requireLibrary('@travetto/worker');
 
+/**
+ * Make a color
+ * @param r 
+ * @param g 
+ * @param b 
+ * @param a 
+ */
 const rgba = (r = 0, g = 0, b = 0, a = 1) => `rgba(${r},${g},${b},${a})`;
 
+/**
+ * Italicizes
+ */
 const ITALIC = 'font-style: italic;';
+
+/**
+ * Various styles 
+ */
 const Style = {
   SMALL_IMAGE: '40%',
   FULL_IMAGE: 'auto',
@@ -32,10 +46,17 @@ const Style = {
     light: { after: { color: 'darkgrey' } },
     dark: { after: { color: 'grey' } }
   } as Partial<vscode.DecorationRenderOptions>
-};
+} as const;
 
+/**
+ * Decoration utils
+ */
 export class Decorations {
 
+  /**
+   * Build an error hover tooltip
+   * @param asrt 
+   */
   static buildErrorHover(asrt: ErrorHoverAssertion) {
     let title: string;
     let body: string;
@@ -88,11 +109,20 @@ export class Decorations {
     return { suffix, title, bodyFirst, body, markdown: new vscode.MarkdownString(`**${title}** \n\n${body}`) };
   }
 
+  /**
+   * Create a line range
+   * @param n 
+   * @param end 
+   */
   static line(n: number, end: number = 0): vscode.DecorationOptions {
     return { range: new vscode.Range(n - 1, 0, (end || n) - 1, 100000000000) };
   }
 
-  static buildAssert(state: StatusUnknown) {
+  /**
+   * Build assertion
+   * @param state 
+   */
+  static buildAssertStyle(state: StatusUnknown) {
     const color = Style.COLORS[state];
     return vscode.window.createTextEditorDecorationType({
       ...Style.ASSERT,
@@ -101,7 +131,12 @@ export class Decorations {
     });
   }
 
-  static buildImage(state: StatusUnknown, size = Style.FULL_IMAGE) {
+  /**
+   * Build guardrail image for assertion status
+   * @param state 
+   * @param size 
+   */
+  static buildImage(state: StatusUnknown, size: string = Style.FULL_IMAGE) {
     const img = Workspace.getAbsoluteResource(`images/${state}.png`);
     return vscode.window.createTextEditorDecorationType({
       ...Style.IMAGE,
@@ -110,6 +145,10 @@ export class Decorations {
     });
   }
 
+  /**
+   * Build assertion
+   * @param assertion 
+   */
   static buildAssertion(assertion: { error?: Error, line: number, lineEnd?: number, message: string }): vscode.DecorationOptions {
     let out = this.line(assertion.line, assertion.lineEnd);
     if (assertion.error) {
@@ -129,10 +168,18 @@ export class Decorations {
     return out;
   }
 
+  /**
+   * Build suite config
+   * @param suite 
+   */
   static buildSuite(suite: { lines: { start: number } }) {
     return { ...this.line(suite.lines.start) };
   }
 
+  /**
+   * Build test config
+   * @param test 
+   */
   static buildTest(test: { lines: { start: number } }) {
     let err: ErrorHoverAssertion | undefined;
     if ('error' in test) {
@@ -152,9 +199,14 @@ export class Decorations {
     }
   }
 
-  static buildStyle(entity: string, state: StatusUnknown) {
+  /**
+   * Build style
+   * @param entity 
+   * @param state 
+   */
+  static buildStyle(entity: 'assertion' | 'test' | 'suite', state: StatusUnknown) {
     return (entity === 'assertion') ?
-      this.buildAssert(state) :
+      this.buildAssertStyle(state) :
       this.buildImage(state, entity === 'test' ? Style.SMALL_IMAGE : Style.FULL_IMAGE);
   }
 }

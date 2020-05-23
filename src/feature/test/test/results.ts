@@ -12,6 +12,9 @@ import {
 
 const diagColl = vscode.languages.createDiagnosticCollection('Travetto');
 
+/**
+ * Test results manager
+ */
 export class ResultsManager {
 
   private results: AllState = {
@@ -31,6 +34,10 @@ export class ResultsManager {
 
   constructor(private file: string) { }
 
+  /**
+   * Support a new editor for results updating
+   * @param e 
+   */
   addEditor(e: vscode.TextEditor) {
     if (!this.editors.has(e)) {
       const elements = Array.from(this.editors).filter(x => !(x as any)._disposed);
@@ -40,6 +47,11 @@ export class ResultsManager {
     }
   }
 
+  /**
+   * Set all styles for all open editors
+   * @param type 
+   * @param decs 
+   */
   setStyle(type: vscode.TextEditorDecorationType, decs: vscode.DecorationOptions[]) {
     for (const ed of this.editors) {
       if (!(ed as any)._disposed) {
@@ -48,6 +60,9 @@ export class ResultsManager {
     }
   }
 
+  /**
+   * Shutdown results manager
+   */
   dispose() {
     this.editors.clear();
 
@@ -61,6 +76,9 @@ export class ResultsManager {
     }
   }
 
+  /**
+   * Refresh all results
+   */
   refresh() {
     for (const suite of Object.values(this.results.suite)) {
       if (suite.decoration && suite.status) {
@@ -82,6 +100,9 @@ export class ResultsManager {
     }
   }
 
+  /**
+   * Refresh global diagnostics
+   */
   refreshDiagnostics() {
     let document = this.document;
 
@@ -123,6 +144,14 @@ export class ResultsManager {
     diagColl.set(vscode.Uri.file(this.file), this.diagnostics);
   }
 
+  /**
+   * Store results information
+   * @param level The level of the results
+   * @param key The test key
+   * @param status The status
+   * @param decoration UI Decoration
+   * @param src 
+   */
   store(level: Level, key: string, status: StatusUnknown, decoration: vscode.DecorationOptions, src?: any) {
     switch (level) {
       case 'assertion': {
@@ -161,6 +190,10 @@ export class ResultsManager {
     }
   }
 
+  /**
+   * Create all level styles
+   * @param level 
+   */
   genStyles(level: Level) {
     return {
       failed: Decorations.buildStyle(level, 'failed'),
@@ -169,6 +202,11 @@ export class ResultsManager {
     };
   }
 
+  /**
+   * Reset all levels
+   * @param level Level to reset
+   * @param key The file to reset
+   */
   reset(level: Exclude<Level, 'assertion'>, key: string) {
     const existing = this.results[level][key];
     const base: ResultState<any> = {
@@ -199,6 +237,9 @@ export class ResultsManager {
     }
   }
 
+  /**
+   * On a test event, update internal state
+   */
   onEvent(e: TestEvent) {
     if (e.phase === 'before') {
       switch (e.type) {
@@ -229,12 +270,20 @@ export class ResultsManager {
     }
   }
 
+  /**
+   * On suite results
+   * @param suite 
+   */
   onSuite(suite: SuiteResult) {
     const status = suite.skipped ? 'unknown' : (suite.failed ? 'failed' : 'passed');
     this.reset('suite', suite.classId);
     this.store('suite', suite.classId, status, Decorations.buildSuite(suite), suite);
   }
 
+  /**
+   * On test results
+   * @param test 
+   */
   onTest(test: TestResult) {
     const dec = Decorations.buildTest(test);
     const status = test.status === 'skipped' ? 'unknown' : test.status;
@@ -243,6 +292,10 @@ export class ResultsManager {
     this.refreshDiagnostics();
   }
 
+  /**
+   * On test assertion
+   * @param assertion 
+   */
   onAssertion(assertion: Assertion) {
     const status = assertion.error ? 'failed' : 'passed';
     const key = `${assertion.classId}:${assertion.methodName}`;
@@ -253,6 +306,9 @@ export class ResultsManager {
     this.store('assertion', key, status, dec, assertion);
   }
 
+  /**
+   * Get full totals
+   */
   getTotals() {
     const vals = Object.values(this.results.test);
     const total = vals.length;

@@ -1,5 +1,8 @@
 import { ParamConfig } from '../../../core/types';
 
+/**
+ * Application config
+ */
 export interface Application {
   name: string;
   filename: string;
@@ -11,6 +14,9 @@ export interface Application {
   env: string;
 }
 
+/**
+ * Application choice
+ */
 export type AppChoice = Application & {
   inputs: string[],
   time?: number,

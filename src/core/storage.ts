@@ -1,30 +1,43 @@
 import * as fs from 'fs';
 import * as util from 'util';
 import * as path from 'path';
+import { FsUtil } from '@travetto/boot';
 
 import { Workspace } from './workspace';
 
 const writeProm = util.promisify(fs.writeFile);
 
+/**
+ * Storage manager
+ */
 export class ActionStorage<T> {
 
-  private storage: { [key: string]: { data: T, time: number } } = {};
+  /**
+   * Local stroage
+   */
+  private storage: Record<string, { data: T, time: number }> = {};
 
   constructor(public scope: string, public root: string = Workspace.cacheDir) {
     this.init();
   }
 
+  /**
+   * Load configuration
+   */
   get resolved() {
     return path.resolve(this.root, `${this.scope}.json`);
   }
 
+  /**
+   * Initialize
+   */
   async init(): Promise<void> {
     try {
-      if (!fs.existsSync(this.root)) {
-        fs.mkdirSync(this.root);
+      if (FsUtil.existsSync(this.root)) {
+        FsUtil.mkdirpSync(this.root);
       }
 
-      this.storage = JSON.parse(fs.readFileSync(this.resolved).toString());
+      this.storage = JSON.parse(fs.readFileSync(this.resolved, 'utf8'));
     } catch {
       await this.persist();
     }
@@ -36,9 +49,14 @@ export class ActionStorage<T> {
   }
 
   persist() {
-    return writeProm(this.resolved, JSON.stringify(this.storage));
+    return writeProm(this.resolved, JSON.stringify(this.storage), 'utf8');
   }
 
+  /**
+   * Set value
+   * @param key 
+   * @param value 
+   */
   async set(key: string, value?: T): Promise<void> {
     if (value) {
       this.storage[key] = { data: value, time: Date.now() };
@@ -48,15 +66,27 @@ export class ActionStorage<T> {
     return this.persist(); // Don't wait
   }
 
+  /**
+   * Check value
+   * @param key 
+   */
   has(key: string) {
     return key in this.storage;
   }
 
+  /**
+   * Get value
+   * @param key 
+   */
   get(key: string): T & { time: number } {
     const ent = this.storage[key];
     return { ...ent.data, time: ent.time };
   }
 
+  /**
+   * Get most recent values
+   * @param size 
+   */
   getRecent(size = 5): (T & { time: number })[] {
     return Object.values(this.storage)
       .sort((a, b) => b.time - a.time)

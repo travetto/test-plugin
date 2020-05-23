@@ -4,6 +4,9 @@ import { AppSelector } from './select';
 import { AppChoice } from './types';
 import { Workspace } from '../../../core/workspace';
 
+/**
+ * Application launcher
+ */
 export class AppLauncher {
 
   constructor(
@@ -14,6 +17,11 @@ export class AppLauncher {
 
   }
 
+  /**
+   * Handle application choices
+   * @param title 
+   * @param choices 
+   */
   async getChoice(title: string, choices: AppChoice[] | AppChoice) {
     const choice = Array.isArray(choices) ? (await this.selector.select(title, choices)) : choices;
 
@@ -36,6 +44,10 @@ export class AppLauncher {
     return choice;
   }
 
+  /**
+   * Get full launch config
+   * @param choice 
+   */
   getLaunchConfig(choice: AppChoice) {
     const args = choice.inputs.map(x => `${x}`.replace(Workspace.path, '.')).join(', ');
     const env = Workspace.getDefaultEnv({});
@@ -49,6 +61,9 @@ export class AppLauncher {
     });
   }
 
+  /**
+   * Persist config
+   */
   async exportLaunchConfig() {
     try {
       const choice = await this.getChoice('Export Application Launch', await this.selector.getValidRecent(10));
@@ -70,6 +85,11 @@ export class AppLauncher {
     }
   }
 
+  /**
+   * Run the application with the given choices
+   * @param title 
+   * @param apps 
+   */
   async runApplication(title: string, apps: AppChoice[] | AppChoice) {
     try {
       const choice = await this.getChoice(title, apps);
@@ -84,6 +104,9 @@ export class AppLauncher {
     }
   }
 
+  /**
+   * Register command handlers
+   */
   register() {
     vscode.commands.registerCommand(`travetto.${this.mod}.run:new`, async config =>
       this.runApplication('Run New Application', await this.selector.getAppList()));

@@ -1,6 +1,12 @@
 import { EventEmitter } from 'events';
 
+/**
+ * Standard promise support
+ */
 export class Promises {
+  /**
+   * Build one-time promise from an event
+   */
   static fromEvent<U = void>() {
     const emitter = new EventEmitter();
     const prom = new Promise<U>((resolve, reject) => {
@@ -12,6 +18,10 @@ export class Promises {
     return { stream: emitter, promise: prom, cancel };
   }
 
+  /**
+   * Make an extendable timeout
+   * @param delay 
+   */
   static extendableTimeout(delay: number = 20000) {
     const { stream, promise } = Promises.fromEvent();
 

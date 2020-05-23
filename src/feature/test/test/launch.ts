@@ -3,6 +3,10 @@ import * as vscode from 'vscode';
 
 import { Workspace } from '../../../core/workspace';
 
+/**
+ * Launch a test from the current location
+ * @param addBreakpoint 
+ */
 export async function launchTests(addBreakpoint: boolean = false) {
 
   const editor = vscode.window.activeTextEditor;

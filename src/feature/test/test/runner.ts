@@ -1,18 +1,15 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-
-import { spawn, ChildProcess } from 'child_process';
-
+import { ExecUtil, FsUtil, ExecutionState } from '@travetto/boot';
 import { ResultsManager } from './results';
 import { Logger } from '../../../core/log';
 import { Workspace } from '../../../core/workspace';
 import { TestEvent, StatusUnknown } from './types';
 
-const { FsUtil } = Workspace.requireLibrary('@travetto/boot')
 
 export class TestRunner {
   private status: vscode.StatusBarItem;
-  private runner: ChildProcess;
+  private runner: ExecutionState;
   private running = true;
 
   private results: Map<string, ResultsManager> = new Map();
@@ -27,6 +24,9 @@ export class TestRunner {
     process.on('SIGTERM', done);
   }
 
+  /**
+   * Get totals from teh runner
+   */
   getTotals() {
     const totals: Record<StatusUnknown, number> = {
       skipped: 0,
@@ -34,7 +34,7 @@ export class TestRunner {
       passed: 0,
       unknown: 0
     };
-    for (const [file, mgr] of this.results.entries()) {
+    for (const mgr of this.results.values()) {
       const test = mgr.getTotals();
       totals.skipped += test.skipped;
       totals.failed += test.failed;
@@ -44,6 +44,11 @@ export class TestRunner {
     return totals;
   }
 
+  /**
+   * Set overall status
+   * @param message 
+   * @param color 
+   */
   setStatus(message: string, color?: string) {
     if (!message) {
       this.status.hide();
@@ -54,6 +59,10 @@ export class TestRunner {
     }
   }
 
+  /**
+   * Get test results
+   * @param target 
+   */
   getResults(target: vscode.TextDocument | string | TestEvent) {
     let file: string;
     if (typeof target === 'string') {
@@ -79,16 +88,23 @@ export class TestRunner {
     }
   }
 
+  /**
+   * On test event
+   * @param ev 
+   */
   onEvent(ev: TestEvent) {
     this.getResults(ev)?.onEvent(ev);
     const totals = this.getTotals();
     this.setStatus(`Passed ${totals.passed}, Failed ${totals.failed}`, totals.failed ? '#f33' : '#8f8');
   }
 
+  /**
+   * Start runner
+   */
   async init() {
     FsUtil.copyRecursiveSync(`${Workspace.path}/.trv_cache`, this.cacheDir, true);
 
-    this.runner = spawn(process.argv0, [`${Workspace.path}/node_modules/@travetto/test/bin/travetto-watch-test`], {
+    this.runner = ExecUtil.fork(`${Workspace.path}/node_modules/@travetto/test/bin/travetto-watch-test`, [], {
       env: {
         ...process.env,
         TRV_CACHE: this.cacheDir,
@@ -98,16 +114,16 @@ export class TestRunner {
       stdio: ['pipe', 'pipe', 'pipe', 'ipc']
     });
 
-    this.runner.stdout?.pipe(process.stdout);
-    this.runner.stderr?.pipe(process.stderr);
+    this.runner.process.stdout?.pipe(process.stdout);
+    this.runner.process.stderr?.pipe(process.stderr);
 
-    this.runner.on('close', () => {
+    this.runner.result.finally(() => {
       if (this.running) { // If still running, reinit
         this.reinit();
       }
     });
 
-    this.runner.addListener('message', this.onEvent.bind(this));
+    this.runner.process.addListener('message', this.onEvent.bind(this));
   }
 
   /**
@@ -116,8 +132,8 @@ export class TestRunner {
   async destroy(running: boolean) {
     Logger.debug('Test', 'Shutting down');
     this.running = running;
-    if (!this.runner.killed) {
-      this.runner.kill();
+    if (!this.runner.process.killed) {
+      this.runner.process.kill();
     }
     // Remove all state
     const entries = [...this.results.entries()];
@@ -127,12 +143,19 @@ export class TestRunner {
     }
   }
 
+  /**
+   * Reinitialize
+   */
   async reinit() {
     this.destroy(true);
     FsUtil.unlinkRecursiveSync(this.cacheDir);
     this.init();
   }
 
+  /**
+   * Close a document
+   * @param doc 
+   */
   async close(doc: vscode.TextDocument) {
     if (this.results.has(doc.fileName)) {
       this.results.get(doc.fileName)!.dispose();
