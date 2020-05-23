@@ -1,6 +1,14 @@
 import * as vscode from 'vscode';
 
 /**
+ * Shape of an activation target
+ */
+export interface ActivationTarget {
+  activate?(ctx: vscode.ExtensionContext): void | Promise<void>;
+  deactivate?(): void | Promise<void>;
+}
+
+/**
  * Parameter configuration
  */
 export interface ParamConfig {
@@ -11,30 +19,4 @@ export interface ParamConfig {
   def?: string | boolean | number;
   optional?: boolean;
   meta?: any;
-}
-
-/**
- * Input parameter with metadata
- */
-export interface ParamWithMeta {
-  param: ParamConfig;
-  total: number;
-  step: number;
-  input?: string;
-}
-
-/**
- * Shape of an activation target
- */
-export interface ActivationTarget {
-  activate?(ctx: vscode.ExtensionContext): void | Promise<void>;
-  deactivate?(): void | Promise<void>;
-}
-
-/**
- * Activation factory
- */
-export interface ActivationFactory<T extends ActivationTarget = ActivationTarget> {
-  init?(): Promise<boolean> | boolean;
-  new(): T;
 }

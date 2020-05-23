@@ -8,7 +8,6 @@ export class Workspace {
 
   static context: vscode.ExtensionContext;
   static folder: vscode.WorkspaceFolder;
-  static cacheDir: string;
 
   /**
    * Get workspace path
@@ -18,20 +17,13 @@ export class Workspace {
   }
 
   /**
-   * Determine if in framework dev mode
-   */
-  static get frameworkDev() {
-    return /travetto.*\/module\//.test(this.path);
-  }
-
-  /**
    * Read default environment data for executions
    * @param extra Additional env vars to add
    */
   static getDefaultEnv(extra: Record<string, string> = {}) {
     return {
       FORCE_COLOR: 'true',
-      ...(this.frameworkDev ? {
+      ...(/travetto.*\/module\//.test(this.path) ? {
         TRV_DEV: '1',
         NODE_PRESERVE_SYMLINKS: '1'
       } : {}),
@@ -45,7 +37,7 @@ export class Workspace {
    */
   static init(context: vscode.ExtensionContext) {
     this.context = context;
-    this.folder = vscode.workspace.workspaceFolders![0];
+    [this.folder] = vscode.workspace.workspaceFolders!;
   }
 
   /**

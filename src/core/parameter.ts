@@ -1,6 +1,17 @@
 import * as vscode from 'vscode';
 import { Workspace } from './workspace';
-import { ParamWithMeta } from './types';
+import { ParamConfig } from './types';
+
+
+/**
+ * Input parameter with metadata
+ */
+interface ParamWithMeta {
+  param: ParamConfig;
+  total: number;
+  step: number;
+  input?: string;
+}
 
 type Complex = vscode.InputBox | vscode.QuickPick<vscode.QuickPickItem>;
 

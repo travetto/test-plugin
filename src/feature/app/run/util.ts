@@ -5,13 +5,16 @@ import { ParameterSelector } from '../../../core/parameter';
 
 type PickItem = vscode.QuickPickItem & { target: AppChoice };
 
+/**
+ * Utils for handling app selection
+ */
 export class AppSelectorUtil {
 
   /**
-   * Get application details
+   * Build application details for quick pick
    * @param app 
    */
-  static getAppDetail(app: AppChoice) {
+  static buildAppDetail(app: AppChoice) {
     const detail = [];
     detail.push(app.description);
     if (app.watchable) {
@@ -23,10 +26,10 @@ export class AppSelectorUtil {
 
 
   /**
-   * Get application parameters
+   * Build application parameters for quick pick
    * @param choice 
    */
-  static getAppParams(choice: AppChoice) {
+  static buildAppParams(choice: AppChoice) {
     const out = choice.params
       .map((x, i) => {
         let val = choice.inputs[i] !== undefined ? choice.inputs[i] : (x.meta && x.meta.choices ? x.meta.choices.join(',') : x.def);
@@ -44,8 +47,8 @@ export class AppSelectorUtil {
   * @param choice 
   */
   static buildQuickPickItem(choice: AppChoice): PickItem | undefined {
-    const params = this.getAppParams(choice);
-    const detail = choice.key ? undefined : this.getAppDetail(choice);
+    const params = this.buildAppParams(choice);
+    const detail = choice.key ? undefined : this.buildAppDetail(choice);
 
     return {
       label: `${choice.key ? '' : '$(gear) '}${choice.appRoot && choice.appRoot !== '.' ? `${choice.appRoot}/` : ''}${choice.name}`,
@@ -56,11 +59,11 @@ export class AppSelectorUtil {
   }
 
   /**
-  * Select an app
-  * @param title 
-  * @param choices 
-  */
-  static async select(title: string, choices: AppChoice[]) {
+   * Select an app
+   * @param title 
+   * @param choices 
+   */
+  static async resolveApp(title: string, choices: AppChoice[]) {
     const items = choices
       .map(x => {
         x.inputs = x.inputs || [];
@@ -80,7 +83,7 @@ export class AppSelectorUtil {
    * Select application parameters
    * @param choice 
    */
-  static async selectParameters(choice: AppChoice): Promise<string[] | undefined> {
+  static async resolveParameters(choice: AppChoice): Promise<string[] | undefined> {
     const all = choice.params;
     const selected = [];
 
@@ -118,14 +121,14 @@ export class AppSelectorUtil {
    * @param choices 
    */
   static async resolveChoices(title: string, choices: AppChoice[] | AppChoice) {
-    const choice = Array.isArray(choices) ? (await this.select(title, choices)) : choices;
+    const choice = Array.isArray(choices) ? (await this.resolveApp(title, choices)) : choices;
 
     if (!choice) {
       return;
     }
 
     if (!choice.key && choice.params) {
-      const inputs = await this.selectParameters(choice);
+      const inputs = await this.resolveParameters(choice);
 
       if (inputs === undefined) {
         return;

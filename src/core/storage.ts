@@ -1,11 +1,11 @@
 import * as fs from 'fs';
 import * as util from 'util';
-import * as path from 'path';
 import { FsUtil } from '@travetto/boot';
 
-import { Workspace } from './workspace';
-
 const writeProm = util.promisify(fs.writeFile);
+const readProm = util.promisify(fs.readFile);
+
+type TimeEntry<T> = { key: string, data: T, time: number };
 
 /**
  * Storage manager
@@ -15,9 +15,9 @@ export class ActionStorage<T> {
   /**
    * Local stroage
    */
-  private storage: Record<string, { key: string, data: T, time: number }> = {};
+  private storage: Record<string, TimeEntry<T>> = {};
 
-  constructor(public scope: string, public root: string = Workspace.cacheDir) {
+  constructor(public scope: string, public root: string) {
     this.init();
   }
 
@@ -25,7 +25,7 @@ export class ActionStorage<T> {
    * Load configuration
    */
   get resolved() {
-    return path.resolve(this.root, `${this.scope}.json`);
+    return FsUtil.resolveUnix(this.root, `.${this.scope}.json`);
   }
 
   /**
@@ -33,11 +33,9 @@ export class ActionStorage<T> {
    */
   async init(): Promise<void> {
     try {
-      if (FsUtil.existsSync(this.root)) {
-        FsUtil.mkdirpSync(this.root);
-      }
+      FsUtil.mkdirpSync(this.root);
 
-      this.storage = JSON.parse(fs.readFileSync(this.resolved, 'utf8'));
+      this.storage = JSON.parse(await readProm(this.resolved, 'utf8'));
     } catch {
       await this.persist();
     }
@@ -87,11 +85,10 @@ export class ActionStorage<T> {
    * Get most recent values
    * @param size 
    */
-  getRecent(size = 5): (T & { key: string, time: number })[] {
+  getRecent(size = 5): TimeEntry<T>[] {
     return Object.values(this.storage)
       .sort((a, b) => b.time - a.time)
-      .slice(0, size)
-      .map(x => ({ ...x.data, key: x.key, time: x.time }));
+      .slice(0, size);
   }
 
   /**
@@ -102,7 +99,7 @@ export class ActionStorage<T> {
   getRecentAndFilterState(size: number, remove: (x: T) => boolean) {
     return this.getRecent(size)
       .filter(x => {
-        if (remove(x)) {
+        if (remove(x.data)) {
           this.set(x.key!);
         }
         return x;

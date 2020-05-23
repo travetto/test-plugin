@@ -25,6 +25,6 @@ export class CleanFeature {
    * On initial activation
    */
   activate() {
-    vscode.commands.registerCommand('travetto.boot.clean', async () => this.clean());
+    vscode.commands.registerCommand('travetto.boot.clean', () => this.clean());
   }
 }

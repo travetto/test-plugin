@@ -1,8 +1,12 @@
 import * as vscode from 'vscode';
+import { ExecUtil } from '@travetto/boot';
+
 import { Workspace } from '../../../core/workspace';
-import { AppChoice } from './types';
-import { AppSelector } from './select';
 import { Activatible } from '../../../core/activation';
+import { ActionStorage } from '../../../core/storage';
+
+import { AppChoice } from './types';
+import { AppSelectorUtil } from './util';
 
 /**
  * App run feature
@@ -14,8 +18,46 @@ export class AppRunFeature {
     return Workspace.isInstalled('@travetto/app');
   }
 
-  private selector = new AppSelector(`@travetto/app/bin/lib`)
-  private pluginPath = `${Workspace.path}/node_modules/@travetto/app/bin/travetto-plugin-run.js`;
+  private listPluginPath = Workspace.resolve('node_modules', `@travetto/app/bin/travetto-plugin-list.js`)
+  private runPluginPath = Workspace.resolve('node_modules', '@travetto/app/bin/travetto-plugin-run.js');
+  private storage = new ActionStorage<AppChoice>('app.run', Workspace.path);
+
+  /**
+   * Get list of applications
+   */
+  async getAppList() {
+    const { result } = ExecUtil.fork(this.listPluginPath);
+    const output = await result;
+    return JSON.parse(output.stdout) as AppChoice[];
+  }
+
+  /**
+   * Find list of recent choices, that are valid
+   * @param count 
+   */
+  async getValidRecent(count: number): Promise<AppChoice[]> {
+    const appList = await this.getAppList();
+
+    return this.storage.getRecentAndFilterState(count * 2, x =>
+      appList.some(a => a.id === x.id && a.name === x.name)
+    )
+      .map(x => x.data)
+      .slice(0, count);
+  }
+
+  /**
+   * Handle application choices
+   * @param title 
+   * @param choices 
+   */
+  async resolveChoices(title: string, choices: AppChoice[] | AppChoice) {
+    const choice = await AppSelectorUtil.resolveChoices(title, choices);
+    if (choice) {
+      const key = `${choice.id}#${choice.name}:${choice.inputs.join(',')}`;
+      this.storage.set(key, { ...choice, time: Date.now(), key });
+      return choice;
+    }
+  }
 
   /**
    * Get full launch config
@@ -27,7 +69,7 @@ export class AppRunFeature {
 
     return Workspace.generateLaunchConfig({
       name: `[Travetto] ${choice.name}${args ? `: ${args}` : ''}`,
-      program: this.pluginPath,
+      program: this.runPluginPath,
       args: [choice.name, ...choice.inputs].map(x => `${x}`),
       env,
       cwd: Workspace.path
@@ -39,7 +81,7 @@ export class AppRunFeature {
    */
   async exportLaunchConfig() {
     try {
-      const choice = await this.selector.resolveChoices('Export Application Launch', await this.selector.getValidRecent(10));
+      const choice = await this.resolveChoices('Export Application Launch', await this.getValidRecent(10));
 
       if (!choice) {
         return;
@@ -65,7 +107,7 @@ export class AppRunFeature {
    */
   async runApplication(title: string, apps: AppChoice[] | AppChoice) {
     try {
-      const choice = await this.selector.resolveChoices(title, apps);
+      const choice = await this.resolveChoices(title, apps);
 
       if (!choice) {
         return;
@@ -81,12 +123,10 @@ export class AppRunFeature {
    * Register command handlers
    */
   activate() {
-    vscode.commands.registerCommand(`travetto.app.run:new`, async config =>
-      this.runApplication('Run New Application', await this.selector.getAppList()));
-    vscode.commands.registerCommand(`travetto.app.run:recent`, async config =>
-      this.runApplication('Run Recent Application', await this.selector.getValidRecent(10)));
-    vscode.commands.registerCommand(`travetto.app.run:mostRecent`, async config =>
-      this.runApplication('Run Most Recent Application', (await this.selector.getValidRecent(1))[0]));
-    vscode.commands.registerCommand(`travetto.app.run:export`, async config => this.exportLaunchConfig());
+    const reg = vscode.commands.registerCommand.bind(vscode.commands);
+    reg(`travetto.app.run:new`, async () => this.runApplication('Run New Application', await this.getAppList()));
+    reg(`travetto.app.run:recent`, async () => this.runApplication('Run Recent Application', await this.getValidRecent(10)));
+    reg(`travetto.app.run:mostRecent`, async () => this.runApplication('Run Most Recent Application', (await this.getValidRecent(1))[0]));
+    reg(`travetto.app.run:export`, async () => this.exportLaunchConfig());
   }
 }

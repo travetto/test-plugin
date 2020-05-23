@@ -1,6 +1,11 @@
 import * as vscode from 'vscode';
-import { ActivationTarget, ActivationFactory } from './types';
-import { Workspace } from './workspace';
+import { ActivationTarget } from './types';
+
+
+interface ActivationFactory<T extends ActivationTarget = ActivationTarget> {
+  init?(): Promise<boolean> | boolean;
+  new(): T;
+}
 
 /**
  * Activation manager
