@@ -2,13 +2,18 @@ import * as vscode from 'vscode';
 import { launchTests } from './launch';
 import { Workspace } from '../../../core/workspace';
 import { TestRunner } from './runner';
-import { Feature } from '../../../core/feature';
+import { Activatible } from '../../../core/activation';
 
 /**
  * Test Runner Feature
  */
-@Feature('@travetto/test', 'test')
+@Activatible('@travetto/test', 'test')
 class TestRunnerFeature {
+
+  static async init() {
+    return Workspace.isInstalled('@travetto/test');
+  }
+
   private runner = new TestRunner(vscode.window);
 
   /**

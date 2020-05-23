@@ -64,6 +64,14 @@ export class Workspace {
   }
 
   /**
+   * See if module is installed
+   * @param module 
+   */
+  static async isInstalled(module: string) {
+    return !!(await FsUtil.exists(this.resolve('node_modules', module)));
+  }
+
+  /**
    * Generate execution launch config
    * @param config 
    */

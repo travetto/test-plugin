@@ -14,15 +14,6 @@ export interface ParamConfig {
 }
 
 /**
- * Input type
- */
-export type FullInput = vscode.QuickInput & {
-  placeholder?: string;
-  value?: string;
-  onDidAccept(cb: () => void): void;
-};
-
-/**
  * Input parameter with metadata
  */
 export interface ParamWithMeta {
@@ -32,18 +23,18 @@ export interface ParamWithMeta {
   input?: string;
 }
 
-export type ParameterUI<T, V = string> = {
-  input: T;
-  run: () => Promise<V>
-};
-
-
-export type InstallMap = Record<string, boolean>;
-
 /**
- * Shape of a module feature
+ * Shape of an activation target
  */
-export interface ModuleFeature {
+export interface ActivationTarget {
   activate?(ctx: vscode.ExtensionContext): void | Promise<void>;
   deactivate?(): void | Promise<void>;
+}
+
+/**
+ * Activation factory
+ */
+export interface ActivationFactory<T extends ActivationTarget = ActivationTarget> {
+  init?(): Promise<boolean> | boolean;
+  new(): T;
 }

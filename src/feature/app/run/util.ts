@@ -70,8 +70,8 @@ export class AppSelectorUtil {
       .map(x => this.buildQuickPickItem(x))
       .filter(x => !!x) as PickItem[];
 
-    const res = await ParameterSelector.showQuickPick(title, items).run();
-    return res && res.target;
+    const res = await ParameterSelector.getObjectQuickPickList(title, items);
+    return res?.target;
   }
 
 
@@ -86,7 +86,7 @@ export class AppSelectorUtil {
 
     for (let i = 0; i < all.length; i++) {
       const param = all[i];
-      const res = await ParameterSelector.selectParameter({
+      const res = await ParameterSelector.getParameter({
         param,
         total: all.length,
         step: i + 1,

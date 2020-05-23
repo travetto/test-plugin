@@ -2,17 +2,19 @@ import * as vscode from 'vscode';
 import { ExecUtil } from '@travetto/boot';
 
 import { Workspace } from '../../../core/workspace';
-import { Feature } from '../../../core/feature';
+import { Activatible } from '../../../core/activation';
 
 /**
  * Clean workspace
  */
-@Feature('@travetto/boot', 'clean')
+@Activatible('@travetto/boot', 'clean')
 export class CleanFeature {
-  private plugin = Workspace.resolve('node_modules', '@travetto/boot', 'bin/travetto-plugin-clean.js');
 
-  module = '@travetto/boot';
-  command = 'clean';
+  static async init() {
+    return Workspace.isInstalled('@travetto/boot');
+  }
+
+  private plugin = Workspace.resolve('node_modules', '@travetto/boot', 'bin/travetto-plugin-clean.js');
 
   async clean() {
     await ExecUtil.fork(this.plugin);

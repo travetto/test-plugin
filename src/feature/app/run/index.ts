@@ -2,13 +2,17 @@ import * as vscode from 'vscode';
 import { Workspace } from '../../../core/workspace';
 import { AppChoice } from './types';
 import { AppSelector } from './select';
-import { Feature } from '../../../core/feature';
+import { Activatible } from '../../../core/activation';
 
 /**
  * App run feature
  */
-@Feature('@travetto/app', 'run')
-export class AppRunFeatur {
+@Activatible('@travetto/app', 'run')
+export class AppRunFeature {
+
+  static async init() {
+    return Workspace.isInstalled('@travetto/app');
+  }
 
   private selector = new AppSelector(`@travetto/app/bin/lib`)
   private pluginPath = `${Workspace.path}/node_modules/@travetto/app/bin/travetto-plugin-run.js`;
