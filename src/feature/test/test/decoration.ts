@@ -3,9 +3,6 @@ import * as util from 'util';
 import { TestResult, ErrorHoverAssertion, StatusUnknown } from './types';
 import { Workspace } from '../../../core/workspace';
 
-const { Stacktrace } = Workspace.requireLibrary('@travetto/base');
-const { CommUtil } = Workspace.requireLibrary('@travetto/worker');
-
 /**
  * Make a color
  * @param r 
@@ -103,7 +100,7 @@ export class Decorations {
       title = asrt.error.message;
       suffix = asrt.error.message;
 
-      body = Stacktrace.simplifyStack(CommUtil.deserializeError(asrt.error));
+      body = asrt.error.stack!;
       bodyFirst = body.split('\n')[0];
     }
     return { suffix, title, bodyFirst, body, markdown: new vscode.MarkdownString(`**${title}** \n\n${body}`) };

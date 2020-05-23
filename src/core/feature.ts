@@ -1,33 +1,47 @@
 import * as vscode from 'vscode';
-import { ScanFs, FsUtil } from '@travetto/boot';
+import { FsUtil } from '@travetto/boot';
 import { Workspace } from './workspace';
+import { ModuleFeature } from './types';
 
 /**
  * Feature manager
  */
 export class FeatureManager {
 
-  static async run(x: 'activate' | 'deactivate', ...args: any[]) {
-    const features = (await ScanFs.scanDir(
-      { testDir: d => /^[a-z]+(\/[a-z]+)?/.test(d) },
-      FsUtil.resolveUnix(__dirname, '..', 'feature')
-    )).map(x => {
-      const [mod, cmd] = x.module.split('/');
-      return { mod, cmd, file: x.file };
-    });
+  static features = new Map<string, ModuleFeature>();
+  static registry = new Set<{ module: string, command: string, cls: { new(): ModuleFeature } }>();
 
-    for (const { mod, cmd, file } of features) {
-      if (await FsUtil.exists(Workspace.resolveLibrary(`@travetto/${mod}`))) {
-        await vscode.commands.executeCommand('setContext', `@travetto/${mod}`, x === 'activate');
+  static async init() {
+    await import('../feature/index');
+    for (const { module, command, cls } of this.registry.values()) {
+      if (await FsUtil.exists(Workspace.resolve('node_modules', module))) {
+        await vscode.commands.executeCommand('setContext', module, true);
+        await vscode.commands.executeCommand('setContext', `${module}/${command}`, true);
         try {
-          const feature = require(file);
-          if (x in feature) {
-            await feature[x]!();
-          }
-          continue;
+          const feat = new cls();
+          await this.features.set(`${module}/${command}`, feat);
         } catch { }
       }
-      await vscode.commands.executeCommand('setContext', `@travetto/${mod}`, false);
     }
+  }
+
+
+  static async activate(ctx: vscode.ExtensionContext) {
+    for (const f of this.features.values()) {
+      f.activate?.(ctx);
+    }
+  }
+
+  static async deactivate(ctx?: vscode.ExtensionContext) {
+    for (const f of this.features.values()) {
+      f.deactivate?.();
+    }
+  }
+}
+
+export function Feature(module: string, command: string) {
+  return <T extends ModuleFeature>(cls: { new(): T }) => {
+    FeatureManager.registry.add({ module, command, cls });
+    return;
   }
 }

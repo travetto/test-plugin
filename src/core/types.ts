@@ -44,6 +44,6 @@ export type InstallMap = Record<string, boolean>;
  * Shape of a module feature
  */
 export interface ModuleFeature {
-  activate?(): void;
-  deactivate?(): void;
+  activate?(ctx: vscode.ExtensionContext): void | Promise<void>;
+  deactivate?(): void | Promise<void>;
 }

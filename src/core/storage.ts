@@ -15,7 +15,7 @@ export class ActionStorage<T> {
   /**
    * Local stroage
    */
-  private storage: Record<string, { data: T, time: number }> = {};
+  private storage: Record<string, { key: string, data: T, time: number }> = {};
 
   constructor(public scope: string, public root: string = Workspace.cacheDir) {
     this.init();
@@ -59,7 +59,7 @@ export class ActionStorage<T> {
    */
   async set(key: string, value?: T): Promise<void> {
     if (value) {
-      this.storage[key] = { data: value, time: Date.now() };
+      this.storage[key] = { key, data: value, time: Date.now() };
     } else {
       delete this.storage[key];
     }
@@ -87,10 +87,25 @@ export class ActionStorage<T> {
    * Get most recent values
    * @param size 
    */
-  getRecent(size = 5): (T & { time: number })[] {
+  getRecent(size = 5): (T & { key: string, time: number })[] {
     return Object.values(this.storage)
       .sort((a, b) => b.time - a.time)
       .slice(0, size)
-      .map(x => ({ ...x.data, time: x.time }));
+      .map(x => ({ ...x.data, key: x.key, time: x.time }));
+  }
+
+  /**
+   * Get recent and filter out stale data
+   * @param size 
+   * @param remove 
+   */
+  getRecentAndFilterState(size: number, remove: (x: T) => boolean) {
+    return this.getRecent(size)
+      .filter(x => {
+        if (remove(x)) {
+          this.set(x.key!);
+        }
+        return x;
+      });
   }
 }

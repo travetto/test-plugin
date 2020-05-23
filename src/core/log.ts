@@ -47,21 +47,8 @@ export class Logger {
   /**
    * Read logging status from workspace configuration
    */
-  static setLoggingFromConfig() {
+  static activate() {
     this.debugMode = !!vscode.workspace.getConfiguration().get('travetto.debug');
-  }
-
-  /**
-   * Enable logging, and listen for config changes
-   */
-  static init() {
-    vscode.workspace.onDidChangeConfiguration(e => {
-      if (e.affectsConfiguration('travetto.debug')) {
-        this.setLoggingFromConfig();
-      }
-    });
-
-    this.setLoggingFromConfig();
   }
 
   /**

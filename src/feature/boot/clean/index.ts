@@ -2,16 +2,27 @@ import * as vscode from 'vscode';
 import { ExecUtil } from '@travetto/boot';
 
 import { Workspace } from '../../../core/workspace';
-import { reinit } from '../../test/test/editor';
+import { Feature } from '../../../core/feature';
 
-async function clean() {
-  const op = Workspace.resolveLibrary('@travetto/boot/bin/travetto-plugin-clean.js');
-  await ExecUtil.fork(op);
+/**
+ * Clean workspace
+ */
+@Feature('@travetto/boot', 'clean')
+export class CleanFeature {
+  private plugin = Workspace.resolve('node_modules', '@travetto/boot', 'bin/travetto-plugin-clean.js');
 
-  await Workspace.reinitTravetto();
-  await reinit();
+  module = '@travetto/boot';
+  command = 'clean';
 
-  vscode.window.showInformationMessage('Successfully deleted');
+  async clean() {
+    await ExecUtil.fork(this.plugin);
+    vscode.window.showInformationMessage('Successfully deleted');
+  }
+
+  /**
+   * On initial activation
+   */
+  activate() {
+    vscode.commands.registerCommand('travetto.boot.clean', async () => this.clean());
+  }
 }
-
-vscode.commands.registerCommand('travetto.boot.clean', async config => clean());

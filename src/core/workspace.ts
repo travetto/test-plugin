@@ -49,24 +49,6 @@ export class Workspace {
   }
 
   /**
-   * Initialize framework
-   */
-  static initTravetto() {
-    process.chdir(this.path);
-    // Allow for workspace requires of ts files
-    this.requireLibrary('@travetto/boot/bin/init');
-  }
-
-  /**
-   * Re-initialize framework
-   */
-  static reinitTravetto() {
-    // @ts-ignore
-    global.trvInit && global.trvInit.deinit();
-    this.initTravetto();
-  }
-
-  /**
    * Find full path for a resource
    * @param rel 
    */
@@ -79,26 +61,6 @@ export class Workspace {
    */
   static resolve(...p: string[]) {
     return FsUtil.resolveUnix(this.path, ...p);
-  }
-  /**
-   * Require via the workspace
-   */
-  static require(...p: string[]) {
-    return require(this.resolve(...p));
-  }
-
-  /**
-   * Resolve framework file
-   */
-  static resolveLibrary(...p: string[]) {
-    return this.resolve('node_modules', ...p);
-  }
-
-  /**
-   * Require framework file
-   */
-  static requireLibrary(...p: string[]) {
-    return this.require('node_modules', ...p);
   }
 
   /**
@@ -126,5 +88,26 @@ export class Workspace {
       internalConsoleOptions: 'openOnSessionStart',
       ...config
     };
+  }
+
+
+  /**
+   * See if an entity is an editor
+   * @param o 
+   */
+  static isEditor(o: any): o is vscode.TextEditor {
+    return 'document' in o;
+  }
+
+  /**
+   * Get the editor for a doc
+   * @param doc 
+   */
+  static getEditor(doc: vscode.TextDocument) {
+    for (const e of vscode.window.visibleTextEditors) {
+      if (e.document === doc) {
+        return e;
+      }
+    }
   }
 }

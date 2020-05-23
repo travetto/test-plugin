@@ -6,15 +6,22 @@ import { FeatureManager } from './core/feature';
 
 export async function activate(context: vscode.ExtensionContext) {
   Workspace.init(context);
+  await FeatureManager.init();
 
-  Logger.init();
+  vscode.workspace.onDidChangeConfiguration(e => {
+    if (e.affectsConfiguration('travetto.debug')) {
+      Logger.activate();
+    }
+  });
+
+  Logger.activate();
   Logger.info('Initializing');
 
   Workspace.initTravetto();
 
-  await FeatureManager.run('activate', context);
+  await FeatureManager.activate(context);
 }
 
 export async function deactivate() {
-  await FeatureManager.run('deactivate');
+  await FeatureManager.deactivate();
 }

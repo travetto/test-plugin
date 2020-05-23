@@ -4,6 +4,7 @@
     "outDir": "out",
     "target": "es2018",
     "strict": true,
+    "experimentalDecorators": true,
     "strictPropertyInitialization": false,
     "lib": [
       "es2015",

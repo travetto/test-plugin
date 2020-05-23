@@ -1,16 +1,14 @@
-import * as vscode from 'vscode';
 import { AppChoice } from './types';
 
 import { ActionStorage } from '../../../core/storage';
 import { Workspace } from '../../../core/workspace';
-import { ParameterSelector } from '../../../core/parameter';
-
-type PickItem = vscode.QuickPickItem & { target: AppChoice };
+import { AppSelectorUtil } from './util';
 
 /**
  * Application selector
  */
 export class AppSelector {
+
   storage = new ActionStorage<AppChoice>('app.run');
 
   constructor(private libPath: string) { }
@@ -19,64 +17,9 @@ export class AppSelector {
    * Get list of applications
    */
   async getAppList() {
-    const { getAppList } = Workspace.requireLibrary(this.libPath);
+    const { getAppList } = require(this.libPath);
 
     return getAppList(false) as Promise<AppChoice[]>;
-  }
-
-  /**
-   * Get application details
-   * @param app 
-   */
-  getAppDetail(app: AppChoice) {
-    const detail = [];
-    detail.push(app.description);
-    if (app.watchable) {
-      detail.push('{watch}');
-    }
-    const out = detail.filter(x => !!x).join(' ').trim();
-    return out ? `${'\u00A0'.repeat(4)}${out}` : out;
-  }
-
-  /**
-   * Get application parameters
-   * @param choice 
-   */
-  getAppParams(choice: AppChoice) {
-    const out = choice.params
-      .map((x, i) => {
-        let val = choice.inputs[i] !== undefined ? choice.inputs[i] : (x.meta && x.meta.choices ? x.meta.choices.join(',') : x.def);
-        if (x.subtype === 'file' && val) {
-          val = val.replace(Workspace.path, '.');
-        }
-        return `${x.title || x.name}${val !== undefined ? `=${val}` : ''}`;
-      })
-      .join(', ');
-    return out;
-  }
-
-  /**
-   * Build quick pick item
-   * @param choice 
-   */
-  buildQuickPickItem(choice: AppChoice): PickItem | undefined {
-    try {
-      const params = this.getAppParams(choice);
-      const detail = choice.key ? undefined : this.getAppDetail(choice);
-
-      return {
-        label: `${choice.key ? '' : '$(gear) '}${choice.appRoot && choice.appRoot !== '.' ? `${choice.appRoot}/` : ''}${choice.name}`,
-        detail,
-        description: params,
-        target: choice
-      };
-    } catch (e) {
-      if (choice.key) {
-        this.storage.set(choice.key);
-      } else {
-        throw e;
-      }
-    }
   }
 
   /**
@@ -86,72 +29,22 @@ export class AppSelector {
   async getValidRecent(count: number): Promise<AppChoice[]> {
     const appList = await this.getAppList();
 
-    return this.storage.getRecent(10)
-      .map(x => {
-        x.key = x.key || x.name;
-        return x;
-      })
-      .filter(x => {
-        const res = appList.find(a => a.id === x.id && a.name === x.name);
-        if (!res) {
-          this.storage.set(x.key!);
-        }
-        return res;
-      })
-      .slice(0, count);
+    return this.storage.getRecentAndFilterState(count * 2, x =>
+      appList.some(a => a.id === x.id && a.name === x.name)
+    ).slice(0, count);
   }
 
   /**
-   * Select an app
+   * Handle application choices
    * @param title 
    * @param choices 
    */
-  async select(title: string, choices: AppChoice[]) {
-    const items = choices
-      .map(x => {
-        x.inputs = x.inputs || [];
-        x.params = x.params || [];
-        return x;
-      })
-      .map(x => this.buildQuickPickItem(x))
-      .filter(x => !!x) as PickItem[];
-
-    const res = await ParameterSelector.showQuickPick(title, items).run();
-    return res && res.target;
-  }
-
-  /**
-   * Select application parameters
-   * @param choice 
-   */
-  async selectParameters(choice: AppChoice): Promise<string[] | undefined> {
-    const all = choice.params;
-    const selected = [];
-
-    for (let i = 0; i < all.length; i++) {
-      const param = all[i];
-      const res = await ParameterSelector.selectParameter({
-        param,
-        total: all.length,
-        step: i + 1,
-        input: choice.inputs[i]
-      });
-
-      if (res === undefined) {
-        if (param.optional) {
-          selected.push('');
-        } else {
-          return undefined;
-        }
-      } else {
-        selected.push(res);
-      }
+  async resolveChoices(title: string, choices: AppChoice[] | AppChoice) {
+    const choice = await AppSelectorUtil.resolveChoices(title, choices);
+    if (choice) {
+      const key = `${choice.id}#${choice.name}:${choice.inputs.join(',')}`;
+      this.storage.set(key, { ...choice, time: Date.now(), key });
+      return choice;
     }
-
-    if (selected.length < all.length) {
-      throw new Error(`Missing arguments for ${choice.name}`);
-    }
-
-    return selected;
   }
 }
