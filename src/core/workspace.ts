@@ -38,6 +38,7 @@ export class Workspace {
   static init(context: vscode.ExtensionContext) {
     this.context = context;
     [this.folder] = vscode.workspace.workspaceFolders!;
+    Object.defineProperty(FsUtil, 'cwd', { value: Workspace.path });
   }
 
   /**

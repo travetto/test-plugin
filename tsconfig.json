@@ -4,13 +4,14 @@
     "outDir": "out",
     "target": "es2018",
     "strict": true,
+    "inlineSourceMap": true,
+    "inlineSources": true,
     "experimentalDecorators": true,
     "strictPropertyInitialization": false,
     "lib": [
       "es2015",
       "es2018"
-    ],
-    "sourceMap": true
+    ]
   },
   "exclude": [
     "node_modules",

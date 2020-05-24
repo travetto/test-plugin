@@ -4,12 +4,18 @@ import { ActivationTarget } from '../core/types';
 import { Workspace } from '../core/workspace';
 import { ExecUtil } from '@travetto/boot';
 
+// @ts-ignore
 export abstract class BaseFeature implements ActivationTarget {
-  private module: string;
-  private command: string;
+
+  static isModule = true;
+
+  constructor(
+    private module?: string,
+    private command?: string
+  ) { }
 
   resolve(...rel: string[]) {
-    return Workspace.resolve('node_modules', this.module, ...rel);
+    return Workspace.resolve('node_modules', this.module!, ...rel);
   }
 
   resolvePlugin(name: string) {
@@ -20,12 +26,6 @@ export abstract class BaseFeature implements ActivationTarget {
     const { result } = ExecUtil.fork(this.resolvePlugin(name));
     const output = await result;
     return output.stdout;
-  }
-
-  init(module: string, command: string) {
-    this.module = module;
-    this.command = command;
-    return Workspace.isInstalled(module);
   }
 
   register(task: string, handler: () => any) {

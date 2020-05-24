@@ -1,10 +1,11 @@
 import * as vscode from 'vscode';
 import { ActivationTarget } from './types';
+import { Workspace } from './workspace';
 
 
 interface ActivationFactory<T extends ActivationTarget = ActivationTarget> {
-  init?(namespace: string, sub?: string): Promise<boolean> | boolean;
-  new(): T;
+  isModule?: boolean;
+  new(namespace?: string, sub?: string): T;
 }
 
 /**
@@ -15,37 +16,34 @@ export class ActivationManager {
   static registry = new Set<{ namespace: string, sub?: string, cls: ActivationFactory, instance?: ActivationTarget }>();
 
   static async init() {
-    for (const entry of this.registry.values()) {
+    for (const entry of [...this.registry.values()]) {
       const { namespace, sub, cls } = entry;
-      if (!('init' in cls) || (await cls.init!(namespace, sub))) {
+      if (!cls.isModule || (await Workspace.isInstalled(namespace))) {
         if (sub) {
           await vscode.commands.executeCommand('setContext', namespace, true);
         }
 
         const key = sub ? `${namespace}/${sub}` : namespace;
         await vscode.commands.executeCommand('setContext', key, true);
-        entry.instance = new cls();
+        entry.instance = new cls(namespace, sub);
       }
     }
   }
 
 
   static async activate(ctx: vscode.ExtensionContext) {
-    for (const { sub, namespace, instance } of this.registry.values()) {
-      instance!.activate?.(ctx);
+    for (const { instance } of this.registry.values()) {
+      instance?.activate?.(ctx);
     }
   }
 
   static async deactivate() {
     for (const { instance } of this.registry.values()) {
-      instance!.deactivate?.();
+      instance?.deactivate?.();
     }
   }
 }
 
 export function Activatible(namespace: string, sub?: string) {
-  return (cls: ActivationFactory) => {
-    ActivationManager.registry.add({ namespace, sub, cls });
-    return;
-  }
+  return (cls: ActivationFactory) => { ActivationManager.registry.add({ namespace, sub, cls }); };
 }
