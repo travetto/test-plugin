@@ -14,8 +14,7 @@
       "env": {
         "DEBUG": "0",
         "TRV_DEV": "1",
-        "LOG_TIME": "1",
-        "LOG_MILLIS": "1",
+        "TRV_LOG_TIME": "ms",
         "NODE_PRESERVE_SYMLINKS": "1"
       },
       "stopOnEntry": false,

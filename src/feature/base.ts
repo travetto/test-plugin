@@ -12,7 +12,11 @@ export abstract class BaseFeature implements ActivationTarget {
   constructor(
     private module?: string,
     private command?: string
-  ) { }
+  ) {
+    const ctxRoot = this.module!.replace('@', '').replace(/\/+/g, '.');
+    vscode.commands.executeCommand('setContext', `${ctxRoot}.${this.command}`, true);
+    vscode.commands.executeCommand('setContext', ctxRoot, true);
+  }
 
   resolve(...rel: string[]) {
     return Workspace.resolve('node_modules', this.module!, ...rel);
@@ -29,6 +33,6 @@ export abstract class BaseFeature implements ActivationTarget {
   }
 
   register(task: string, handler: () => any) {
-    vscode.commands.registerCommand(`${this.module}.${this.command}${task}`, handler);
+    vscode.commands.registerCommand(`${this.module!.replace('@', '').replace(/\/+/g, '.')}.${this.command}:${task}`, handler);
   }
 }

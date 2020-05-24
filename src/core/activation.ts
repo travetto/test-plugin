@@ -19,17 +19,10 @@ export class ActivationManager {
     for (const entry of [...this.registry.values()]) {
       const { namespace, sub, cls } = entry;
       if (!cls.isModule || (await Workspace.isInstalled(namespace))) {
-        if (sub) {
-          await vscode.commands.executeCommand('setContext', namespace, true);
-        }
-
-        const key = sub ? `${namespace}/${sub}` : namespace;
-        await vscode.commands.executeCommand('setContext', key, true);
         entry.instance = new cls(namespace, sub);
       }
     }
   }
-
 
   static async activate(ctx: vscode.ExtensionContext) {
     for (const { instance } of this.registry.values()) {
