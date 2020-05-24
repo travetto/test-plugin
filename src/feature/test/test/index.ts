@@ -1,18 +1,16 @@
 import * as vscode from 'vscode';
-import { launchTests } from './launch';
+import * as path from 'path';
+
 import { Workspace } from '../../../core/workspace';
 import { TestRunner } from './runner';
 import { Activatible } from '../../../core/activation';
+import { BaseFeature } from '../../base';
 
 /**
  * Test Runner Feature
  */
 @Activatible('@travetto/test', 'test')
-class TestRunnerFeature {
-
-  static async init() {
-    return Workspace.isInstalled('@travetto/test');
-  }
+class TestRunnerFeature extends BaseFeature {
 
   private runner = new TestRunner(vscode.window);
 
@@ -50,19 +48,63 @@ class TestRunnerFeature {
     }
   }
 
+
+  /**
+   * Launch a test from the current location
+   * @param addBreakpoint 
+   */
+  async launchTests(addBreakpoint: boolean = false) {
+
+    const editor = vscode.window.activeTextEditor;
+
+    if (!editor) {
+      throw new Error('No editor for tests');
+    }
+
+    if (editor.document && /@Test\(/.test(editor.document.getText() || '')) {
+      const line = editor.selection.start.line + 1;
+
+      if (addBreakpoint) {
+        const uri = editor.document.uri;
+        const pos = new vscode.Position(line - 1, 0);
+        const loc = new vscode.Location(uri, pos);
+        const breakpoint = new vscode.SourceBreakpoint(loc, true);
+        vscode.debug.addBreakpoints([breakpoint]);
+
+        const remove = vscode.debug.onDidTerminateDebugSession(e => {
+          vscode.debug.removeBreakpoints([breakpoint]);
+          remove.dispose();
+        });
+      }
+
+      const env: { [key: string]: any } = {
+        ...Workspace.getDefaultEnv({ DEBUG: '1' })
+      };
+
+      return await vscode.debug.startDebugging(Workspace.folder, Workspace.generateLaunchConfig({
+        name: 'Debug Travetto',
+        program: this.resolvePlugin('test'),
+        args: [
+          `${editor.document.fileName.replace(`${Workspace.path}${path.sep}`, '')}`,
+          `${line}`
+        ].filter(x => x !== ''),
+        env
+      }));
+    }
+  }
+
   /**
    * On feature activate
    */
-  async activate() {
-    vscode.commands.registerCommand('travetto.test.test:all', async config => launchTests());
-    vscode.commands.registerCommand('travetto.test.test:line', async config => launchTests(true));
-    vscode.commands.registerCommand('travetto.test.test:rerun', async config => this.onDocumentUpdate(vscode.window.activeTextEditor, 0));
+  async activate(context: vscode.ExtensionContext) {
+    this.register('all', () => this.launchTests());
+    this.register('line', () => this.launchTests(true));
+    this.register('rerun', () => this.onDocumentUpdate(vscode.window.activeTextEditor, 0));
 
-    vscode.workspace.onDidOpenTextDocument(x => this.onDocumentUpdate(x, 0), null, Workspace.context.subscriptions);
-    vscode.workspace.onDidCloseTextDocument(x => this.onDocumentClose(x), null, Workspace.context.subscriptions);
-    vscode.window.onDidChangeActiveTextEditor(x => this.onDocumentUpdate(x), null, Workspace.context.subscriptions);
+    vscode.workspace.onDidOpenTextDocument(x => this.onDocumentUpdate(x, 0), null, context.subscriptions);
+    vscode.workspace.onDidCloseTextDocument(x => this.onDocumentClose(x), null, context.subscriptions);
+    vscode.window.onDidChangeActiveTextEditor(x => this.onDocumentUpdate(x), null, context.subscriptions);
 
-    // vscode.window.onDidChangeVisibleTextEditors(eds => eds.forEach(x => onDocumentUpdate(x, 0)), null, context.subscriptions);
     setTimeout(() => vscode.window.visibleTextEditors.forEach(x => this.onDocumentUpdate(x, 0)), 1000);
 
     await this.runner.init();
@@ -73,12 +115,5 @@ class TestRunnerFeature {
    */
   async deactivate() {
     await this.runner.destroy(false);
-  }
-
-  /**
-   * Handle reinit
-   */
-  async reinit() {
-    this.runner.reinit();
   }
 }

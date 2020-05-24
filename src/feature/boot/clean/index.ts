@@ -1,23 +1,16 @@
 import * as vscode from 'vscode';
-import { ExecUtil } from '@travetto/boot';
 
-import { Workspace } from '../../../core/workspace';
 import { Activatible } from '../../../core/activation';
+import { BaseFeature } from '../../base';
 
 /**
  * Clean workspace
  */
 @Activatible('@travetto/boot', 'clean')
-export class CleanFeature {
-
-  static async init() {
-    return Workspace.isInstalled('@travetto/boot');
-  }
-
-  private plugin = Workspace.resolve('node_modules', '@travetto/boot', 'bin/travetto-plugin-clean.js');
+export class CleanFeature extends BaseFeature {
 
   async clean() {
-    await ExecUtil.fork(this.plugin);
+    await this.runPlugin('clean');
     vscode.window.showInformationMessage('Successfully deleted');
   }
 
@@ -25,6 +18,6 @@ export class CleanFeature {
    * On initial activation
    */
   activate() {
-    vscode.commands.registerCommand('travetto.boot.clean', () => this.clean());
+    this.register('run', () => this.clean());
   }
 }
