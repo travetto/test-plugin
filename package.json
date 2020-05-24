@@ -66,7 +66,7 @@
     },
     "commands": [
       {
-        "command": "travetto.boot.clean",
+        "command": "travetto.boot.clean:run",
         "title": "Clean",
         "category": "Travetto"
       },
@@ -78,26 +78,6 @@
       {
         "command": "travetto.test.test:all",
         "title": "Debug Tests",
-        "category": "Travetto"
-      },
-      {
-        "command": "travetto.di.run:new",
-        "title": "Run New Application",
-        "category": "Travetto"
-      },
-      {
-        "command": "travetto.di.run:recent",
-        "title": "Run Recent Application",
-        "category": "Travetto"
-      },
-      {
-        "command": "travetto.di.run:mostRecent",
-        "title": "Run Most Recent Application",
-        "category": "Travetto"
-      },
-      {
-        "command": "travetto.di.run:export",
-        "title": "Export Application Launch",
         "category": "Travetto"
       },
       {
@@ -124,48 +104,32 @@
     "menus": {
       "commandPalette": [
         {
-          "command": "travetto.boot.clean",
-          "when": "config.travetto.modules.boot"
+          "command": "travetto.boot.clean:run",
+          "when": "travetto.boot"
         },
         {
           "command": "travetto.test.test:all",
-          "when": "config.travetto.modules.test && !inDebugMode && editorLangId == typescript && editorIsOpen"
+          "when": "travetto.test && !inDebugMode && editorLangId == typescript && editorIsOpen"
         },
         {
           "command": "travetto.test.test:rerun",
-          "when": "config.travetto.modules.test && !inDebugMode && editorLangId == typescript && editorIsOpen"
-        },
-        {
-          "command": "travetto.di.run:new",
-          "when": "config.travetto.modules.di && !config.travetto.modules.app"
-        },
-        {
-          "command": "travetto.di.run:recent",
-          "when": "config.travetto.modules.di && !config.travetto.modules.app"
-        },
-        {
-          "command": "travetto.di.run:mostRecent",
-          "when": "config.travetto.modules.di && !config.travetto.modules.app"
-        },
-        {
-          "command": "travetto.di.run:export",
-          "when": "config.travetto.modules.di && !config.travetto.modules.app"
+          "when": "travetto.test && !inDebugMode && editorLangId == typescript && editorIsOpen"
         },
         {
           "command": "travetto.app.run:new",
-          "when": "config.travetto.modules.app"
+          "when": "travetto.app"
         },
         {
           "command": "travetto.app.run:recent",
-          "when": "config.travetto.modules.app"
+          "when": "travetto.app"
         },
         {
           "command": "travetto.app.run:mostRecent",
-          "when": "config.travetto.modules.app"
+          "when": "travetto.app"
         },
         {
           "command": "travetto.app.run:export",
-          "when": "config.travetto.modules.app"
+          "when": "travetto.app"
         }
       ]
     },
@@ -174,13 +138,13 @@
         "command": "travetto.test.test:line",
         "key": "ctrl+shift+t",
         "mac": "cmd+shift+t",
-        "when": "config.travetto.modules.test && !inDebugMode && editorLangId == typescript && editorTextFocus"
+        "when": "travetto.test && !inDebugMode && editorLangId == typescript && editorTextFocus"
       },
       {
         "command": "travetto.test.test:rerun",
         "key": "ctrl+shift+r",
         "mac": "cmd+shift+r",
-        "when": "config.travetto.modules.test && !inDebugMode && editorLangId == typescript && editorFocus"
+        "when": "travetto.test && !inDebugMode && editorLangId == typescript && editorFocus"
       }
     ]
   }

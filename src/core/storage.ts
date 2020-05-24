@@ -25,7 +25,7 @@ export class ActionStorage<T> {
    * Load configuration
    */
   get resolved() {
-    return FsUtil.resolveUnix(this.root, `.${this.scope}.json`);
+    return FsUtil.resolveUnix(this.root, `.trv.${this.scope}.json`);
   }
 
   /**
