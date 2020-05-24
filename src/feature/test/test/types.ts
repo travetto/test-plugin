@@ -30,8 +30,8 @@ export interface TestState extends ResultState<TestConfig | TestResult> {
 }
 
 export interface AllState {
-  suite: { [key: string]: SuiteState };
-  test: { [key: string]: TestState };
+  suite: SMap<SuiteState>;
+  test: SMap<TestState>;
 }
 
 export interface SuiteConfig {
@@ -84,5 +84,5 @@ export interface ErrorHoverAssertion {
   expected?: any;
   actual?: any;
   operator?: string;
-  error: Error & { [key: string]: any };
+  error: Error & SMap<any>;
 }

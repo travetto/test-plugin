@@ -110,4 +110,24 @@ export class Workspace {
       }
     }
   }
+
+  static getDocumentEditor(editor?: vscode.TextEditor | vscode.TextDocument) {
+    editor = editor && !this.isEditor(editor) ? this.getEditor(editor) : editor;
+    if (editor && editor.document) {
+      return editor;
+    }
+  }
+
+  static addBreakpoint(editor: vscode.TextEditor, line: number) {
+    const uri = editor.document.uri;
+    const pos = new vscode.Position(line - 1, 0);
+    const loc = new vscode.Location(uri, pos);
+    const breakpoint = new vscode.SourceBreakpoint(loc, true);
+    vscode.debug.addBreakpoints([breakpoint]);
+
+    const remove = vscode.debug.onDidTerminateDebugSession(e => {
+      vscode.debug.removeBreakpoints([breakpoint]);
+      remove.dispose();
+    });
+  }
 }

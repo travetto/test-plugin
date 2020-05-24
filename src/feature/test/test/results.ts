@@ -23,13 +23,9 @@ export class ResultsManager {
   };
 
   private failedAssertions: { [key: number]: Assertion } = {};
-
   private diagnostics: vscode.Diagnostic[] = [];
-
   private editors: Set<vscode.TextEditor> = new Set();
-
   private document: vscode.TextDocument;
-
   public active = false;
 
   constructor(private file: string) { }
@@ -66,13 +62,15 @@ export class ResultsManager {
   dispose() {
     this.editors.clear();
 
-    for (const l of ['suite', 'test'] as (keyof AllState)[]) {
-      Object.values(this.results[l] as { [key: string]: ResultState<any> }).forEach(e => {
-        Object.values(e.styles).forEach(x => x.dispose());
+    for (const l of ['suite', 'test'] as const) {
+      for (const e of Object.values(this.results[l]) as ResultState<any>[]) {
+        for (const x of Object.values(e.styles)) { x.dispose(); }
         if (l === 'test') {
-          Object.values((e as TestState).assertStyles).forEach(x => x.dispose());
+          for (const x of Object.values((e as TestState).assertStyles)) {
+            x.dispose();
+          }
         }
-      });
+      }
     }
   }
 

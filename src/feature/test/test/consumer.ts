@@ -1,27 +1,19 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { ExecUtil, FsUtil, ExecutionState } from '@travetto/boot';
-import { ResultsManager } from './results';
-import { Logger } from '../../../core/log';
+
 import { Workspace } from '../../../core/workspace';
+
+import { ResultsManager } from './results';
 import { TestEvent, StatusUnknown } from './types';
 
 
-export class TestRunner {
+export class TestConsumer {
   private status: vscode.StatusBarItem;
-  private runner: ExecutionState;
-  private running = true;
-
   private results: Map<string, ResultsManager> = new Map();
-  private cacheDir = `${Workspace.path}/.trv_cache_test`;
 
   constructor(private window: typeof vscode.window) {
     this.status = this.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
     this.status.command = 'workbench.action.showErrorsWarnings';
-    const done = this.destroy.bind(this, false);
-    process.on('exit', done);
-    process.on('SIGINT', done);
-    process.on('SIGTERM', done);
   }
 
   /**
@@ -99,57 +91,15 @@ export class TestRunner {
   }
 
   /**
-   * Start runner
-   */
-  async init() {
-    FsUtil.copyRecursiveSync(`${Workspace.path}/.trv_cache`, this.cacheDir, true);
-
-    this.runner = ExecUtil.fork(`${Workspace.path}/node_modules/@travetto/test/bin/travetto-watch-test`, [], {
-      env: {
-        ...process.env,
-        TRV_CACHE: this.cacheDir,
-        TEST_FORMAT: 'exec'
-      },
-      cwd: Workspace.path,
-      stdio: ['pipe', 'pipe', 'pipe', 'ipc']
-    });
-
-    this.runner.process.stdout?.pipe(process.stdout);
-    this.runner.process.stderr?.pipe(process.stderr);
-
-    this.runner.result.finally(() => {
-      if (this.running) { // If still running, reinit
-        this.reinit();
-      }
-    });
-
-    this.runner.process.addListener('message', this.onEvent.bind(this));
-  }
-
-  /**
    * Stop runner
    */
-  async destroy(running: boolean) {
-    Logger.debug('Test', 'Shutting down');
-    this.running = running;
-    if (!this.runner.process.killed) {
-      this.runner.process.kill();
-    }
+  async dispose() {
     // Remove all state
     const entries = [...this.results.entries()];
     this.results.clear();
     for (const [k, v] of entries) {
       v.dispose();
     }
-  }
-
-  /**
-   * Reinitialize
-   */
-  async reinit() {
-    this.destroy(true);
-    FsUtil.unlinkRecursiveSync(this.cacheDir);
-    this.init();
   }
 
   /**

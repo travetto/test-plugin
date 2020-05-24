@@ -2,9 +2,10 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 
 import { Workspace } from '../../../core/workspace';
-import { TestRunner } from './runner';
+import { TestConsumer } from './consumer';
 import { Activatible } from '../../../core/activation';
 import { BaseFeature } from '../../base';
+import { FsUtil, ExecutionState, ExecUtil } from '@travetto/boot';
 
 /**
  * Test Runner Feature
@@ -12,7 +13,10 @@ import { BaseFeature } from '../../base';
 @Activatible('@travetto/test', 'test')
 class TestRunnerFeature extends BaseFeature {
 
-  private runner = new TestRunner(vscode.window);
+  private consumer = new TestConsumer(vscode.window);
+  private runner: ExecutionState;
+  private running = true;
+  private cacheDir = `${Workspace.path}/.trv_cache_test`;
 
   /**
    * On document update, track for results
@@ -20,20 +24,9 @@ class TestRunnerFeature extends BaseFeature {
    * @param line 
    */
   onDocumentUpdate(editor?: vscode.TextEditor | vscode.TextDocument, line?: number) {
-    if (!editor) {
-      return;
-    }
-
-    editor = !Workspace.isEditor(editor) ? Workspace.getEditor(editor) : editor;
-
-    if (!editor) {
-      return;
-    }
-
-    console.log('Document updated', editor.document.fileName);
-
-    if (editor.document) {
-      const results = this.runner.getResults(editor.document);
+    editor = Workspace.getDocumentEditor(editor);
+    if (editor) {
+      const results = this.consumer.getResults(editor.document);
       results?.addEditor(editor);
     }
   }
@@ -42,44 +35,26 @@ class TestRunnerFeature extends BaseFeature {
    * On Document close, stop listening
    */
   onDocumentClose(doc: vscode.TextDocument) {
-    const gone = vscode.workspace.textDocuments.find(d => d.fileName === doc.fileName);
-    if (gone) {
-      this.runner.close(gone);
+    const closing = vscode.workspace.textDocuments.find(d => d.fileName === doc.fileName);
+    if (closing) {
+      this.consumer.close(closing);
     }
   }
-
 
   /**
    * Launch a test from the current location
    * @param addBreakpoint 
    */
-  async launchTests(addBreakpoint: boolean = false) {
+  async launchTestDebugger(addBreakpoint: boolean = false) {
 
-    const editor = vscode.window.activeTextEditor;
+    const editor = Workspace.getDocumentEditor(vscode.window.activeTextEditor);
 
-    if (!editor) {
-      throw new Error('No editor for tests');
-    }
-
-    if (editor.document && /@Test\(/.test(editor.document.getText() || '')) {
+    if (editor && /@Test\(/.test(editor.document.getText() || '')) {
       const line = editor.selection.start.line + 1;
 
       if (addBreakpoint) {
-        const uri = editor.document.uri;
-        const pos = new vscode.Position(line - 1, 0);
-        const loc = new vscode.Location(uri, pos);
-        const breakpoint = new vscode.SourceBreakpoint(loc, true);
-        vscode.debug.addBreakpoints([breakpoint]);
-
-        const remove = vscode.debug.onDidTerminateDebugSession(e => {
-          vscode.debug.removeBreakpoints([breakpoint]);
-          remove.dispose();
-        });
+        Workspace.addBreakpoint(editor, line);
       }
-
-      const env: { [key: string]: any } = {
-        ...Workspace.getDefaultEnv({ DEBUG: '1' })
-      };
 
       return await vscode.debug.startDebugging(Workspace.folder, Workspace.generateLaunchConfig({
         name: 'Debug Travetto',
@@ -88,17 +63,58 @@ class TestRunnerFeature extends BaseFeature {
           `${editor.document.fileName.replace(`${Workspace.path}${path.sep}`, '')}`,
           `${line}`
         ].filter(x => x !== ''),
-        env
+        env: Workspace.getDefaultEnv({ DEBUG: '1' })
       }));
     }
   }
+
+  async launchTestServer() {
+    FsUtil.copyRecursiveSync(`${Workspace.path}/.trv_cache`, this.cacheDir, true);
+
+    this.runner = ExecUtil.fork(this.resolvePlugin('watch-test'), [], {
+      env: {
+        ...process.env,
+        TRV_CACHE: this.cacheDir,
+        TEST_FORMAT: 'exec'
+      },
+      cwd: Workspace.path,
+      stdio: ['pipe', 'pipe', 'pipe', 'ipc']
+    });
+
+    this.runner.process.stdout?.pipe(process.stdout);
+    this.runner.process.stderr?.pipe(process.stderr);
+
+    this.runner.result.finally(() => {
+      if (this.running) { // If still running, reinit
+        this.killTestServer(true);
+        FsUtil.unlinkRecursiveSync(this.cacheDir);
+        this.launchTestServer();
+      }
+    });
+
+    this.runner.process.addListener('message', this.consumer.onEvent.bind(this));
+  }
+
+  /**
+   * Stop runner
+   */
+  async killTestServer(running: boolean) {
+    console.debug('Test', 'Shutting down');
+    this.running = running;
+    if (this.runner && this.runner.process && !this.runner.process.killed) {
+      this.runner.process.kill();
+    }
+    // Remove all state
+    this.consumer.dispose();
+  }
+
 
   /**
    * On feature activate
    */
   async activate(context: vscode.ExtensionContext) {
-    this.register('all', () => this.launchTests());
-    this.register('line', () => this.launchTests(true));
+    this.register('all', () => this.launchTestDebugger());
+    this.register('line', () => this.launchTestDebugger(true));
     this.register('rerun', () => this.onDocumentUpdate(vscode.window.activeTextEditor, 0));
 
     vscode.workspace.onDidOpenTextDocument(x => this.onDocumentUpdate(x, 0), null, context.subscriptions);
@@ -107,13 +123,13 @@ class TestRunnerFeature extends BaseFeature {
 
     setTimeout(() => vscode.window.visibleTextEditors.forEach(x => this.onDocumentUpdate(x, 0)), 1000);
 
-    await this.runner.init();
+    await this.launchTestServer();
   }
 
   /**
    * On feature deactivate
    */
   async deactivate() {
-    await this.runner.destroy(false);
+    await this.killTestServer(false);
   }
 }
