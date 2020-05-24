@@ -71,14 +71,9 @@ class TestRunnerFeature extends BaseFeature {
   async launchTestServer() {
     FsUtil.copyRecursiveSync(`${Workspace.path}/.trv_cache`, this.cacheDir, true);
 
-    this.runner = ExecUtil.fork(this.resolvePlugin('watch-test'), [], {
-      env: {
-        ...process.env,
-        TRV_CACHE: this.cacheDir,
-        TEST_FORMAT: 'exec'
-      },
-      cwd: Workspace.path,
-      stdio: ['pipe', 'pipe', 'pipe', 'ipc']
+    this.runner = ExecUtil.fork(this.resolvePlugin('watch-test'), ['exec'], {
+      env: { TRV_CACHE: this.cacheDir, },
+      cwd: Workspace.path
     });
 
     this.runner.process.stdout?.pipe(process.stdout);
@@ -92,7 +87,7 @@ class TestRunnerFeature extends BaseFeature {
       }
     });
 
-    this.runner.process.addListener('message', this.consumer.onEvent.bind(this));
+    this.runner.process.addListener('message', ev => this.consumer.onEvent(ev as any));
   }
 
   /**
