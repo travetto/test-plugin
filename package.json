@@ -76,8 +76,8 @@
         "category": "Travetto"
       },
       {
-        "command": "travetto.test.test:all",
-        "title": "Debug Tests",
+        "command": "travetto.test.test:line",
+        "title": "Debug Test",
         "category": "Travetto"
       },
       {
@@ -108,7 +108,7 @@
           "when": "travetto.boot"
         },
         {
-          "command": "travetto.test.test:all",
+          "command": "travetto.test.test:line",
           "when": "travetto.test && !inDebugMode && editorLangId == typescript && editorIsOpen"
         },
         {

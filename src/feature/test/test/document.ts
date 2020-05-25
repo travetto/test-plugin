@@ -12,19 +12,23 @@ import {
 
 const diagColl = vscode.languages.createDiagnosticCollection('Travetto');
 
+function isDisposable(o: any): o is { _disposed: boolean } {
+  return '_disposed' in o;
+}
+
 /**
  * Test results manager
  */
-export class ResultsManager {
+export class DocumentResultsManager {
 
   private results: AllState = {
     suite: {},
     test: {}
   };
 
-  private failedAssertions: { [key: number]: Assertion } = {};
+  private failedAssertions: Record<number, Assertion> = {};
   private diagnostics: vscode.Diagnostic[] = [];
-  private editors: Set<vscode.TextEditor> = new Set();
+  private editors = new Set<vscode.TextEditor>();
   private document: vscode.TextDocument;
   public active = false;
 
@@ -36,10 +40,14 @@ export class ResultsManager {
    */
   addEditor(e: vscode.TextEditor) {
     if (!this.editors.has(e)) {
-      const elements = Array.from(this.editors).filter(x => !(x as any)._disposed);
+      const elements = [...this.editors].filter(x => isDisposable(x) && x._disposed);
       this.editors = new Set([...elements, e]);
       this.document = e.document;
-      this.refresh();
+      try {
+        this.refresh();
+      } catch (err) {
+        console.error(err);
+      }
     }
   }
 
@@ -49,9 +57,11 @@ export class ResultsManager {
    * @param decs 
    */
   setStyle(type: vscode.TextEditorDecorationType, decs: vscode.DecorationOptions[]) {
-    for (const ed of this.editors) {
-      if (!(ed as any)._disposed) {
-        ed.setDecorations(type, decs);
+    if (type) {
+      for (const ed of this.editors) {
+        if (isDisposable(ed) && !ed._disposed) {
+          ed.setDecorations(type, decs);
+        }
       }
     }
   }
@@ -63,7 +73,7 @@ export class ResultsManager {
     this.editors.clear();
 
     for (const l of ['suite', 'test'] as const) {
-      for (const e of Object.values(this.results[l]) as ResultState<any>[]) {
+      for (const e of Object.values(this.results[l])) {
         for (const x of Object.values(e.styles)) { x.dispose(); }
         if (l === 'test') {
           for (const x of Object.values((e as TestState).assertStyles)) {
@@ -87,11 +97,11 @@ export class ResultsManager {
       if (test.decoration && test.status) {
         this.setStyle(test.styles[test.status], [test.decoration]);
 
-        const out: { [key: string]: vscode.DecorationOptions[] } = { ok: [], fail: [], unknown: [] };
+        const out: Record<StatusUnknown, vscode.DecorationOptions[]> = { passed: [], failed: [], unknown: [], skipped: [] };
         for (const asrt of test.assertions) {
           out[asrt.status].push(asrt.decoration);
         }
-        for (const k of Object.keys(out)) {
+        for (const k of Object.keys(out) as StatusUnknown[]) {
           this.setStyle(test.assertStyles[k], out[k]);
         }
       }
@@ -124,7 +134,8 @@ export class ResultsManager {
                 }
               }
             };
-            document = self as any;
+            // @ts-ignore
+            document = self as vscode.TextDocument;
           }
 
           const diagRng = new vscode.Range(
@@ -236,39 +247,6 @@ export class ResultsManager {
   }
 
   /**
-   * On a test event, update internal state
-   */
-  onEvent(e: TestEvent) {
-    if (e.phase === 'before') {
-      switch (e.type) {
-        case 'suite': {
-          this.reset('suite', e.suite.classId);
-          this.store('suite', e.suite.classId, 'unknown', Decorations.buildSuite(e.suite), e.suite);
-
-          for (const test of Object.values(this.results.test).filter(x => x.src.classId === e.suite.classId)) {
-            this.reset('test', `${test.src.classId}:${test.src.methodName}`);
-          }
-          break;
-        }
-        // Clear diags
-        case 'test': {
-          const key = `${e.test.classId}:${e.test.methodName}`;
-          this.reset('test', key);
-          const dec = Decorations.buildTest(e.test);
-          this.store('test', key, 'unknown', dec, e.test);
-          break;
-        }
-      }
-    } else {
-      switch (e.type) {
-        case 'suite': this.onSuite(e.suite); break;
-        case 'test': this.onTest(e.test); break;
-        case 'assertion': this.onAssertion(e.assertion); break;
-      }
-    }
-  }
-
-  /**
    * On suite results
    * @param suite 
    */
@@ -302,6 +280,39 @@ export class ResultsManager {
       this.failedAssertions[Decorations.line(assertion.line).range.start.line] = assertion;
     }
     this.store('assertion', key, status, dec, assertion);
+  }
+
+  /**
+   * On a test event, update internal state
+   */
+  onEvent(e: TestEvent) {
+    if (e.phase === 'before') {
+      switch (e.type) {
+        case 'suite': {
+          this.reset('suite', e.suite.classId);
+          this.store('suite', e.suite.classId, 'unknown', Decorations.buildSuite(e.suite), e.suite);
+
+          for (const test of Object.values(this.results.test).filter(x => x.src.classId === e.suite.classId)) {
+            this.reset('test', `${test.src.classId}:${test.src.methodName}`);
+          }
+          break;
+        }
+        // Clear diags
+        case 'test': {
+          const key = `${e.test.classId}:${e.test.methodName}`;
+          this.reset('test', key);
+          const dec = Decorations.buildTest(e.test);
+          this.store('test', key, 'unknown', dec, e.test);
+          break;
+        }
+      }
+    } else {
+      switch (e.type) {
+        case 'suite': this.onSuite(e.suite); break;
+        case 'test': this.onTest(e.test); break;
+        case 'assertion': this.onAssertion(e.assertion); break;
+      }
+    }
   }
 
   /**

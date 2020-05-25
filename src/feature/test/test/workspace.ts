@@ -1,15 +1,14 @@
 import * as vscode from 'vscode';
-import * as path from 'path';
 
 import { Workspace } from '../../../core/workspace';
 
-import { ResultsManager } from './results';
+import { DocumentResultsManager } from './document';
 import { TestEvent, StatusUnknown } from './types';
 
 
-export class TestConsumer {
+export class WorkspaceResultsManager {
   private status: vscode.StatusBarItem;
-  private results: Map<string, ResultsManager> = new Map();
+  private results: Map<string, DocumentResultsManager> = new Map();
 
   constructor(private window: typeof vscode.window) {
     this.status = this.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
@@ -55,11 +54,9 @@ export class TestConsumer {
    * Get test results
    * @param target 
    */
-  getResults(target: vscode.TextDocument | string | TestEvent) {
+  getLocation(target: vscode.TextDocument | TestEvent) {
     let file: string;
-    if (typeof target === 'string') {
-      file = target;
-    } else if ('fileName' in target) {
+    if ('fileName' in target) {
       file = target.fileName;
     } else {
       switch (target.type) {
@@ -70,10 +67,20 @@ export class TestConsumer {
     }
 
     if (file) {
-      file = path.resolve(Workspace.path, file);
+      return Workspace.resolve(file);
+    }
+  }
 
+  /**
+   * Get test results
+   * @param target 
+   */
+  getResults(target: vscode.TextDocument | TestEvent) {
+    const file = this.getLocation(target);
+    if (file) {
       if (!this.results.has(file)) {
-        const rm = new ResultsManager(file);
+        const rm = new DocumentResultsManager(file);
+        console.debug('Generating results manager for ', file);
         this.results.set(file, rm);
       }
       return this.results.get(file)!;
@@ -103,12 +110,24 @@ export class TestConsumer {
   }
 
   /**
-   * Close a document
-   * @param doc 
+   * Start tracking an editor
    */
-  async close(doc: vscode.TextDocument) {
-    if (this.results.has(doc.fileName)) {
-      this.results.get(doc.fileName)!.dispose();
+  trackEditor(editor: vscode.TextEditor | vscode.TextDocument | undefined) {
+    editor = Workspace.getDocumentEditor(editor);
+    if (editor && editor.document) {
+      this.getResults(editor.document)?.addEditor(editor);
+    }
+  }
+
+  /**
+   * Stop tracking
+   */
+  async untrackEditor(editor: vscode.TextEditor | vscode.TextDocument | undefined) {
+    editor = Workspace.getDocumentEditor(editor);
+    if (editor) {
+      if (this.results.has(editor.document.fileName)) {
+        this.results.get(editor.document.fileName)!.dispose();
+      }
     }
   }
 }

@@ -32,7 +32,11 @@ export abstract class BaseFeature implements ActivationTarget {
     return output.stdout;
   }
 
+  commandName(task: string) {
+    return `${this.module!.replace('@', '').replace(/\/+/g, '.')}.${this.command}:${task}`;
+  }
+
   register(task: string, handler: () => any) {
-    vscode.commands.registerCommand(`${this.module!.replace('@', '').replace(/\/+/g, '.')}.${this.command}:${task}`, handler);
+    vscode.commands.registerCommand(this.commandName(task), handler);
   }
 }
