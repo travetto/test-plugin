@@ -3,9 +3,12 @@ import * as vscode from 'vscode';
 import { Workspace } from '../../../core/workspace';
 
 import { DocumentResultsManager } from './document';
-import { TestEvent, StatusUnknown } from './types';
+import { TestEvent, StatusUnknown, RemoveEvent } from './types';
 
 
+/**
+ * Manages results for the entire workspace, including the statusbar
+ */
 export class WorkspaceResultsManager {
   private status: vscode.StatusBarItem;
   private results: Map<string, DocumentResultsManager> = new Map();
@@ -16,7 +19,7 @@ export class WorkspaceResultsManager {
   }
 
   /**
-   * Get totals from teh runner
+   * Get totals from the runner
    */
   getTotals() {
     const totals: Record<StatusUnknown, number> = {
@@ -54,10 +57,12 @@ export class WorkspaceResultsManager {
    * Get test results
    * @param target 
    */
-  getLocation(target: vscode.TextDocument | TestEvent) {
+  getLocation(target: vscode.TextDocument | RemoveEvent | TestEvent) {
     let file: string;
     if ('fileName' in target) {
       file = target.fileName;
+    } else if ('file' in target) {
+      file = target.file;
     } else {
       switch (target.type) {
         case 'test': file = target.test.file; break;
@@ -75,7 +80,7 @@ export class WorkspaceResultsManager {
    * Get test results
    * @param target 
    */
-  getResults(target: vscode.TextDocument | TestEvent) {
+  getResults(target: vscode.TextDocument | RemoveEvent | TestEvent) {
     const file = this.getLocation(target);
     if (file) {
       if (!this.results.has(file)) {
@@ -91,10 +96,15 @@ export class WorkspaceResultsManager {
    * On test event
    * @param ev 
    */
-  onEvent(ev: TestEvent) {
+  onEvent(ev: TestEvent | RemoveEvent) {
     this.getResults(ev)?.onEvent(ev);
     const totals = this.getTotals();
-    this.setStatus(`Passed ${totals.passed}, Failed ${totals.failed}`, totals.failed ? '#f33' : '#8f8');
+    this.setStatus(
+      totals.failed === 0 ?
+        `Passed ${totals.passed}` :
+        `Failed ${totals.failed}/${totals.failed + totals.passed}`,
+      totals.failed ? '#f33' : '#8f8'
+    );
   }
 
   /**

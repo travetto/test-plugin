@@ -7,7 +7,8 @@ import {
   TestEvent, SuiteResult, TestResult, Assertion,
   SuiteState, Level,
   ErrorHoverAssertion,
-  StatusUnknown
+  StatusUnknown,
+  RemoveEvent
 } from './types';
 
 const diagColl = vscode.languages.createDiagnosticCollection('Travetto');
@@ -84,6 +85,23 @@ export class DocumentResultsManager {
     }
   }
 
+  refreshTest(test: TestState | string) {
+    if (typeof test === 'string') {
+      test = this.results.test[test];
+    }
+    if (test.decoration && test.status) {
+      this.setStyle(test.styles[test.status], [test.decoration]);
+
+      const out: Record<StatusUnknown, vscode.DecorationOptions[]> = { passed: [], failed: [], unknown: [], skipped: [] };
+      for (const asrt of test.assertions) {
+        out[asrt.status].push(asrt.decoration);
+      }
+      for (const k of Object.keys(out) as StatusUnknown[]) {
+        this.setStyle(test.assertStyles[k], out[k]);
+      }
+    }
+  }
+
   /**
    * Refresh all results
    */
@@ -94,17 +112,7 @@ export class DocumentResultsManager {
       }
     }
     for (const test of Object.values(this.results.test)) {
-      if (test.decoration && test.status) {
-        this.setStyle(test.styles[test.status], [test.decoration]);
-
-        const out: Record<StatusUnknown, vscode.DecorationOptions[]> = { passed: [], failed: [], unknown: [], skipped: [] };
-        for (const asrt of test.assertions) {
-          out[asrt.status].push(asrt.decoration);
-        }
-        for (const k of Object.keys(out) as StatusUnknown[]) {
-          this.setStyle(test.assertStyles[k], out[k]);
-        }
-      }
+      this.refreshTest(test);
     }
   }
 
@@ -189,7 +197,7 @@ export class DocumentResultsManager {
         });
         break;
       }
-      default: {
+      case 'test': {
         const el = this.results.test[key];
         el.src = src;
         el.status = status;
@@ -265,6 +273,7 @@ export class DocumentResultsManager {
     const status = test.status === 'skipped' ? 'unknown' : test.status;
     this.store('test', `${test.classId}:${test.methodName}`, status, dec, test);
 
+    this.refreshTest(`${test.classId}:${test.methodName}`);
     this.refreshDiagnostics();
   }
 
@@ -285,8 +294,10 @@ export class DocumentResultsManager {
   /**
    * On a test event, update internal state
    */
-  onEvent(e: TestEvent) {
-    if (e.phase === 'before') {
+  onEvent(e: TestEvent | RemoveEvent) {
+    if (e.type === 'removeTest') {
+      this.reset('test', `${e.classId}:${e.method}`)
+    } else if (e.phase === 'before') {
       switch (e.type) {
         case 'suite': {
           this.reset('suite', e.suite.classId);

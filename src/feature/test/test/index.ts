@@ -18,7 +18,7 @@ class TestRunnerFeature extends BaseFeature {
   private consumer = new WorkspaceResultsManager(vscode.window);
   private runner: ExecutionState;
   private running = true;
-  private cacheDir = `${Workspace.path}/.trv_cache_test`;
+  private cacheDir = `${Workspace.path}/.trv_cache_plugin`;
 
   /**
    * Launch a test from the current location
@@ -74,7 +74,7 @@ class TestRunnerFeature extends BaseFeature {
   /**
    * Stop runner
    */
-  async killTestServer(running: boolean) {
+  killTestServer(running: boolean) {
     console.debug('Test', 'Shutting down');
     this.running = running;
     if (this.runner && this.runner.process && !this.runner.process.killed) {
@@ -136,12 +136,16 @@ class TestRunnerFeature extends BaseFeature {
     }, { provideCodeLenses: this.buildCodeLenses.bind(this) })
 
     await this.launchTestServer();
+
+    process.on('SIGKILL', this.deactivate.bind(this));
+    process.on('SIGINT', this.deactivate.bind(this));
+    process.on('exit', this.deactivate.bind(this));
   }
 
   /**
    * On feature deactivate
    */
-  async deactivate() {
-    await this.killTestServer(false);
+  deactivate() {
+    this.killTestServer(false);
   }
 }

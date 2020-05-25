@@ -86,3 +86,10 @@ export interface ErrorHoverAssertion {
   operator?: string;
   error: Error & SMap<any>;
 }
+
+export type RemoveEvent = {
+  type: 'removeTest';
+  method: string;
+  file: string;
+  classId: string;
+};
