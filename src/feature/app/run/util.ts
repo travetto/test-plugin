@@ -85,6 +85,8 @@ export class AppSelectorUtil {
     const all = choice.params;
     const selected = [];
 
+    choice.inputs = choice.inputs || [];
+
     for (let i = 0; i < all.length; i++) {
       const param = all[i];
       const res = await ParameterSelector.getParameter({

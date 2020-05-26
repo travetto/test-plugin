@@ -31,7 +31,9 @@ export abstract class BaseFeature implements ActivationTarget {
   }
 
   async runPlugin(name: string) {
-    const { result } = ExecUtil.fork(this.resolvePlugin(name));
+    const { result } = ExecUtil.fork(this.resolvePlugin(name), [], {
+      cwd: Workspace.path
+    });
     const output = await result;
     return output.stdout;
   }

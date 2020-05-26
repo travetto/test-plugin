@@ -16,8 +16,13 @@ export class AppRunFeature extends BaseFeature {
 
   private storage = new ActionStorage<AppChoice>('app.run', Workspace.path);
 
-  private runner(title: string, choices: () => Promise<AppChoice[] | AppChoice>) {
-    return async () => this.runApplication(title, await choices());
+  private runner(title: string, choices: () => Promise<AppChoice[] | AppChoice | undefined>) {
+    return async () => {
+      const choice = await choices();
+      if (choice) {
+        await this.runApplication(title, choice);
+      }
+    };
   }
 
   /**
@@ -29,7 +34,7 @@ export class AppRunFeature extends BaseFeature {
 
   /**
    * Find list of recent choices, that are valid
-   * @param count 
+   * @param count
    */
   async getValidRecent(count: number): Promise<AppChoice[]> {
     const appList = await this.getAppList();
@@ -43,8 +48,8 @@ export class AppRunFeature extends BaseFeature {
 
   /**
    * Handle application choices
-   * @param title 
-   * @param choices 
+   * @param title
+   * @param choices
    */
   async resolveChoices(title: string, choices: AppChoice[] | AppChoice) {
     const choice = await AppSelectorUtil.resolveChoices(title, choices);
@@ -57,7 +62,7 @@ export class AppRunFeature extends BaseFeature {
 
   /**
    * Get full launch config
-   * @param choice 
+   * @param choice
    */
   getLaunchConfig(choice: AppChoice) {
     const args = choice.inputs.map(x => `${x}`.replace(Workspace.path, '.')).join(', ');
@@ -98,8 +103,8 @@ export class AppRunFeature extends BaseFeature {
 
   /**
    * Run the application with the given choices
-   * @param title 
-   * @param apps 
+   * @param title
+   * @param apps
    */
   async runApplication(title: string, apps: AppChoice[] | AppChoice) {
     try {
@@ -116,12 +121,67 @@ export class AppRunFeature extends BaseFeature {
   }
 
   /**
+   * Build code lenses for a given document
+   * @param doc
+   */
+  buildCodeLenses(doc: vscode.TextDocument) {
+    const out: vscode.CodeLens[] = [];
+    for (let i = 0; i < doc.lineCount; i++) {
+      const line = doc.lineAt(i);
+      if (line.text.includes('@Application')) {
+        const [, name] = line.text.match(/^@Application\(['"]([^'"]+)/)!;
+        // Find start of function
+        while (!/\s+run\(/.test(doc.lineAt(i).text)) {
+          i += 1;
+        }
+
+        const cmd = {
+          range: doc.lineAt(i).range,
+          isResolved: true,
+          command: {
+            command: this.commandName('new'),
+            title: `Debug Application`,
+            arguments: [name, i + 1]
+          }
+        };
+        // @ts-ignore
+        out.push(cmd);
+      }
+    }
+    return out;
+  }
+
+  /**
    * Register command handlers
    */
   activate() {
-    this.register('new', this.runner('Run New Application', () => this.getAppList()));
+    this.register('new', (name?: string, line?: number) =>
+      this.runner('Run New Application', async () => {
+        const list = await this.getAppList();
+        if (name) {
+          const choice = list.find(x => x.name === name);
+          if (choice && line) {
+            const active = Workspace.getDocumentEditor(vscode.window.activeTextEditor);
+            if (active) {
+              Workspace.addBreakpoint(active, line);
+            }
+          }
+          return choice;
+        } else {
+          return list;
+        }
+      })()
+    );
     this.register('recent', this.runner('Run Recent Application', () => this.getValidRecent(10)));
     this.register('mostRecent', this.runner('Run Most Recent Application', () => this.getValidRecent(1).then(([x]) => x)));
     this.register('export', async () => this.exportLaunchConfig());
+
+    vscode.languages.registerCodeLensProvider({
+      language: 'typescript',
+      pattern: {
+        base: Workspace.path,
+        pattern: '**/src/**'
+      }
+    }, { provideCodeLenses: this.buildCodeLenses.bind(this) });
   }
 }
