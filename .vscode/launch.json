@@ -9,7 +9,7 @@
       "runtimeExecutable": "${execPath}",
       "args": [
         "--extensionDevelopmentPath=${workspaceRoot}",
-        "${workspaceRoot}/../../travetto/module/schema"
+        "${workspaceRoot}/../../travetto/module/app"
       ],
       "env": {
         "DEBUG": "0",

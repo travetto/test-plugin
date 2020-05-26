@@ -37,7 +37,7 @@ export class DocumentResultsManager {
 
   /**
    * Support a new editor for results updating
-   * @param e 
+   * @param e
    */
   addEditor(e: vscode.TextEditor) {
     if (!this.editors.has(e)) {
@@ -54,8 +54,8 @@ export class DocumentResultsManager {
 
   /**
    * Set all styles for all open editors
-   * @param type 
-   * @param decs 
+   * @param type
+   * @param decs
    */
   setStyle(type: vscode.TextEditorDecorationType, decs: vscode.DecorationOptions[]) {
     if (type) {
@@ -139,7 +139,7 @@ export class DocumentResultsManager {
               lineAt(line: number) {
                 return {
                   firstNonWhitespaceCharacterIndex: (self.lines[line].length - self.lines[line].trimLeft().length)
-                }
+                };
               }
             };
             // @ts-ignore
@@ -167,7 +167,7 @@ export class DocumentResultsManager {
    * @param key The test key
    * @param status The status
    * @param decoration UI Decoration
-   * @param src 
+   * @param src
    */
   store(level: Level, key: string, status: StatusUnknown, decoration: vscode.DecorationOptions, src?: any) {
     switch (level) {
@@ -209,7 +209,7 @@ export class DocumentResultsManager {
 
   /**
    * Create all level styles
-   * @param level 
+   * @param level
    */
   genStyles(level: Level) {
     return {
@@ -256,7 +256,7 @@ export class DocumentResultsManager {
 
   /**
    * On suite results
-   * @param suite 
+   * @param suite
    */
   onSuite(suite: SuiteResult) {
     const status = suite.skipped ? 'unknown' : (suite.failed ? 'failed' : 'passed');
@@ -266,7 +266,7 @@ export class DocumentResultsManager {
 
   /**
    * On test results
-   * @param test 
+   * @param test
    */
   onTest(test: TestResult) {
     const dec = Decorations.buildTest(test);
@@ -279,7 +279,7 @@ export class DocumentResultsManager {
 
   /**
    * On test assertion
-   * @param assertion 
+   * @param assertion
    */
   onAssertion(assertion: Assertion) {
     const status = assertion.error ? 'failed' : 'passed';
@@ -296,7 +296,7 @@ export class DocumentResultsManager {
    */
   onEvent(e: TestEvent | RemoveEvent) {
     if (e.type === 'removeTest') {
-      this.reset('test', `${e.classId}:${e.method}`)
+      this.reset('test', `${e.classId}:${e.method}`);
     } else if (e.phase === 'before') {
       switch (e.type) {
         case 'suite': {
@@ -339,7 +339,7 @@ export class DocumentResultsManager {
 
     for (const o of vals) {
       switch (o.status) {
-        case 'skipped': skipped += 1;
+        case 'skipped': skipped += 1; break;
         case 'failed': failed++; break;
         case 'passed': passed++; break;
         default: unknown++; break;

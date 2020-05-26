@@ -5,10 +5,10 @@ import { Workspace } from '../../../core/workspace';
 
 /**
  * Make a color
- * @param r 
- * @param g 
- * @param b 
- * @param a 
+ * @param r
+ * @param g
+ * @param b
+ * @param a
  */
 const rgba = (r = 0, g = 0, b = 0, a = 1) => `rgba(${r},${g},${b},${a})`;
 
@@ -18,7 +18,7 @@ const rgba = (r = 0, g = 0, b = 0, a = 1) => `rgba(${r},${g},${b},${a})`;
 const ITALIC = 'font-style: italic;';
 
 /**
- * Various styles 
+ * Various styles
  */
 const Style = {
   SMALL_IMAGE: '40%',
@@ -52,7 +52,7 @@ export class Decorations {
 
   /**
    * Build an error hover tooltip
-   * @param asrt 
+   * @param asrt
    */
   static buildErrorHover(asrt: ErrorHoverAssertion) {
     let title: string;
@@ -108,8 +108,8 @@ export class Decorations {
 
   /**
    * Create a line range
-   * @param n 
-   * @param end 
+   * @param n
+   * @param end
    */
   static line(n: number, end: number = 0): vscode.DecorationOptions {
     return { range: new vscode.Range(n - 1, 0, (end || n) - 1, 100000000000) };
@@ -117,7 +117,7 @@ export class Decorations {
 
   /**
    * Build assertion
-   * @param state 
+   * @param state
    */
   static buildAssertStyle(state: StatusUnknown) {
     const color = Style.COLORS[state];
@@ -130,8 +130,8 @@ export class Decorations {
 
   /**
    * Build guardrail image for assertion status
-   * @param state 
-   * @param size 
+   * @param state
+   * @param size
    */
   static buildImage(state: StatusUnknown, size: string = Style.FULL_IMAGE) {
     const img = Workspace.getAbsoluteResource(`images/${state}.png`);
@@ -144,12 +144,12 @@ export class Decorations {
 
   /**
    * Build assertion
-   * @param assertion 
+   * @param assertion
    */
   static buildAssertion(assertion: { error?: Error, line: number, lineEnd?: number, message: string }): vscode.DecorationOptions {
     let out = this.line(assertion.line, assertion.lineEnd);
     if (assertion.error) {
-      const { suffix, title, markdown } = this.buildErrorHover(assertion as ErrorHoverAssertion);
+      const { suffix, markdown } = this.buildErrorHover(assertion as ErrorHoverAssertion);
 
       out = {
         ...out,
@@ -167,7 +167,7 @@ export class Decorations {
 
   /**
    * Build suite config
-   * @param suite 
+   * @param suite
    */
   static buildSuite(suite: { lines: { start: number } }) {
     return { ...this.line(suite.lines.start) };
@@ -175,7 +175,7 @@ export class Decorations {
 
   /**
    * Build test config
-   * @param test 
+   * @param test
    */
   static buildTest(test: { lines: { start: number } }) {
     let err: ErrorHoverAssertion | undefined;
@@ -198,8 +198,8 @@ export class Decorations {
 
   /**
    * Build style
-   * @param entity 
-   * @param state 
+   * @param entity
+   * @param state
    */
   static buildStyle(entity: 'assertion' | 'test' | 'suite', state: StatusUnknown) {
     return (entity === 'assertion') ?

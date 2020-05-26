@@ -19,7 +19,11 @@ export abstract class BaseFeature implements ActivationTarget {
   }
 
   resolve(...rel: string[]) {
-    return Workspace.resolve('node_modules', this.module!, ...rel);
+    if (this.module === Workspace.getModule()) {
+      return Workspace.resolve(...rel);
+    } else {
+      return Workspace.resolve('node_modules', this.module!, ...rel);
+    }
   }
 
   resolvePlugin(name: string) {

@@ -16,7 +16,7 @@ interface ParamWithMeta {
 type Complex = vscode.InputBox | vscode.QuickPick<vscode.QuickPickItem>;
 
 /**
- * Selects a parameter 
+ * Selects a parameter
  */
 export class ParameterSelector {
   /**
@@ -37,7 +37,7 @@ export class ParameterSelector {
 
   /**
    * Build quick input
-   * @param conf 
+   * @param conf
    */
   static buildQuickInput(conf: ParamWithMeta) {
     return this.buildQuick(conf, vscode.window.createInputBox);
@@ -71,7 +71,7 @@ export class ParameterSelector {
 
   /**
    * Convert input to resolvable value
-   * @param input 
+   * @param input
    */
   static async getInput<T extends Complex, U = string>(input: T, transform?: (val: T) => U): Promise<U> {
     input.show();
@@ -87,7 +87,7 @@ export class ParameterSelector {
       input.hide();
       input.dispose();
     });
-  };
+  }
 
   /**
    * Prompt for a file
@@ -106,7 +106,7 @@ export class ParameterSelector {
 
   /**
    * Get quick pick input
-   * @param conf 
+   * @param conf
    */
   static getQuickInput(conf: ParamWithMeta) {
     return this.getInput(this.buildQuickInput(conf));
@@ -114,9 +114,9 @@ export class ParameterSelector {
 
   /**
    * Get quick pick list
-   * 
-   * @param conf 
-   * @param choices 
+   *
+   * @param conf
+   * @param choices
    */
   static getQuickPickList(conf: ParamWithMeta, choices: string[]) {
     return this.getInput(
@@ -126,8 +126,8 @@ export class ParameterSelector {
 
   /**
    * Display the quick pick dialog
-   * @param title 
-   * @param items 
+   * @param title
+   * @param items
    */
   static getObjectQuickPickList<T extends vscode.QuickPickItem>(title: string, items: T[]): Promise<T> {
     const qp = vscode.window.createQuickPick<T>();

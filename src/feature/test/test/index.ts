@@ -86,7 +86,7 @@ class TestRunnerFeature extends BaseFeature {
 
   /**
    * Build code lenses for a given document
-   * @param doc 
+   * @param doc
    */
   buildCodeLenses(doc: vscode.TextDocument) {
     const out: vscode.CodeLens[] = [];
@@ -131,9 +131,9 @@ class TestRunnerFeature extends BaseFeature {
       language: 'typescript',
       pattern: {
         base: Workspace.path,
-        pattern: "test/**"
+        pattern: 'test/**'
       }
-    }, { provideCodeLenses: this.buildCodeLenses.bind(this) })
+    }, { provideCodeLenses: this.buildCodeLenses.bind(this) });
 
     await this.launchTestServer();
 

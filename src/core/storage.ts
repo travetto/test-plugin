@@ -52,8 +52,8 @@ export class ActionStorage<T> {
 
   /**
    * Set value
-   * @param key 
-   * @param value 
+   * @param key
+   * @param value
    */
   async set(key: string, value?: T): Promise<void> {
     if (value) {
@@ -66,7 +66,7 @@ export class ActionStorage<T> {
 
   /**
    * Check value
-   * @param key 
+   * @param key
    */
   has(key: string) {
     return key in this.storage;
@@ -74,7 +74,7 @@ export class ActionStorage<T> {
 
   /**
    * Get value
-   * @param key 
+   * @param key
    */
   get(key: string): T & { time: number } {
     const ent = this.storage[key];
@@ -83,7 +83,7 @@ export class ActionStorage<T> {
 
   /**
    * Get most recent values
-   * @param size 
+   * @param size
    */
   getRecent(size = 5): TimeEntry<T>[] {
     return Object.values(this.storage)
@@ -93,8 +93,8 @@ export class ActionStorage<T> {
 
   /**
    * Get recent and filter out stale data
-   * @param size 
-   * @param remove 
+   * @param size
+   * @param remove
    */
   getRecentAndFilterState(size: number, remove: (x: T) => boolean) {
     return this.getRecent(size)

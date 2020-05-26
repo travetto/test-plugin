@@ -1,5 +1,4 @@
 import * as vscode from 'vscode';
-import { ExecUtil } from '@travetto/boot';
 
 import { Workspace } from '../../../core/workspace';
 import { Activatible } from '../../../core/activation';

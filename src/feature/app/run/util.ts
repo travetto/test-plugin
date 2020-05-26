@@ -12,7 +12,7 @@ export class AppSelectorUtil {
 
   /**
    * Build application details for quick pick
-   * @param app 
+   * @param app
    */
   static buildAppDetail(app: AppChoice) {
     const detail = [];
@@ -27,7 +27,7 @@ export class AppSelectorUtil {
 
   /**
    * Build application parameters for quick pick
-   * @param choice 
+   * @param choice
    */
   static buildAppParams(choice: AppChoice) {
     const out = choice.params
@@ -44,7 +44,7 @@ export class AppSelectorUtil {
 
   /**
   * Build quick pick item
-  * @param choice 
+  * @param choice
   */
   static buildQuickPickItem(choice: AppChoice): PickItem | undefined {
     const params = this.buildAppParams(choice);
@@ -60,8 +60,8 @@ export class AppSelectorUtil {
 
   /**
    * Select an app
-   * @param title 
-   * @param choices 
+   * @param title
+   * @param choices
    */
   static async resolveApp(title: string, choices: AppChoice[]) {
     const items = choices
@@ -77,11 +77,9 @@ export class AppSelectorUtil {
     return res?.target;
   }
 
-
-
   /**
    * Select application parameters
-   * @param choice 
+   * @param choice
    */
   static async resolveParameters(choice: AppChoice): Promise<string[] | undefined> {
     const all = choice.params;
@@ -117,8 +115,8 @@ export class AppSelectorUtil {
 
   /**
    * Handle application choices
-   * @param title 
-   * @param choices 
+   * @param title
+   * @param choices
    */
   static async resolveChoices(title: string, choices: AppChoice[] | AppChoice) {
     const choice = Array.isArray(choices) ? (await this.resolveApp(title, choices)) : choices;

@@ -40,8 +40,8 @@ export class WorkspaceResultsManager {
 
   /**
    * Set overall status
-   * @param message 
-   * @param color 
+   * @param message
+   * @param color
    */
   setStatus(message: string, color?: string) {
     if (!message) {
@@ -55,7 +55,7 @@ export class WorkspaceResultsManager {
 
   /**
    * Get test results
-   * @param target 
+   * @param target
    */
   getLocation(target: vscode.TextDocument | RemoveEvent | TestEvent) {
     let file: string;
@@ -78,7 +78,7 @@ export class WorkspaceResultsManager {
 
   /**
    * Get test results
-   * @param target 
+   * @param target
    */
   getResults(target: vscode.TextDocument | RemoveEvent | TestEvent) {
     const file = this.getLocation(target);
@@ -94,7 +94,7 @@ export class WorkspaceResultsManager {
 
   /**
    * On test event
-   * @param ev 
+   * @param ev
    */
   onEvent(ev: TestEvent | RemoveEvent) {
     this.getResults(ev)?.onEvent(ev);
@@ -114,7 +114,7 @@ export class WorkspaceResultsManager {
     // Remove all state
     const entries = [...this.results.entries()];
     this.results.clear();
-    for (const [k, v] of entries) {
+    for (const [, v] of entries) {
       v.dispose();
     }
   }

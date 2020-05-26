@@ -18,7 +18,7 @@ export interface Application {
  * Application choice
  */
 export type AppChoice = Application & {
-  inputs: string[],
-  time?: number,
-  key?: string
+  inputs: string[];
+  time?: number;
+  key?: string;
 };

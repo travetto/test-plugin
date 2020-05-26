@@ -6,6 +6,7 @@ import { FsUtil } from '@travetto/boot';
  */
 export class Workspace {
 
+  static _module: string;
   static context: vscode.ExtensionContext;
   static folder: vscode.WorkspaceFolder;
 
@@ -33,7 +34,7 @@ export class Workspace {
 
   /**
    * Initialize extension context
-   * @param context 
+   * @param context
    */
   static init(context: vscode.ExtensionContext) {
     this.context = context;
@@ -43,7 +44,7 @@ export class Workspace {
 
   /**
    * Find full path for a resource
-   * @param rel 
+   * @param rel
    */
   static getAbsoluteResource(rel: string) {
     return this.context.asAbsolutePath(rel);
@@ -57,16 +58,26 @@ export class Workspace {
   }
 
   /**
+   * Get module
+   */
+  static getModule() {
+    if (this._module === undefined) {
+      this._module = FsUtil.existsSync(this.resolve('package.json')) ? require(Workspace.resolve('package.json')).name : '';
+    }
+    return this._module;
+  }
+
+  /**
    * See if module is installed
-   * @param module 
+   * @param module
    */
   static async isInstalled(module: string) {
-    return !!(await FsUtil.exists(this.resolve('node_modules', module)));
+    return !!(await FsUtil.exists(this.resolve('node_modules', module))) || this.getModule() === module;
   }
 
   /**
    * Generate execution launch config
-   * @param config 
+   * @param config
    */
   static generateLaunchConfig(config: { name: string, program: string } & Partial<vscode.DebugConfiguration>) {
     config.program = config.program.replace(this.path, `\${workspaceFolder}`);
@@ -74,7 +85,7 @@ export class Workspace {
       type: 'node',
       request: 'launch',
       protocol: 'inspector',
-      // tslint:disable-next-line:no-invalid-template-strings
+      // eslint-disable-next-line no-template-curly-in-string
       cwd: '${workspaceFolder}',
       stopOnEntry: false,
       sourceMaps: true,
@@ -94,7 +105,7 @@ export class Workspace {
 
   /**
    * See if an entity is an editor
-   * @param o 
+   * @param o
    */
   static isEditor(o: any): o is vscode.TextEditor {
     return 'document' in o;
@@ -102,7 +113,7 @@ export class Workspace {
 
   /**
    * Get the editor for a doc
-   * @param doc 
+   * @param doc
    */
   static getEditor(doc: vscode.TextDocument) {
     for (const e of vscode.window.visibleTextEditors) {
